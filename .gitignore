@@ -41,6 +41,9 @@ config.toml
 # Claude Code (user-specific)
 .claude/
 
+# Git worktrees
+.worktrees/
+
 # Test artifacts
 .coverage
 .pytest_cache/
