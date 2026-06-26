@@ -918,6 +918,29 @@ class TestBacktrackIntegration:
         assert ag.backtrack.total_restores == 1
         assert ag.stuck_turns == 0
 
+    def test_force_restore_on_progress_stall(self, tmp_path):
+        # When no meaningful progress for >500 turns (and not in Oak's Lab),
+        # run_overworld forces a backtrack restore even if not "stuck".
+        ag = _make_agent(tmp_path)
+        state = OverworldState(map_id=0, x=5, y=5)
+        ag.memory.read_overworld_state = MagicMock(return_value=state)
+        ag.backtrack.save_snapshot(ag.pyboy, state, turn=0)
+        ag._bt_last_map_id = 0
+
+        # 600-turn progress gap, but not stuck (so only the stall path fires)
+        ag.turn_count = 600
+        ag._last_progress_turn = 0
+        ag.stuck_turns = 0
+
+        ag.run_overworld()
+
+        stall_events = [e for e in ag.events if "PROGRESS STALL" in e]
+        assert len(stall_events) == 1
+        assert ag.backtrack.total_restores == 1
+        assert ag.stuck_turns == 0
+        # progress watermark advances to the current turn after the restore
+        assert ag._last_progress_turn == 600
+
     def test_compute_fitness_includes_backtrack_restores(self, tmp_path):
         ag = _make_agent(tmp_path)
         ag.backtrack.total_restores = 7

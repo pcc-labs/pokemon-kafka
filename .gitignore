@@ -9,7 +9,10 @@ rom/
 # Screenshot output
 frames/
 
-# Tapes telemetry (SQLite DB + local config)
+# Observer memory output (per-run observations + watermark)
+pokedex/memory/
+
+# Leftover local Tapes telemetry (project migrated to Paper)
 .tapes/
 
 # Plans (ephemeral working artifacts, never commit)
@@ -41,14 +44,22 @@ config.toml
 # Claude Code (user-specific)
 .claude/
 
+# Git worktrees
+.worktrees/
+
 # Test artifacts
 .coverage
 .pytest_cache/
 
-# Pokedex session logs (log7+ are local-only run artifacts)
-pokedex/log[7-9]*.md
-pokedex/log1[0-9]*.md
-pokedex/log2[0-9]*.md
+# Pokedex session logs: log1-6 are committed as examples, everything
+# else is local-only run output (users do their own training runs).
+pokedex/log*.md
+!pokedex/log1.md
+!pokedex/log2.md
+!pokedex/log3.md
+!pokedex/log4.md
+!pokedex/log5.md
+!pokedex/log6.md
 
 # Generated results
 pokedex/evolve_results.json
