@@ -18,22 +18,17 @@ until docker compose exec -T kafka kafka-topics --bootstrap-server kafka:29092 -
 done
 echo "[entrypoint] Kafka ready."
 
-echo "[entrypoint] Starting Tapes proxy..."
-tapes serve proxy \
-    --config-dir /workspace/.tapes \
-    --sqlite /workspace/.tapes/tapes.sqlite \
-    --kafka-brokers localhost:9092 \
-    --kafka-topic agent.telemetry.raw &
-TAPES_PID=$!
+# LLM session recording is handled by Paper (paperd), not a local proxy.
+# paperd runs on the host; the agent reaches it via ANTHROPIC_BASE_URL.
+if [ -z "${ANTHROPIC_BASE_URL:-}" ]; then
+    echo "[entrypoint] WARNING: ANTHROPIC_BASE_URL is not set."
+    echo "[entrypoint] Run 'paper init' on the host and ensure paperd is running"
+    echo "[entrypoint] before starting agents, so sessions are recorded by Paper."
+else
+    echo "[entrypoint] Paper proxy: ${ANTHROPIC_BASE_URL}"
+fi
 
-# Wait for proxy to accept connections
-echo "[entrypoint] Waiting for Tapes proxy on :8080..."
-until curl -sf http://localhost:8080 >/dev/null 2>&1 || kill -0 "$TAPES_PID" 2>/dev/null; do
-    sleep 1
-done
-sleep 1
-
-echo "[entrypoint] Starting remaining services..."
+echo "[entrypoint] Starting telemetry services (Kafka consumers + Flink)..."
 docker compose up -d
 
 echo "[entrypoint] Launching agent..."

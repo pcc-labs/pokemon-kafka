@@ -27,32 +27,10 @@ services:
       timeout: 5s
       retries: 5
 
-  tapes-proxy:
-    build: docker/tapes-proxy
-    command: >
-      serve proxy
-      --listen 0.0.0.0:8080
-      --upstream ${ANTHROPIC_API_BASE:-https://api.anthropic.com}
-      --kafka-brokers kafka:29092
-      --kafka-topic agent.telemetry.raw
-    ports:
-      - "8080:8080"
-    depends_on:
-      kafka:
-        condition: service_healthy
-
-  telemetry-consumer:
-    build: docker/telemetry-consumer
-    depends_on:
-      kafka:
-        condition: service_healthy
-    environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
-      KAFKA_TOPIC: agent.telemetry.raw
-      KAFKA_GROUP_ID: telemetry-consumer
-      SINK_DIR: /data/telemetry
-    volumes:
-      - ./data/telemetry:/data/telemetry
+  # Session recording is handled by Paper (paperd) on the host — there is no
+  # local LLM proxy. The agent.telemetry.raw stream and its consumers were
+  # retired with the Tapes proxy; game-event telemetry (agent.game.events)
+  # below remains the live Kafka feed.
 
   alerts-consumer:
     build: docker/alerts-consumer
