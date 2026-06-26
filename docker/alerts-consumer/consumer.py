@@ -1,7 +1,8 @@
 """Alerts consumer — reads Flink anomaly alerts from Kafka and displays them.
 
-When TAPES_DB_PATH is set, each alert is also written as a Tapes node so the
-observational memory loop can pick it up.
+When MEMORY_DIR is set, each alert is also appended as an `[important]`
+observation to <MEMORY_DIR>/observations.md, the same file the observational
+memory loop maintains, so the agent surfaces Flink anomalies at session start.
 """
 
 import json
@@ -12,7 +13,7 @@ from confluent_kafka import Consumer, KafkaError
 TOPIC = os.environ.get("KAFKA_TOPIC", "agent.telemetry.alerts")
 BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092")
 GROUP_ID = os.environ.get("KAFKA_GROUP_ID", "alerts-consumer")
-TAPES_DB = os.environ.get("TAPES_DB_PATH")
+MEMORY_DIR = os.environ.get("MEMORY_DIR")
 
 
 def format_alert(data: dict) -> str:
@@ -24,6 +25,22 @@ def format_alert(data: dict) -> str:
     count = data.get("event_count", 0)
     window = f" window=[{window_start} -> {window_end}]" if window_start else ""
     return f"*** ALERT [{alert_type}] conv={root} count={count}{window} | {detail}"
+
+
+def alert_observation(data: dict) -> dict:
+    """Shape a Flink alert as an observation row for memory_writer."""
+    alert_type = data.get("alert_type", "UNKNOWN")
+    detail = data.get("detail", "")[:200]
+    count = data.get("event_count", 0)
+    content = f"Flink alert [{alert_type}]: {detail}".rstrip()
+    if count:
+        content += f" (count={count})"
+    return {
+        "referenced_time": data.get("window_end") or data.get("window_start", ""),
+        "priority": "important",
+        "content": content,
+        "source_session": "flink",
+    }
 
 
 def main():
@@ -39,12 +56,12 @@ def main():
     consumer.subscribe([TOPIC])
     print("[alerts] Subscribed. Waiting for alerts...", flush=True)
 
-    tape_writer = None
-    if TAPES_DB:
-        from tape_writer import TapeWriter
+    append_observations = None
+    if MEMORY_DIR:
+        from memory_writer import append_observations as _append
 
-        tape_writer = TapeWriter(TAPES_DB)
-        print(f"[alerts] Tapes writer: {TAPES_DB}", flush=True)
+        append_observations = _append
+        print(f"[alerts] Memory: {MEMORY_DIR}", flush=True)
 
     try:
         while True:
@@ -59,25 +76,18 @@ def main():
 
             try:
                 data = json.loads(msg.value().decode("utf-8"))
-                alert_text = format_alert(data)
-                print(alert_text, flush=True)
+                print(format_alert(data), flush=True)
 
-                if tape_writer:
+                if append_observations:
                     try:
-                        tape_writer.write_node(
-                            role="assistant",
-                            content_blocks=[{"type": "text", "text": alert_text}],
-                            agent_name="flink",
-                        )
+                        append_observations(MEMORY_DIR, [alert_observation(data)], dedupe=True)
                     except Exception as exc:
-                        print(f"[alerts] Tapes write failed: {exc}", flush=True)
+                        print(f"[alerts] memory write failed: {exc}", flush=True)
             except (json.JSONDecodeError, UnicodeDecodeError) as exc:
                 print(f"[alerts] Bad message: {exc}", flush=True)
     except KeyboardInterrupt:
         pass
     finally:
-        if tape_writer:
-            tape_writer.close()
         consumer.close()
 
 

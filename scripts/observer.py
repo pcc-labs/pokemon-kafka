@@ -12,6 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
+from memory_writer import append_observations
 from paper_reader import TapeReader, TapeSession
 
 
@@ -172,34 +173,12 @@ class Observer:
         return default
 
     def write_observations(self, observations: list[Observation]) -> None:
-        """Append observations to observations.md grouped by date."""
-        self.memory_dir.mkdir(parents=True, exist_ok=True)
+        """Append observations to observations.md grouped by date.
 
-        # Group by date
-        by_date: dict[str, list[Observation]] = {}
-        for obs in observations:
-            date = obs.referenced_time[:10] if obs.referenced_time else "unknown"
-            by_date.setdefault(date, []).append(obs)
-
-        # Read existing content
-        existing = ""
-        if self.observations_path.exists():
-            existing = self.observations_path.read_text()
-
-        # Build new sections
-        lines: list[str] = []
-        for date in sorted(by_date.keys()):
-            header = f"## {date}"
-            if header not in existing:
-                lines.append(f"\n{header}\n")
-            else:
-                lines.append("")
-
-            for obs in by_date[date]:
-                lines.append(f"- [{obs.priority}] {obs.content} (session: {obs.source_session[:8]})")
-
-        with open(self.observations_path, "a") as f:
-            f.write("\n".join(lines) + "\n")
+        Delegates to memory_writer so the Flink alerts-consumer writes to the
+        same file in the same format (see scripts/memory_writer.py).
+        """
+        append_observations(self.memory_dir, observations)
 
     def load_state(self) -> dict:
         """Load observer state from JSON file.
