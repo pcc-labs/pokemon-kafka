@@ -31,5 +31,11 @@ fi
 echo "[entrypoint] Starting telemetry services (Kafka consumers + Flink)..."
 docker compose up -d
 
-echo "[entrypoint] Launching agent..."
-~/venv/bin/python3 scripts/agent.py rom/pokemon_red.gb --strategy heuristic --max-turns 500000
+ROM=$(ls rom/*.gb 2>/dev/null | head -1 || true)
+if [ -z "${ROM}" ]; then
+    echo "[entrypoint] ERROR: no .gb ROM found in rom/ — supply your own ROM file."
+    exit 1
+fi
+
+echo "[entrypoint] Launching agent on ${ROM}..."
+~/venv/bin/python3 scripts/agent.py "${ROM}" --strategy low --max-turns 500000
