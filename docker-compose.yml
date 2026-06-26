@@ -41,10 +41,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC: agent.telemetry.alerts
       KAFKA_GROUP_ID: alerts-consumer
-      TAPES_DB_PATH: /tapes/tapes.sqlite
+      MEMORY_DIR: /memory
     volumes:
-      - ./.tapes:/tapes
-      - ./scripts/tape_writer.py:/app/tape_writer.py
+      - ./pokedex/memory:/memory
+      - ./scripts/memory_writer.py:/app/memory_writer.py
 
   game-consumer:
     build: docker/game-consumer

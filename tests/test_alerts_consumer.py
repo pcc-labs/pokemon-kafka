@@ -1,7 +1,5 @@
-"""Tests for alerts-consumer — Tapes integration."""
+"""Tests for alerts-consumer — observational-memory integration."""
 
-import json
-import sqlite3
 import sys
 import types
 from pathlib import Path
@@ -17,7 +15,6 @@ CONSUMER_PATH = Path(__file__).resolve().parent.parent / "docker" / "alerts-cons
 @pytest.fixture(autouse=True)
 def _consumer_env():
     """Add consumer dir to sys.path and stub confluent_kafka."""
-    # Stub confluent_kafka
     kafka_mod = types.ModuleType("confluent_kafka")
     kafka_mod.Consumer = MagicMock
     kafka_mod.KafkaError = type("KafkaError", (), {"_PARTITION_EOF": -191})
@@ -27,18 +24,15 @@ def _consumer_env():
     yield
     sys.path.remove(str(CONSUMER_PATH))
 
-    # Clean up so other tests aren't affected
     for name in ("consumer", "confluent_kafka"):
         sys.modules.pop(name, None)
 
 
-def _import_consumer(tapes_db=None):
-    """Import consumer module with TAPES_DB_PATH env var set."""
-    env_patch = {"TAPES_DB_PATH": tapes_db} if tapes_db else {"TAPES_DB_PATH": ""}
-    # Remove stale module to pick up new env
+def _import_consumer(memory_dir=None):
+    """Import the consumer module with MEMORY_DIR set."""
+    env_patch = {"MEMORY_DIR": memory_dir} if memory_dir else {"MEMORY_DIR": ""}
     sys.modules.pop("consumer", None)
     with patch.dict("os.environ", env_patch, clear=False):
-        # Reload to re-read module-level env vars
         import importlib
 
         import consumer
@@ -64,41 +58,50 @@ class TestFormatAlert:
         assert "Agent stuck" in result
 
 
-class TestTapesIntegration:
-    def test_writes_to_tapes_db(self, tmp_path):
-        db = tmp_path / "tapes.sqlite"
-        consumer = _import_consumer(str(db))
+class TestAlertObservation:
+    def test_shapes_full_alert(self):
+        consumer = _import_consumer()
+        obs = consumer.alert_observation(
+            {
+                "alert_type": "BATTLE_LOOP",
+                "detail": "enemy_hp=12 player_hp=9",
+                "event_count": 20,
+                "window_end": "2026-06-26T10:05:00Z",
+            }
+        )
+        assert obs["priority"] == "important"
+        assert obs["source_session"] == "flink"
+        assert obs["referenced_time"] == "2026-06-26T10:05:00Z"
+        assert obs["content"] == "Flink alert [BATTLE_LOOP]: enemy_hp=12 player_hp=9 (count=20)"
+
+    def test_falls_back_to_window_start_and_omits_zero_count(self):
+        consumer = _import_consumer()
+        obs = consumer.alert_observation(
+            {"alert_type": "NO_PROGRESS", "detail": "", "window_start": "2026-06-26T09:00:00Z"}
+        )
+        assert obs["referenced_time"] == "2026-06-26T09:00:00Z"
+        # empty detail trimmed, no count suffix
+        assert obs["content"] == "Flink alert [NO_PROGRESS]:"
+
+
+class TestMemoryIntegration:
+    def test_alert_written_as_observation(self, tmp_path):
+        consumer = _import_consumer(str(tmp_path))
+        from memory_writer import append_observations
 
         data = {
-            "alert_type": "STUCK_LOOP",
-            "root_hash": "abc123",
-            "detail": "Stuck for 50 turns",
-            "event_count": 5,
+            "alert_type": "POSITION_DEADLOCK",
+            "detail": "map=12 pos=(5,31)",
+            "event_count": 50,
+            "window_end": "2026-06-26T10:00:00Z",
         }
+        n = append_observations(str(tmp_path), [consumer.alert_observation(data)], dedupe=True)
 
-        # Simulate what main() does after polling a message
-        alert_text = consumer.format_alert(data)
+        assert n == 1
+        content = (tmp_path / "observations.md").read_text()
+        assert "## 2026-06-26" in content
+        assert "- [important] Flink alert [POSITION_DEADLOCK]: map=12 pos=(5,31) (count=50) (session: flink)" in content
 
-        from tape_writer import TapeWriter
-
-        writer = TapeWriter(str(db))
-        writer.write_node(
-            role="assistant",
-            content_blocks=[{"type": "text", "text": alert_text}],
-            agent_name="flink",
-        )
-
-        conn = sqlite3.connect(str(db))
-        rows = conn.execute("SELECT role, agent_name, content FROM nodes").fetchall()
-        conn.close()
-
-        assert len(rows) == 1
-        assert rows[0][0] == "assistant"
-        assert rows[0][1] == "flink"
-        content = json.loads(rows[0][2])
-        assert "STUCK_LOOP" in content[0]["text"]
-
-    def test_no_tapes_db_configured(self):
+    def test_no_memory_dir_configured(self):
         consumer = _import_consumer(None)
-        # When TAPES_DB_PATH is empty/unset, TAPES_DB should be falsy
-        assert not consumer.TAPES_DB
+        assert not consumer.MEMORY_DIR
