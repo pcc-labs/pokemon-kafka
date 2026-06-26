@@ -828,70 +828,25 @@ class TestMakeLlmFn:
 
 
 class TestMakeObserverFn:
-    def test_returns_none_when_no_db(self):
-        assert _make_observer_fn(None) is None
-        assert _make_observer_fn("") is None
+    def test_returns_callable(self):
+        assert callable(_make_observer_fn())
 
-    def test_returns_callable_when_path_provided(self):
-        """Returns a callable even if the DB doesn't exist yet (deferred check)."""
-        fn = _make_observer_fn("/nonexistent/tapes.sqlite")
-        assert callable(fn)
+    def test_callable_distills_latest_paper_session(self, monkeypatch):
+        import observer
 
-    def test_deferred_missing_db_returns_empty(self):
-        """Calling observer_fn when DB doesn't exist returns empty list."""
-        fn = _make_observer_fn("/nonexistent/tapes.sqlite")
-        result = fn()
-        assert result == []
-
-    def test_returns_callable_when_db_exists(self, tmp_path):
-        from tape_helpers import create_test_db
-
-        db = tmp_path / "tapes.sqlite"
-        create_test_db(db)
-
-        fn = _make_observer_fn(str(db))
-        assert callable(fn)
-
-    def test_callable_returns_observations(self, tmp_path):
-        from tape_helpers import create_test_db, insert_test_node
-
-        db = tmp_path / "tapes.sqlite"
-        conn = create_test_db(db)
-        insert_test_node(
-            conn,
-            "root1",
-            role="assistant",
-            content=[{"type": "text", "text": "error: stuck in loop"}],
+        monkeypatch.setattr(
+            observer,
+            "observe_session_inline",
+            lambda *a, **k: [{"priority": "important", "content": "error: stuck in loop"}],
         )
-        conn.close()
+        result = _make_observer_fn()()
+        assert result == [{"priority": "important", "content": "error: stuck in loop"}]
 
-        fn = _make_observer_fn(str(db))
-        result = fn()
-        assert isinstance(result, list)
+    def test_callable_returns_empty_when_no_sessions(self, monkeypatch):
+        import observer
 
-    def test_picks_up_late_created_db(self, tmp_path):
-        """DB created after _make_observer_fn is still picked up."""
-        db = tmp_path / "tapes.sqlite"
-        fn = _make_observer_fn(str(db))
-
-        # DB doesn't exist yet — returns empty
-        assert fn() == []
-
-        # Now create the DB
-        from tape_helpers import create_test_db, insert_test_node
-
-        conn = create_test_db(db)
-        insert_test_node(
-            conn,
-            "root1",
-            role="assistant",
-            content=[{"type": "text", "text": "error: stuck"}],
-        )
-        conn.close()
-
-        # Same fn now picks up the data
-        result = fn()
-        assert isinstance(result, list)
+        monkeypatch.setattr(observer, "observe_session_inline", lambda *a, **k: [])
+        assert _make_observer_fn()() == []
 
 
 class TestMakeHistoricalFn:
@@ -969,23 +924,16 @@ class TestMain:
             historical_fn=ANY,
         )
 
-    def test_runs_with_tapes_db_flag(self, tmp_path):
+    def test_observer_enabled_by_default(self, tmp_path):
         rom = tmp_path / "test.gb"
         rom.write_bytes(b"\x00" * 100)
 
-        from tape_helpers import create_test_db
-
-        db = tmp_path / "tapes.sqlite"
-        create_test_db(db)
-
-        with patch(
-            "sys.argv", ["evolve.py", str(rom), "--generations", "1", "--max-turns", "10", "--tapes-db", str(db)]
-        ):
+        with patch("sys.argv", ["evolve.py", str(rom), "--generations", "1", "--max-turns", "10", "--no-llm"]):
             with patch("evolve.evolve", return_value=[EvolutionResult(generation=1, improved=False)]) as mock_evolve:
                 main()
 
-        call_kwargs = mock_evolve.call_args
-        assert call_kwargs[1]["observer_fn"] is not None
+        # Observer feedback (Paper-based) is on unless --no-observer is passed.
+        assert mock_evolve.call_args[1]["observer_fn"] is not None
 
     def test_no_observer_flag(self, tmp_path):
         rom = tmp_path / "test.gb"

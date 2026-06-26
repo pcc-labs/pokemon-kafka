@@ -463,22 +463,17 @@ def _perturb(params: dict) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def _make_observer_fn(tapes_db: str | None = None):
-    """Create an observer function that reads from a Tapes database.
+def _make_observer_fn():
+    """Create an observer function that distills the latest Paper session.
 
-    The DB existence check is deferred to call time so databases created
-    after CLI startup (e.g. by alerts-consumer during an evolution run)
-    are still picked up.
+    Reads recorded Paper sessions (paperd API + Claude Code JSONL) via the
+    observer; returns an empty list when no sessions are available yet.
     """
-    if not tapes_db:
-        return None
 
     def observer_fn():
-        if not Path(tapes_db).exists():
-            return []
         from observer import observe_session_inline
 
-        return observe_session_inline(tapes_db)
+        return observe_session_inline()
 
     return observer_fn
 
@@ -549,11 +544,6 @@ def main():
         help="Disable LLM mutation, use random perturbation only",
     )
     parser.add_argument(
-        "--tapes-db",
-        default=str(SCRIPT_DIR.parent / ".tapes" / "tapes.sqlite"),
-        help="Path to Tapes SQLite database (default: .tapes/tapes.sqlite)",
-    )
-    parser.add_argument(
         "--no-observer",
         action="store_true",
         help="Disable observational memory feedback",
@@ -575,7 +565,7 @@ def main():
         sys.exit(1)
 
     llm_fn = None if args.no_llm else _make_llm_fn()
-    observer_fn = None if args.no_observer else _make_observer_fn(args.tapes_db)
+    observer_fn = None if args.no_observer else _make_observer_fn()
     historical_fn = None if args.no_historical else _make_historical_fn(args.telemetry_dir)
 
     results = evolve(

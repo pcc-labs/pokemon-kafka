@@ -114,7 +114,7 @@ Agent → Kafka (agent.game.events)
             ├→ game-consumer (prints + writes JSONL)
             ├→ Flink SQL (anomaly detection)
             │    └→ Kafka (agent.telemetry.alerts)
-            │         └→ alerts-consumer (prints + writes nodes to tapes.sqlite)
+            │         └→ alerts-consumer (prints + writes observations to pokedex/memory)
             └→ DuckDB (ad-hoc queries on JSONL sink)
 
 JSONL sink (data/telemetry/*.jsonl)
@@ -187,14 +187,17 @@ Events stream to both local JSONL and Confluent Cloud via the `FanoutPublisher`.
 
 ## Flink Anomaly Detection
 
-Apache Flink (1.18) runs two SQL jobs against the telemetry stream:
+Apache Flink (1.18) runs SQL jobs against the `agent.game.events` stream:
 
 | Job | Window | Trigger | What it catches |
 |---|---|---|---|
-| Stuck loop | 30s tumbling | 10+ assistant turns per conversation | Agent repeating the same action in a loop |
-| Token spike | 2min tumbling | Max input tokens > 2x average | Unexpected prompt size growth or injection |
+| `GAME_STUCK_LOOP` | 60s tumbling | 5+ stuck events on a map | Navigation stuck on one tile |
+| `BATTLE_WIPE` | 5min tumbling | Player HP hits 0 | Party wipe / failed battle |
+| `BATTLE_LOOP` | 30s tumbling | 20+ battle events at same enemy HP | Input spam not dealing damage |
+| `POSITION_DEADLOCK` | 2min tumbling | 50+ overworld events at one position | Bouncing off an impassable obstacle |
+| `NO_PROGRESS` | 5min tumbling | 100+ overworld events, ≤5 unique tiles | Navigation completely stalled |
 
-Both jobs write alerts to the `agent.telemetry.alerts` Kafka topic. The alerts consumer picks them up and optionally writes them as Tapes nodes back into `.tapes/tapes.sqlite`, feeding anomalies into the observational memory system.
+The jobs write alerts to the `agent.telemetry.alerts` Kafka topic. The alerts consumer picks them up and appends each as an `[important]` observation to `pokedex/memory/observations.md`, feeding anomalies into the observational memory the agent loads at session start.
 
 Flink SQL definitions live in `docker/flink-sql/init.sql`. The connector JAR is downloaded automatically at startup.
 
@@ -303,7 +306,7 @@ pokemon-agent/
 ├── docker-compose.yml       # Kafka + Flink + consumers stack
 ├── docker/
 │   ├── game-consumer/       # game event consumer + JSONL writer
-│   ├── alerts-consumer/     # anomaly alert consumer → tapes.sqlite
+│   ├── alerts-consumer/     # anomaly alert consumer → pokedex/memory
 │   └── flink-sql/
 │       ├── init.sql          # Flink SQL anomaly jobs (game events)
 │       └── submit-jobs.sh    # startup script for SQL client
@@ -319,7 +322,7 @@ pokemon-agent/
 │   ├── dlt_pipeline.py      # dlt warehouse loader (JSONL → DuckDB/Snowflake)
 │   ├── historical_observer.py # cross-session insights via DuckDB
 │   ├── query_telemetry.py   # ad-hoc telemetry queries
-│   ├── tape_writer.py       # writes synthetic Tapes nodes to SQLite
+│   ├── memory_writer.py     # appends observations to pokedex/memory
 │   ├── pathfinding.py       # collision map + backtrack manager
 │   ├── evolve.py            # AlphaEvolve strategy evolution harness
 │   └── run_10_agents.py     # parallel multi-agent evaluation runner
