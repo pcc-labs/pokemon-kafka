@@ -200,30 +200,29 @@ mb attach   # watch the agent play
 
 The `[[shared]]` mount maps the host repo to `/workspace` inside the VM. Host files retain their original ownership (UID 501 on macOS), but the VM runs as `admin` (UID 1000). Output directories (`frames/`, `pokedex/`, `.tapes/`) need world-writable permissions so the agent can write data that persists back to the host. The install script handles this automatically with `chmod a+rwx`.
 
-### Tapes + Kafka Telemetry
+### Game Events + Kafka Telemetry
 
-Tapes proxies all LLM API calls and publishes `tapes.node.v1` events to Kafka. The agent just sets `ANTHROPIC_API_BASE` to the Tapes proxy — zero code changes.
+The agent publishes real-time game events (`pokemon.game.v1`) directly to Kafka via `scripts/publisher.py` — no proxy needed. Flink SQL jobs detect navigation and battle anomalies from the `agent.game.events` stream. LLM sessions are recorded separately by Paper (paperd) — see Observational Memory below.
 
 ```
-Agent → Tapes proxy (port 8080) → Kafka (agent.telemetry.raw)
-                                      ↓
-                                 Flink SQL jobs (anomaly detection)
-                                      ↓
-                              Kafka (agent.telemetry.alerts)
+Agent → Kafka (agent.game.events)
+                  ↓
+             Flink SQL jobs (stuck loops, battle wipes, position deadlocks)
+                  ↓
+          Kafka (agent.telemetry.alerts)
 ```
 
 Start the full local stack:
 
 ```bash
-docker compose up -d   # Kafka + Zookeeper + Tapes proxy + Flink + consumers
+docker compose up -d   # Kafka + Zookeeper + Flink + consumers
 ```
 
-Inspect sessions:
+Inspect Paper sessions and memory:
 
 ```bash
-tapes deck           # Terminal UI for session exploration
-tapes search "battle" # Search session turns
-tapes checkout <hash> # Restore a previous conversation state
+paper status                          # check paperd is running and authenticated
+cat pokedex/memory/observations.md    # distilled observations from past sessions
 ```
 
 ### Observational Memory
@@ -264,7 +263,7 @@ For long speed runs, the pattern is:
 pokemon-agent/
 ├── SKILL.md              # This file
 ├── jcard.toml            # stereOS VM config
-├── docker-compose.yml    # Kafka + Flink + Tapes proxy stack
+├── docker-compose.yml    # Kafka + Flink + consumers stack
 ├── .tapes/               # Tapes telemetry DB + config (gitignored)
 │   └── memory/           # Observational memory output
 ├── scripts/
@@ -280,10 +279,9 @@ pokemon-agent/
 │   ├── observer.py       # Observation extraction heuristics
 │   └── observe_cli.py    # Observer CLI
 ├── docker/
-│   ├── tapes-proxy/      # Tapes proxy Dockerfile
-│   ├── telemetry-consumer/ # Raw telemetry event consumer
-│   ├── alerts-consumer/  # Flink anomaly alert consumer
-│   └── flink-sql/        # Flink SQL anomaly detection jobs
+│   ├── game-consumer/    # Game event consumer + JSONL writer
+│   ├── alerts-consumer/  # Flink anomaly alert consumer → tapes.sqlite
+│   └── flink-sql/        # Flink SQL anomaly detection jobs (game events)
 ├── tests/                # 100% coverage test suite (205 tests)
 └── references/
     ├── routes.json        # Overworld waypoints by map ID

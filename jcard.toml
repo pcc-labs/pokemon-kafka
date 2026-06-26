@@ -22,7 +22,9 @@ guest = "/workspace"
 readonly = false
 
 [env]
-ANTHROPIC_API_BASE = "http://localhost:8080"
+# Paper (paperd) records LLM sessions; the agent reaches it via this URL,
+# inherited from the host where paperd runs. Read by scripts/paper_reader.py.
+ANTHROPIC_BASE_URL = "${ANTHROPIC_BASE_URL}"
 
 [secrets]
 ANTHROPIC_API_KEY = "${ANTHROPIC_API_KEY}"

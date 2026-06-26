@@ -107,29 +107,29 @@ Sessions are discovered from paperd (read from `ANTHROPIC_BASE_URL`), or from th
 
 ## Kafka Telemetry Pipeline
 
-The agent streams every LLM conversation turn to Kafka as structured events. A Tapes proxy sits between the agent and the Anthropic API, publishing `tapes.node.v1` events to the `agent.telemetry.raw` topic. Downstream consumers and Flink jobs process the stream in real time.
+The agent streams real-time **game events** to Kafka as structured events. `scripts/agent.py` publishes `pokemon.game.v1` events directly to the `agent.game.events` topic via `scripts/publisher.py` — no proxy required. Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
 
 ```
-Agent → Tapes Proxy → Kafka (agent.telemetry.raw)
-                          ├→ telemetry-consumer (prints + writes JSONL)
-                          ├→ Flink SQL (anomaly detection)
-                          │    └→ Kafka (agent.telemetry.alerts)
-                          │         └→ alerts-consumer (prints + writes Tapes nodes)
-                          └→ DuckDB (ad-hoc queries on JSONL sink)
+Agent → Kafka (agent.game.events)
+            ├→ game-consumer (prints + writes JSONL)
+            ├→ Flink SQL (anomaly detection)
+            │    └→ Kafka (agent.telemetry.alerts)
+            │         └→ alerts-consumer (prints + writes nodes to tapes.sqlite)
+            └→ DuckDB (ad-hoc queries on JSONL sink)
 
 JSONL sink (data/telemetry/*.jsonl)
   └→ dlt pipeline → DuckDB warehouse (local)
                   → Snowflake / Confluent Cloud (production)
 ```
 
-Each event contains the conversation root hash, node role (assistant/user/tool), model, token usage, and timestamp. Content arrays are excluded from the Flink schema since anomaly detection only needs metadata.
+Each event carries the event type (`battle`, `overworld`, `map_change`, `stuck`, `milestone`, `session`), turn, timestamp, and a flat data payload (map, position, HP, action, badges, …). Flink reads these to flag navigation deadlocks and battle loops in real time: `GAME_STUCK_LOOP`, `BATTLE_WIPE`, `BATTLE_LOOP`, `POSITION_DEADLOCK`, `NO_PROGRESS`.
 
 ```bash
-# Start the full pipeline (Kafka, Flink, consumers, Tapes proxy)
+# Start the full pipeline (Kafka, Flink, consumers)
 docker compose up -d
 
-# Watch raw telemetry events
-docker compose logs -f telemetry-consumer
+# Watch raw game events
+docker compose logs -f game-consumer
 
 # Watch anomaly alerts
 docker compose logs -f alerts-consumer
@@ -138,9 +138,7 @@ docker compose logs -f alerts-consumer
 open http://localhost:8081
 ```
 
-The Tapes proxy listens on port 8080. Point the agent at it by setting `ANTHROPIC_API_BASE=http://localhost:8080` so every API call flows through Kafka.
-
-A local-first alternative exists for development without a broker: pass `--telemetry-dir` to the agent and it writes JSONL files directly via `scripts/publisher.py`.
+LLM sessions are recorded by Paper (paperd) on the host — point the agent at it with `ANTHROPIC_BASE_URL`. A local-first alternative for the game-event stream exists without a broker: pass `--telemetry-dir` to the agent and it writes JSONL files directly via `scripts/publisher.py`.
 
 ## Confluent Cloud Setup
 
@@ -304,11 +302,10 @@ pokemon-agent/
 ├── rom/                     # user-provided ROM files (gitignored)
 ├── docker-compose.yml       # Kafka + Flink + consumers stack
 ├── docker/
-│   ├── tapes-proxy/         # Tapes proxy that publishes to Kafka
-│   ├── telemetry-consumer/  # raw event consumer + JSONL writer
-│   ├── alerts-consumer/     # anomaly alert consumer + Tapes writer
+│   ├── game-consumer/       # game event consumer + JSONL writer
+│   ├── alerts-consumer/     # anomaly alert consumer → tapes.sqlite
 │   └── flink-sql/
-│       ├── init.sql          # Flink SQL jobs (stuck loop, token spike)
+│       ├── init.sql          # Flink SQL anomaly jobs (game events)
 │       └── submit-jobs.sh    # startup script for SQL client
 ├── scripts/
 │   ├── install.sh           # setup: Python, PyBoy, checks paperd
