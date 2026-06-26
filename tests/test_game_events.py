@@ -146,3 +146,26 @@ def test_collector_accumulates_mixed_events():
     assert len(c.events) == 7
     types = [e["event_type"] for e in c.events]
     assert types == ["session", "overworld", "battle", "map_change", "stuck", "milestone", "session"]
+
+
+def test_collector_tees_events_to_recorder():
+    seen = []
+
+    class Rec:
+        def on_event(self, event):
+            seen.append(event)
+
+    c = GameEventCollector(recorder=Rec())
+    c.milestone(3, "picked starter")
+    assert seen and seen[0]["event_type"] == "milestone"
+    assert seen[0]["turn"] == 3
+
+
+def test_collector_recorder_error_is_swallowed(capsys):
+    class Rec:
+        def on_event(self, event):
+            raise RuntimeError("boom")
+
+    c = GameEventCollector(recorder=Rec())
+    c.milestone(1, "x")  # must not raise
+    assert "recorder error" in capsys.readouterr().out
