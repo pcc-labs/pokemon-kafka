@@ -198,7 +198,7 @@ mb attach   # watch the agent play
 
 ### Shared Mount Permissions
 
-The `[[shared]]` mount maps the host repo to `/workspace` inside the VM. Host files retain their original ownership (UID 501 on macOS), but the VM runs as `admin` (UID 1000). Output directories (`frames/`, `pokedex/`, `.tapes/`) need world-writable permissions so the agent can write data that persists back to the host. The install script handles this automatically with `chmod a+rwx`.
+The `[[shared]]` mount maps the host repo to `/workspace` inside the VM. Host files retain their original ownership (UID 501 on macOS), but the VM runs as `admin` (UID 1000). Output directories (`frames/`, `pokedex/`) need world-writable permissions so the agent can write data that persists back to the host. The install script handles this automatically with `chmod a+rwx`.
 
 ### Game Events + Kafka Telemetry
 
@@ -264,23 +264,23 @@ pokemon-agent/
 ├── SKILL.md              # This file
 ├── jcard.toml            # stereOS VM config
 ├── docker-compose.yml    # Kafka + Flink + consumers stack
-├── .tapes/               # Tapes telemetry DB + config (gitignored)
-│   └── memory/           # Observational memory output
+├── pokedex/
+│   └── memory/           # Observational memory output (observations.md)
 ├── scripts/
-│   ├── install.sh        # Setup script (installs PyBoy + Tapes)
+│   ├── install.sh        # Setup script (installs PyBoy, checks paperd)
 │   ├── agent.py          # Main agent loop (1000 lines)
 │   ├── memory_reader.py  # Memory address definitions
 │   ├── memory_file.py    # Agent memory management
 │   ├── pathfinding.py    # A* pathfinding + collision maps
 │   ├── evolve.py         # AlphaEvolve parameter evolution
 │   ├── run_10_agents.py  # Parallel multi-agent evaluation
-│   ├── tape_reader.py    # Tapes SQLite reader (Flink telemetry → memory loop)
 │   ├── paper_reader.py   # Paper session reader (paperd API + Claude Code JSONL)
+│   ├── memory_writer.py  # Appends observations to pokedex/memory
 │   ├── observer.py       # Observation extraction heuristics
 │   └── observe_cli.py    # Observer CLI
 ├── docker/
 │   ├── game-consumer/    # Game event consumer + JSONL writer
-│   ├── alerts-consumer/  # Flink anomaly alert consumer → tapes.sqlite
+│   ├── alerts-consumer/  # Flink anomaly alert consumer → pokedex/memory
 │   └── flink-sql/        # Flink SQL anomaly detection jobs (game events)
 ├── tests/                # 100% coverage test suite (205 tests)
 └── references/

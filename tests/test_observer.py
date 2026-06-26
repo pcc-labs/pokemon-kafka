@@ -481,7 +481,7 @@ class TestObserveSessionInline:
 
         monkeypatch.setattr(obs_module, "TapeReader", lambda db_path="": fake)
 
-        results = observe_session_inline("", "s1")
+        results = observe_session_inline("s1")
         assert isinstance(results, list)
         assert len(results) > 0
         assert all("priority" in r and "content" in r for r in results)
@@ -494,7 +494,7 @@ class TestObserveSessionInline:
 
         monkeypatch.setattr(obs_module, "TapeReader", lambda db_path="": fake)
 
-        results = observe_session_inline("")
+        results = observe_session_inline()
         assert isinstance(results, list)
         assert len(results) > 0
 
@@ -504,4 +504,4 @@ class TestObserveSessionInline:
 
         monkeypatch.setattr(obs_module, "TapeReader", lambda db_path="": fake)
 
-        assert observe_session_inline("") == []
+        assert observe_session_inline() == []

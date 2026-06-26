@@ -207,13 +207,13 @@ class Observer:
         self.state_path.write_text(json.dumps(state, indent=2) + "\n")
 
 
-def observe_session_inline(db_path: str, session_id: str | None = None) -> list[dict]:
+def observe_session_inline(session_id: str | None = None) -> list[dict]:
     """Return observations as dicts for programmatic use (no file I/O).
 
-    If session_id is None, observes the most recent session.
-    Returns list of {"priority": str, "content": str} dicts.
+    Reads the most recent Paper session (or ``session_id`` when given) and runs
+    the heuristic extraction. Returns list of {"priority": str, "content": str}.
     """
-    reader = TapeReader(db_path)
+    reader = TapeReader()
     sessions = reader.list_sessions()
     if not sessions:
         return []
@@ -223,7 +223,6 @@ def observe_session_inline(db_path: str, session_id: str | None = None) -> list[
 
     # Reuse Observer's heuristic extraction without needing memory_dir
     obs = Observer.__new__(Observer)
-    obs.db_path = Path(db_path)
     obs.reader = reader
     observations = obs.observe_session(session)
 

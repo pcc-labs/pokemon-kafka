@@ -12,9 +12,6 @@ frames/
 # Observer memory output (per-run observations + watermark)
 pokedex/memory/
 
-# Leftover local Tapes telemetry (project migrated to Paper)
-.tapes/
-
 # Plans (ephemeral working artifacts, never commit)
 docs/plans/
 docs/superpowers/
