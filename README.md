@@ -1,5 +1,7 @@
 # Pokemon Agent
 
+> See also: [pokemon-kafka](https://github.com/papercomputeco/pokemon-kafka) — Streams gameplay events through Kafka for large-scale data processing and uses Flink for real-time anomaly detection and self-healing.
+
 ![Pokemon Agent](hero2.png)
 
 Autonomous Pokemon Red player that reads game memory, makes strategic decisions, and plays headlessly inside a stereOS VM.
@@ -18,27 +20,27 @@ stereOS VM (/workspace)
 │    ↓ button inputs                               │
 │  GameController → PyBoy                          │
 │                                                  │
-│  Tapes ← proxies LLM API calls, records sessions │
+│  paperd ← proxies LLM API calls, records sessions│
 │                                                  │
 └──────────────────────────────────────────────────┘
   ↕ shared mount (./ ↔ /workspace)
-Host: frames/  .tapes/  pokedex/
+Host: frames/  pokedex/
 ```
 
 The agent runs a tight loop: read game state from known memory addresses, pick an action, send button inputs, tick the emulator forward. No display server needed. Screenshots come from PyBoy's internal frame buffer (`screen.ndarray`), not from the OS.
 
-**Shared mount permissions.** The `[[shared]]` mount in `jcard.toml` maps `./` on the host to `/workspace` in the VM. Files keep their host ownership (UID 501 on macOS), but the VM runs as `admin` (UID 1000). This means host-created directories are read-only inside the VM by default. The install script opens write permissions on output directories (`frames/`, `pokedex/`, `.tapes/`) so the agent can write session data that persists back to the host.
+**Shared mount permissions.** The `[[shared]]` mount in `jcard.toml` maps `./` on the host to `/workspace` in the VM. Files keep their host ownership (UID 501 on macOS), but the VM runs as `admin` (UID 1000). This means host-created directories are read-only inside the VM by default. The install script opens write permissions on output directories (`frames/`, `pokedex/`) so the agent can write session data that persists back to the host.
 
 ## Quickstart
 
 ### stereOS (recommended)
 
 ```bash
-mb up          # boot the VM, install deps, start the agent through Tapes
+mb up          # boot the VM, install deps, start the agent through Paper
 mb attach      # watch it play
 ```
 
-The VM configuration lives in `jcard.toml`. It mounts the repo at `/workspace`, installs Python + PyBoy + Tapes, and runs the agent.
+The VM configuration lives in `jcard.toml`. It mounts the repo at `/workspace`, installs Python + PyBoy, and runs the agent. `paperd` is assumed to be running on the host (authenticate the `paper` CLI with `paper status` first); it proxies the agents' LLM calls via `ANTHROPIC_BASE_URL`.
 
 ### Local
 
@@ -61,32 +63,22 @@ Add `--save-screenshots` to capture frames every 10 turns into `frames/`.
 
 **Overworld navigation.** Outside battle, the agent follows waypoints defined in `references/routes.json`. It handles early-game scripted sequences (Red's room to Oak's lab) and general map-to-map routing. A stuck counter triggers random movement to break out of loops.
 
-## Tapes Telemetry
+## Paper Telemetry
 
-Tapes proxies all LLM API calls made by the agent and records them with content-addressable session storage. The install script sets up Tapes automatically inside the VM.
+[Paper](https://papercompute.com) records every LLM session the agent runs. The local `paperd` daemon proxies all API calls transparently (via `ANTHROPIC_BASE_URL`) — no instrumentation in the agent code. Each agent session appears in the Paper dashboard with its own session ID, turn count, and cost.
 
-After a run, inspect what happened:
-
-```bash
-tapes deck              # terminal UI for session exploration
-tapes search "battle"   # search session turns
-tapes checkout <hash>   # restore a previous conversation state
-```
-
-Session data lives in `.tapes/` (gitignored).
+When the multi-agent runner spawns variants via `paper start claude`, each one is a full, independently recorded Claude Code session. Authenticate the `paper` CLI once with `paper status` before launching.
 
 ## Observational Memory
 
-Inspired by [Mastra's observational memory](https://mastra.ai/blog/observational-memory), this system reads the [Tapes](https://tapes.dev) SQLite database, extracts noteworthy events via heuristic pattern matching (no LLM calls), and writes prioritized observations to memory files.
+Inspired by [Mastra's observational memory](https://mastra.ai/blog/observational-memory), this system reads recorded Paper sessions, extracts noteworthy events via heuristic pattern matching (no LLM calls), and writes prioritized observations to memory files.
 
-Tapes records every LLM conversation as a content-addressable DAG of nodes in `.tapes/tapes.sqlite`. The observer walks these conversation chains, identifies patterns (errors, file creations, token usage), and writes observations alongside the database.
+`paper_reader.py` is a two-source hybrid: it discovers sessions through the local paperd API (filtered to this working directory) and reads their transcript content from the Claude Code JSONL files under `~/.claude/projects/`. When paperd is unavailable, it falls back to scanning the JSONL directory directly, so observation still works offline. The observer walks each session, identifies patterns (errors, file creations, token usage), and writes observations to `pokedex/memory/`.
 
 ```
-.tapes/
-├── tapes.sqlite             # Tapes DB: nodes, embeddings, facets
-└── memory/
-    ├── observations.md      # date-grouped observations with priority tags
-    └── observer_state.json  # watermark tracking processed sessions
+pokedex/memory/
+├── observations.md      # date-grouped observations with priority tags
+└── observer_state.json  # watermark tracking processed sessions
 ```
 
 **What it extracts:**
@@ -107,11 +99,11 @@ uv run scripts/observe_cli.py
 # Reprocess everything from scratch
 uv run scripts/observe_cli.py --reset
 
-# Process a single session by root node hash
-uv run scripts/observe_cli.py --session <hash>
+# Process a single session by ID
+uv run scripts/observe_cli.py --session <harness_session_id>
 ```
 
-Auto-detects `.tapes/tapes.sqlite` from cwd. Override with `--db`.
+Sessions are discovered from paperd (read from `ANTHROPIC_BASE_URL`), or from the local JSONL transcripts when paperd is offline. The watermark in `observer_state.json` is stamped with the reader identity and auto-resets if the reader changes, so upgrades don't reprocess old sessions.
 
 ## Kafka Telemetry Pipeline
 
@@ -308,7 +300,6 @@ pokemon-agent/
 ├── CONTRIBUTING.md          # contributor guide
 ├── SKILL.md                 # skill definition for stereOS agents
 ├── jcard.toml               # stereOS VM configuration
-├── .tapes/                  # Tapes telemetry DB + config (gitignored)
 ├── frames/                  # screenshot output (gitignored)
 ├── rom/                     # user-provided ROM files (gitignored)
 ├── docker-compose.yml       # Kafka + Flink + consumers stack
@@ -320,11 +311,11 @@ pokemon-agent/
 │       ├── init.sql          # Flink SQL jobs (stuck loop, token spike)
 │       └── submit-jobs.sh    # startup script for SQL client
 ├── scripts/
-│   ├── install.sh           # setup: Python, PyBoy, Tapes
+│   ├── install.sh           # setup: Python, PyBoy, checks paperd
 │   ├── agent.py             # main agent loop + strategies
 │   ├── memory_reader.py     # memory address definitions
 │   ├── memory_file.py       # agent memory management
-│   ├── tape_reader.py       # Tapes SQLite reader (stdlib only)
+│   ├── paper_reader.py      # Paper API + JSONL transcript reader (stdlib only)
 │   ├── observer.py          # heuristic observation extractor
 │   ├── observe_cli.py       # CLI for running the observer
 │   ├── publisher.py         # local-first JSONL telemetry publisher

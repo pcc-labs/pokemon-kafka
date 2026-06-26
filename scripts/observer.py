@@ -1,7 +1,7 @@
-"""Observational memory: distills Tapes sessions into prioritized observations.
+"""Observational memory: distills Paper sessions into prioritized observations.
 
 Uses heuristic pattern matching (no LLM calls) to extract noteworthy events
-from Tapes conversation data and write them to memory files.
+from recorded Paper conversation data and write them to memory files.
 """
 
 from __future__ import annotations
@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-from tape_reader import TapeReader, TapeSession
+from paper_reader import TapeReader, TapeSession
 
 
 @dataclass
@@ -38,7 +38,7 @@ _POSSIBLE_KEYWORDS = re.compile(
 
 
 class Observer:
-    """Extracts observations from Tapes sessions using heuristics."""
+    """Extracts observations from Paper sessions using heuristics."""
 
     def __init__(self, db_path: str, memory_dir: str):
         self.db_path = Path(db_path)
@@ -202,14 +202,29 @@ class Observer:
             f.write("\n".join(lines) + "\n")
 
     def load_state(self) -> dict:
-        """Load observer state from JSON file."""
-        if self.state_path.exists():
-            return json.loads(self.state_path.read_text())
-        return {}
+        """Load observer state from JSON file.
+
+        If the stored ``reader`` identity differs from the current reader's
+        READER_ID, the watermark was written against a different session-ID
+        namespace (e.g. the old SQLite tape_reader's SHA hashes vs. Paper's
+        harness UUIDs). Reprocessing under the new IDs would duplicate every
+        observation, so we drop the stale watermark instead.
+        """
+        if not self.state_path.exists():
+            return {}
+        state = json.loads(self.state_path.read_text())
+        expected = getattr(self.reader, "READER_ID", None)
+        if expected is not None and state.get("reader") != expected:
+            print(f"[observer] reader changed ({state.get('reader')!r} -> {expected!r}); resetting watermark")
+            return {"reader": expected}
+        return state
 
     def save_state(self, state: dict) -> None:
-        """Save observer state to JSON file."""
+        """Save observer state to JSON file, stamping the current reader identity."""
         self.memory_dir.mkdir(parents=True, exist_ok=True)
+        expected = getattr(self.reader, "READER_ID", None)
+        if expected is not None:
+            state = {**state, "reader": expected}
         self.state_path.write_text(json.dumps(state, indent=2) + "\n")
 
 
@@ -239,8 +254,8 @@ def observe_session_inline(db_path: str, session_id: str | None = None) -> list[
 def _first_user_message(session: TapeSession) -> str:
     """Extract the first user message text from a session.
 
-    Skips system framework noise (e.g. <system-reminder> tags) that Tapes
-    stores as user-role nodes.
+    Skips system framework noise (e.g. <system-reminder> tags) that the
+    harness stores as user-role entries.
     """
     for entry in session.entries:
         if entry.type == "user" and entry.text_content:

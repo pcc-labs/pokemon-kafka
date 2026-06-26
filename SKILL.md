@@ -1,158 +1,160 @@
 ---
 name: pokemon-agent
 description: "Play turn-based RPGs autonomously via Game Boy emulation. Use when the user asks to 'play pokemon', 'emulate a game boy game', 'automate pokemon battles', 'grind pokemon', 'run a pokemon nuzlocke', 'play an RPG for me', or mentions headless emulation, PyBoy, or turn-based game automation."
-version: 0.1.0
+version: 0.2.0
 metadata:
-  { "openclaw": { "emoji": "🎮", "requires": { "bins": ["python3"], "env": [] }, "install": [{ "id": "pip", "kind": "node", "label": "Install PyBoy + dependencies (pip)" }] } }
+  { "openclaw": { "emoji": "🎮", "requires": { "bins": ["python3", "paper"], "env": [] }, "install": [{ "id": "pip", "kind": "node", "label": "Install PyBoy + dependencies (pip)" }] } }
 ---
 
 # Pokemon Agent
 
 Autonomous turn-based RPG player using headless Game Boy emulation via PyBoy.
-
-## Overview
-
-This skill runs a Game Boy / Game Boy Color ROM headlessly using PyBoy's Python API. The agent reads game state from emulator memory, makes strategic decisions (via LLM or heuristics), and sends button inputs back. No display server required — runs fully headless inside a terminal, container, or stereOS VM.
+Sessions are recorded via Paper — every API call is captured and observable.
 
 ## Requirements
 
-- Python 3.10+
-- PyBoy (`pip install pyboy`)
+- Python 3.10+ with PyBoy (`pip install pyboy Pillow numpy`)
+- `paper` CLI authenticated (`paper status`)
 - A legally obtained ROM file (`.gb` or `.gbc`)
-- Optional: `Pillow` for screenshot capture and frame export
 
 ## Setup
-
-Run the install script to set up the Python environment:
 
 ```bash
 cd {baseDir}
 bash scripts/install.sh
 ```
 
-Place your ROM file in the skill directory or provide an absolute path when starting.
+## Running a single agent
 
-## Usage
-
-### Start a game session
-
-```
-Play Pokemon Red for me
-Start a new pokemon playthrough
-Grind my team on Route 3
+```bash
+~/venv/bin/python3 scripts/agent.py 'rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb' \
+  --strategy low --max-turns 5000
 ```
 
-### Battle automation
+When run via `paper start claude`, this session is automatically recorded in Paper.
 
-```
-Auto-battle wild encounters
-Use the best move against the current opponent
-Grind until my starter reaches level 16
-```
+## Running the multi-agent evolution loop
 
-### Navigation
+`run_10_agents.py` spawns one `paper start claude` process per parameter variant.
+Each agent is a full Claude Code session — independently recorded, scoreable, observable.
 
-```
-Walk to Pewter City
-Navigate to the next gym
-Find and heal at the nearest Pokemon Center
+```bash
+paper start claude -- --print --dangerously-skip-permissions \
+  "Run the Pokemon agent evolution loop: python3 scripts/run_10_agents.py \
+  'rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb'"
 ```
 
-## How It Works
+Or directly from the host (paperd must be running):
 
-### Game Loop
+```bash
+python3 scripts/run_10_agents.py 'rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb'
+```
+
+Each sub-agent receives a prompt like:
+
+> Run the Pokemon agent with the parameters below and print the fitness JSON.
+> `EVOLVE_PARAMS='{"stuck_threshold": 8, ...}' ~/venv/bin/python3 scripts/agent.py ...`
+> When it finishes, read the output JSON and print ONLY its raw JSON contents as the final line.
+
+The orchestrator parses each agent's fitness from stdout, ranks by score, and saves results to `pokedex/evolve_results.json`.
+
+## When invoked as a sub-agent by run_10_agents.py
+
+You will receive a prompt containing:
+1. An `EVOLVE_PARAMS` JSON blob with navigator parameters
+2. A bash command to run `agent.py` with `--output-json /tmp/pokemon_fitness_<label>.json`
+3. An instruction to read that file and print its JSON as the last line
+
+Do exactly this:
+1. Run the bash command using a 10-minute timeout
+2. Read the output JSON file
+3. Print the raw JSON as your final output line — no markdown, no explanation
+
+## Paper telemetry
+
+`paperd` proxies all LLM API calls transparently. No instrumentation needed.
+Every agent session appears in the Paper dashboard with its own session ID, turn count, and cost.
+
+After a run, read sessions via `paper_reader.py`:
+
+```python
+from scripts.paper_reader import TapeReader
+reader = TapeReader()
+for session_id in reader.list_sessions():
+    session = reader.read_session(session_id)
+    print(session.session_id, len(session.entries))
+```
+
+## Observational memory
+
+The observer reads Paper sessions and distills them into `pokedex/observations.md` —
+errors hit, parameters tried, progress made. The next agent generation loads this file for continuity.
+
+```bash
+# Preview observations from past sessions
+python3 scripts/observe_cli.py --dry-run
+
+# Write observations to disk
+python3 scripts/observe_cli.py
+```
+
+## How the agent works
+
+### Game loop
 
 1. **Boot**: Launch PyBoy in headless mode (`window="null"`)
-2. **Read state**: Extract game data from known memory addresses
-3. **Decide**: Choose action based on current context (battle, overworld, menu)
-4. **Act**: Send button inputs to the emulator
-5. **Advance**: Tick the emulator forward, wait for state change
-6. **Repeat**
+2. **Read state**: Extract game data from memory addresses
+3. **Decide**: Heuristic or LLM strategy
+4. **Act**: Send button inputs
+5. **Advance**: Tick emulator, repeat
 
-### Memory Map (Pokemon Red/Blue)
-
-The agent reads game state from these memory addresses:
+### Memory map (Pokemon Red/Blue US)
 
 | Address | Data |
 |---------|------|
-| `0xD057` | Battle type (0 = none, 1 = wild, 2 = trainer) |
+| `0xD057` | Battle type (0=none, 1=wild, 2=trainer) |
 | `0xCFE6` | Enemy current HP |
 | `0xCFE7` | Enemy max HP |
-| `0xD015` | Player lead Pokemon current HP (high byte) |
-| `0xD016` | Player lead Pokemon current HP (low byte) |
-| `0xD014` | Player lead Pokemon level |
-| `0xD163` | Number of Pokemon in party |
-| `0xD01C` | Player Pokemon move 1 ID |
-| `0xD01D` | Player Pokemon move 2 ID |
-| `0xD01E` | Player Pokemon move 3 ID |
-| `0xD01F` | Player Pokemon move 4 ID |
-| `0xD02C` | Player Pokemon move 1 PP |
-| `0xD02D` | Player Pokemon move 2 PP |
+| `0xD015` | Player lead HP (high byte) |
+| `0xD016` | Player lead HP (low byte) |
+| `0xD014` | Player lead level |
+| `0xD163` | Party size |
+| `0xD01C`–`0xD01F` | Move 1–4 IDs |
+| `0xD02C`–`0xD02F` | Move 1–4 PP |
 | `0xD35E` | Current map ID |
-| `0xD361` | Player X position |
-| `0xD362` | Player Y position |
-| `0xD31D` | Number of badges |
-| `0xFF44` | Current scanline (use to detect vblank for frame sync) |
+| `0xD361` | Player X |
+| `0xD362` | Player Y |
+| `0xD31D` | Badge count |
 
-### Battle Strategy
+### Navigator parameters (evolved by run_10_agents.py)
 
-When in battle (`0xD057 != 0`):
+| Parameter | Default | Effect |
+|-----------|---------|--------|
+| `stuck_threshold` | 8 | Turns before declaring stuck |
+| `door_cooldown` | 4 | Turns to ignore a door after using it |
+| `waypoint_skip_distance` | 3 | A* skip distance for waypoints |
+| `axis_preference_map_0` | `"y"` | Preferred movement axis on map 0 |
+| `bt_restore_threshold` | 15 | Turns stuck before backtracking |
+| `bt_max_attempts` | 3 | Max backtrack attempts per stuck event |
 
-1. Read enemy HP and player HP
-2. If player HP < 20% max → use best healing item
-3. If all moves have PP → pick highest-power move with type advantage
-4. If a move is super effective → always prefer it
-5. If no PP remaining → use Struggle (auto-selected)
-6. If player fainted → switch to next alive Pokemon
-7. If all fainted → navigate to Pokemon Center after whiteout
+## File structure
 
-### Overworld Navigation
-
-When not in battle (`0xD057 == 0`):
-
-1. Read current map ID and position
-2. Follow a predefined route plan (stored in `references/routes.json`)
-3. Move toward objective using cardinal directions
-4. If grass tile → expect random encounter, ensure party is healthy
-5. If at Pokemon Center → heal if any party member below 50%
-6. If at objective → execute next story beat
-
-### Input Mapping
-
-Send inputs via PyBoy's button API:
-
-```python
-# Button press: hold for N frames then release
-def press_button(pyboy, button, frames=10):
-    pyboy.button(button)        # press
-    for _ in range(frames):
-        pyboy.tick()
-    pyboy.button_release(button) # release
-    pyboy.tick()
-
-# Available buttons: "a", "b", "start", "select", "up", "down", "left", "right"
 ```
-
-### Menu Navigation
-
-Menus require sequenced button presses with frame delays:
-
-- **Select FIGHT in battle**: Press `"a"` → wait 30 frames → cursor is on FIGHT
-- **Move cursor down**: Press `"down"` → wait 10 frames
-- **Confirm selection**: Press `"a"` → wait 30 frames
-- **Cancel / go back**: Press `"b"` → wait 20 frames
-- **Open start menu**: Press `"start"` → wait 30 frames
-
-### Screenshot Capture
-
-To capture the current frame for LLM vision analysis:
-
-```python
-from PIL import Image
-
-screen = pyboy.screen.ndarray  # numpy array of current frame
-img = Image.fromarray(screen)
-img.save("current_frame.png")
+pokemon-agent/
+├── SKILL.md                  # This file
+├── jcard.toml                # stereOS VM config
+├── scripts/
+│   ├── install.sh            # Setup (installs PyBoy, checks paperd)
+│   ├── agent.py              # Main agent loop
+│   ├── run_10_agents.py      # Multi-agent evolution orchestrator
+│   ├── evolve.py             # Fitness scoring + LLM-guided mutation
+│   ├── paper_reader.py       # Paper API + JSONL transcript reader
+│   ├── observer.py           # Observation extraction from sessions
+│   └── observe_cli.py        # Observer CLI
+├── pokedex/                  # Run logs and evolution results
+└── references/
+    ├── routes.json            # Overworld route plans
+    └── type_chart.json        # Type effectiveness
 ```
 
 ## Verification
@@ -226,17 +228,17 @@ tapes checkout <hash> # Restore a previous conversation state
 
 ### Observational Memory
 
-Long agent runs hit context compaction — when the context window fills up, older messages are compressed and cache prefixes are destroyed. Tapes solves this by storing the full conversation in `.tapes/tapes.sqlite` regardless of what happens to the live context.
+Long agent runs hit context compaction — when the context window fills up, older messages are compressed and cache prefixes are destroyed. Paper solves this by recording the full conversation (via paperd + Claude Code JSONL transcripts) regardless of what happens to the live context.
 
-The observational memory system reads Tapes data and distills it into a lightweight observations file that the agent can load at session start. This gives the agent durable memory across compaction boundaries and between sessions.
+The observational memory system reads Paper sessions and distills them into a lightweight observations file that the agent can load at session start. This gives the agent durable memory across compaction boundaries and between sessions.
 
-**Session start:** Read `.tapes/memory/observations.md` to recall what happened in previous sessions — errors hit, files created, progress made. This is cheap to load and keeps the agent from repeating mistakes or rediscovering things it already learned.
+**Session start:** Read `pokedex/memory/observations.md` to recall what happened in previous sessions — errors hit, files created, progress made. This is cheap to load and keeps the agent from repeating mistakes or rediscovering things it already learned.
 
 **Session end:** Run the observer to extract observations from the current session into the memory file.
 
 ```bash
 # Check observations from past sessions before starting
-cat .tapes/memory/observations.md
+cat pokedex/memory/observations.md
 
 # After a session, distill new observations
 python3 scripts/observe_cli.py
@@ -273,7 +275,8 @@ pokemon-agent/
 │   ├── pathfinding.py    # A* pathfinding + collision maps
 │   ├── evolve.py         # AlphaEvolve parameter evolution
 │   ├── run_10_agents.py  # Parallel multi-agent evaluation
-│   ├── tape_reader.py    # Tapes SQLite reader
+│   ├── tape_reader.py    # Tapes SQLite reader (Flink telemetry → memory loop)
+│   ├── paper_reader.py   # Paper session reader (paperd API + Claude Code JSONL)
 │   ├── observer.py       # Observation extraction heuristics
 │   └── observe_cli.py    # Observer CLI
 ├── docker/
@@ -344,16 +347,6 @@ When the agent faints, it respawns in Pallet Town, walks north, and re-enters th
 
 ## Limitations
 
-- ROM not included. You must supply your own legally obtained ROM.
-- Memory addresses are specific to Pokemon Red/Blue (US). Other games or regions require adjusted offsets.
-- Real-time games (action RPGs) are not supported — this is for turn-based only.
-- PyBoy supports Game Boy and Game Boy Color. GBA requires a different emulator (mGBA with Python bindings).
-
-## Extending
-
-To support other turn-based RPGs:
-
-1. Map the game's memory layout (use BGB debugger or similar)
-2. Create a new memory reader module in `scripts/`
-3. Adjust the battle strategy logic for the game's combat system
-4. Update `routes.json` with the game's map structure
+- ROM not included — supply your own legally obtained copy.
+- Memory addresses are specific to Pokemon Red/Blue (US). Other games need adjusted offsets.
+- `paper` CLI must be authenticated before launching agents (`paper status`).
