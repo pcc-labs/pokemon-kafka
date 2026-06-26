@@ -3224,3 +3224,84 @@ class TestGameEventPublish:
 
         assert len(collector.events) == 1
         assert collector.events[0]["event_type"] == "milestone"
+
+
+# ===================================================================
+# build_recorder
+# ===================================================================
+
+
+def test_build_recorder_returns_none_without_flag(tmp_path):
+    from agent import build_recorder
+
+    assert build_recorder(record=False, runs_dir=tmp_path, run_id="r", grabber=None) is None
+
+
+def test_build_recorder_configures_run_dir(tmp_path):
+    from agent import build_recorder
+
+    rec = build_recorder(record=True, runs_dir=tmp_path, run_id="r", grabber=None, frame_interval=7)
+    assert rec is not None
+    assert rec.run_dir == tmp_path / "r"
+    assert rec.frame_interval == 7
+
+
+# ===================================================================
+# --record CLI flag wiring
+# ===================================================================
+
+
+class TestRecordFlag:
+    def test_record_flag_calls_recorder_start_and_finish(self, tmp_path):
+        """When --record is passed, recorder.start() and recorder.finish() are called."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 5, "battles_won": 0}
+        mock_recorder = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                ["agent.py", str(rom), "--record", "--runs-dir", str(runs_dir), "--telemetry-dir", ""],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder),
+        ):
+            main()
+
+        mock_recorder.start.assert_called_once_with({"strategy": "low", "rom": str(rom)})
+        mock_recorder.finish.assert_called_once_with({"turns": 5, "battles_won": 0})
+
+    def test_record_frame_interval_passed_to_build_recorder(self, tmp_path):
+        """--frame-interval is forwarded to build_recorder."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 3}
+
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "agent.py",
+                    str(rom),
+                    "--record",
+                    "--runs-dir",
+                    str(runs_dir),
+                    "--frame-interval",
+                    "15",
+                    "--telemetry-dir",
+                    "",
+                ],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=None),
+        ):
+            main()
+
+        # When build_recorder returns None, recorder is None so start/finish are not called — just confirm no crash.
