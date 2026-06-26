@@ -83,46 +83,19 @@ fi
 # The VM runs as admin (UID 1000), so host-created directories are read-only
 # unless we open permissions. These directories hold runtime output that the
 # agent writes during a session.
-for dir in frames pokedex .tapes; do
+for dir in frames pokedex; do
     mkdir -p "$SKILL_DIR/$dir"
     chmod a+rwx "$SKILL_DIR/$dir" 2>/dev/null || true
 done
 
 # ---------------------------------------------------------------------------
-# Tapes CLI
+# Paper (paperd proxy)
 # ---------------------------------------------------------------------------
-if ! command -v tapes &>/dev/null && [ ! -f /usr/local/bin/tapes ]; then
-    echo ""
-    echo "Installing Tapes CLI..."
-    sudo mkdir -p /usr/local/bin
-    curl -fsSL https://download.tapes.dev/install | bash
-
-    # NixOS: patch the dynamically linked binary for the nix linker
-    if $IS_NIXOS && [ -f /usr/local/bin/tapes ]; then
-        INTERP=$(find /nix/store -name "ld-linux-*.so.1" 2>/dev/null | head -1)
-        if [ -n "$INTERP" ]; then
-            if ! command -v patchelf &>/dev/null; then
-                nix profile install nixpkgs#patchelf
-            fi
-            echo "Patching tapes binary for NixOS..."
-            patchelf --set-interpreter "$INTERP" /usr/local/bin/tapes
-        fi
-    fi
-fi
-
-# Verify tapes
-if command -v tapes &>/dev/null; then
-    tapes version
-elif [ -f /usr/local/bin/tapes ]; then
-    /usr/local/bin/tapes version
-fi
-
-# Initialize Tapes in the project if not already done
-if [ ! -f "$SKILL_DIR/.tapes/config.toml" ]; then
-    echo "Initializing Tapes..."
-    mkdir -p "$SKILL_DIR/.tapes"
-    cd "$SKILL_DIR" && tapes init --preset anthropic 2>/dev/null \
-        || /usr/local/bin/tapes init --preset anthropic
+if [ -z "${ANTHROPIC_BASE_URL:-}" ]; then
+    echo "WARNING: ANTHROPIC_BASE_URL is not set."
+    echo "Run 'paper init' on the host and ensure paperd is running before starting agents."
+else
+    echo "Paper proxy: $ANTHROPIC_BASE_URL"
 fi
 
 echo ""

@@ -1,7 +1,7 @@
 """CLI wrapper for the observational memory observer.
 
 Usage:
-    python3 scripts/observe_cli.py [--db PATH] [--memory-dir DIR] [--dry-run] [--session HASH] [--reset]
+    python3 scripts/observe_cli.py [--memory-dir DIR] [--dry-run] [--session ID] [--reset]
 """
 
 import argparse
@@ -9,29 +9,20 @@ import os
 from pathlib import Path
 
 from observer import Observer
-
-
-def detect_db_path() -> str:
-    """Auto-detect tapes.sqlite from .tapes/ in the current working directory."""
-    return str(Path(os.getcwd()) / ".tapes" / "tapes.sqlite")
+from paper_reader import TapeReader
 
 
 def detect_memory_dir() -> str:
-    """Default memory directory alongside the tapes database."""
-    return str(Path(os.getcwd()) / ".tapes" / "memory")
+    return str(Path(os.getcwd()) / "pokedex" / "memory")
 
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Distill Tapes sessions into observational memory"
-    )
-    parser.add_argument(
-        "--db",
-        help="Path to tapes.sqlite (default: .tapes/tapes.sqlite)",
+        description="Distill Paper sessions into observational memory"
     )
     parser.add_argument(
         "--memory-dir",
-        help="Directory for observations output (default: .tapes/memory/)",
+        help="Directory for observations output (default: pokedex/memory/)",
     )
     parser.add_argument(
         "--dry-run",
@@ -40,7 +31,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     parser.add_argument(
         "--session",
-        help="Process a single session (root node hash) only",
+        help="Process a single session ID only",
     )
     parser.add_argument(
         "--reset",
@@ -49,11 +40,10 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     args = parser.parse_args(argv)
-
-    db_path = args.db or detect_db_path()
     memory_dir = args.memory_dir or detect_memory_dir()
 
-    observer = Observer(db_path=db_path, memory_dir=memory_dir)
+    # db_path is unused by paper_reader but Observer still accepts it
+    observer = Observer(db_path="", memory_dir=memory_dir)
 
     if args.reset:
         if observer.state_path.exists():

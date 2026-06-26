@@ -1,210 +1,229 @@
 #!/usr/bin/env python3
-"""Run 10 agent instances with parameter variants to reach Pokemon selection.
+"""Run agent variants in parallel via paper start claude.
 
-Launches agents in parallel (5 at a time) with different navigator parameter
-combinations. Collects fitness from each and reports results.
+Each agent is a full Claude Code session (recorded in Paper) that runs
+agent.py with its parameter variant and reports fitness as JSON to stdout.
 
 Usage:
-    uv run scripts/run_10_agents.py <rom>
+    python3 scripts/run_10_agents.py <rom>
 """
 
 import json
 import os
+import re
+import signal
 import subprocess
 import sys
-import tempfile
 import time
-from concurrent.futures import ProcessPoolExecutor, as_completed
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).parent
-AGENT_SCRIPT = SCRIPT_DIR / "agent.py"
+WORKSPACE = SCRIPT_DIR.parent
 
-# Re-use the canonical scoring function from evolve.py
-from evolve import score
+from evolve import score  # noqa: E402
 
-# 10 parameter variants to try — tuned for reaching rival battle
-# Previous winner: door_cooldown=4 beat baseline for Pokemon selection
 _BT_DEFAULTS = {
     "bt_max_snapshots": 8, "bt_restore_threshold": 15,
     "bt_max_attempts": 3, "bt_snapshot_interval": 50,
 }
 
 PARAM_VARIANTS = [
-    # Baseline (previous winner door_cooldown=4)
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "baseline_4dc"},
-    # Original defaults
-    {"stuck_threshold": 8, "door_cooldown": 8, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "original"},
-    # Very short door cooldown
-    {"stuck_threshold": 8, "door_cooldown": 2, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "dc2"},
-    # Low stuck + short door
-    {"stuck_threshold": 4, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "low_stuck_dc4"},
-    # High stuck + short door
-    {"stuck_threshold": 12, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "high_stuck_dc4"},
-    # Wide skip + short door
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 6,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "wide_skip_dc4"},
-    # Narrow skip + short door
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 1,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "narrow_dc4"},
-    # X-axis + short door
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "x", **_BT_DEFAULTS, "label": "x_axis_dc4"},
-    # Aggressive: low stuck + very short door + wide skip
-    {"stuck_threshold": 3, "door_cooldown": 2, "waypoint_skip_distance": 5,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "aggressive"},
-    # Moderate: medium stuck + short door
-    {"stuck_threshold": 6, "door_cooldown": 6, "waypoint_skip_distance": 4,
-     "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "moderate"},
-    # Aggressive backtracking: low restore threshold, high retries
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", "bt_max_snapshots": 8,
-     "bt_restore_threshold": 10, "bt_max_attempts": 5,
-     "bt_snapshot_interval": 50, "label": "aggressive_bt"},
-    # Backtracking disabled
-    {"stuck_threshold": 8, "door_cooldown": 4, "waypoint_skip_distance": 3,
-     "axis_preference_map_0": "y", "bt_max_snapshots": 0,
-     "bt_restore_threshold": 999, "bt_max_attempts": 3,
-     "bt_snapshot_interval": 50, "label": "no_bt"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "baseline_4dc"},
+    {"stuck_threshold": 8,  "door_cooldown": 8, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "original"},
+    {"stuck_threshold": 8,  "door_cooldown": 2, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "dc2"},
+    {"stuck_threshold": 4,  "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "low_stuck_dc4"},
+    {"stuck_threshold": 12, "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "high_stuck_dc4"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 6, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "wide_skip_dc4"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 1, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "narrow_dc4"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "x", **_BT_DEFAULTS, "label": "x_axis_dc4"},
+    {"stuck_threshold": 3,  "door_cooldown": 2, "waypoint_skip_distance": 5, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "aggressive"},
+    {"stuck_threshold": 6,  "door_cooldown": 6, "waypoint_skip_distance": 4, "axis_preference_map_0": "y", **_BT_DEFAULTS, "label": "moderate"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "y",
+     "bt_max_snapshots": 8, "bt_restore_threshold": 10, "bt_max_attempts": 5, "bt_snapshot_interval": 50, "label": "aggressive_bt"},
+    {"stuck_threshold": 8,  "door_cooldown": 4, "waypoint_skip_distance": 3, "axis_preference_map_0": "y",
+     "bt_max_snapshots": 0, "bt_restore_threshold": 999, "bt_max_attempts": 3, "bt_snapshot_interval": 50, "label": "no_bt"},
 ]
 
-MAX_TURNS = 5000  # Intro + Pokemon selection + rival scripted sequence + battle + exit
+MAX_TURNS = 5000
+CONCURRENCY = 5
+AGENT_TIMEOUT = 600  # seconds — agent.py can run several minutes for 5000 turns
 
 
-def run_one_agent(rom_path: str, params: dict, agent_id: int) -> dict:
-    """Run a single agent and return results."""
-    label = params.get("label", f"agent_{agent_id}")
-    output_file = tempfile.NamedTemporaryFile(
-        suffix=".json", prefix=f"fitness_{label}_", delete=False
-    )
-    output_path = output_file.name
-    output_file.close()
+def _has_paper() -> bool:
+    try:
+        subprocess.run(["paper", "--version"], capture_output=True, timeout=5)
+        return True
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return False
 
-    env = os.environ.copy()
-    # Remove label from params before passing to agent
+
+def _build_prompt(rom_path: str, params: dict, label: str) -> str:
     agent_params = {k: v for k, v in params.items() if k != "label"}
-    env["EVOLVE_PARAMS"] = json.dumps(agent_params)
+    output_json = f"/tmp/pokemon_fitness_{label}.json"
+    return (
+        f"Run the Pokemon agent with the parameters below and print the fitness JSON.\n\n"
+        f"```bash\n"
+        f"EVOLVE_PARAMS='{json.dumps(agent_params)}' "
+        f"~/venv/bin/python3 scripts/agent.py '{rom_path}' "
+        f"--max-turns {MAX_TURNS} --output-json {output_json}\n"
+        f"```\n\n"
+        f"The command runs a headless Game Boy emulator and takes 2-5 minutes. "
+        f"Use a 10-minute bash timeout. "
+        f"When it finishes, read {output_json} and print ONLY its raw JSON contents "
+        f"as the final line of your response — no markdown, no explanation."
+    )
 
-    cmd = [
-        sys.executable,
-        str(AGENT_SCRIPT),
-        rom_path,
-        "--max-turns", str(MAX_TURNS),
-        "--output-json", output_path,
-    ]
+
+def _extract_fitness(stdout: str) -> dict:
+    """Find a JSON fitness object in Claude's stdout.
+
+    agent.py writes indented JSON, so we search the full output blob rather
+    than scanning line by line.
+    """
+    m = re.search(r'\{[^{}]*"party_size"[^{}]*\}', stdout, re.DOTALL)
+    if m:
+        try:
+            return json.loads(m.group(0))
+        except json.JSONDecodeError:
+            pass
+    return {}
+
+
+def _terminate_tree(proc: subprocess.Popen) -> None:
+    """Kill the agent's entire process group.
+
+    ``paper start claude`` spawns claude, which spawns agent.py. A plain
+    ``subprocess.run(timeout=...)`` only SIGKILLs the direct child on timeout,
+    orphaning those descendants — they keep running and paperd never sees the
+    session end, so it shows "Running" forever. Because the child was launched
+    with ``start_new_session=True`` it leads its own process group, so we can
+    signal the whole group and reap the tree.
+    """
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (ProcessLookupError, PermissionError, OSError):
+        pass  # already gone, or we can't signal it
+    try:
+        proc.wait(timeout=10)
+    except subprocess.TimeoutExpired:
+        pass
+
+
+def run_one_agent(rom_path: str, params: dict, agent_id: int, use_paper: bool) -> dict:
+    label = params.get("label", f"agent_{agent_id}")
+    prompt = _build_prompt(rom_path, params, label)
+    stripped = {k: v for k, v in params.items() if k != "label"}
+
+    if use_paper:
+        # Strip API key and base URL — paper start handles auth
+        env = {k: v for k, v in os.environ.items()
+               if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_BASE_URL")}
+        cmd = ["paper", "start", "claude", "--", "--print", "--dangerously-skip-permissions", prompt]
+    else:
+        env = os.environ.copy()
+        cmd = ["claude", "--print", "--dangerously-skip-permissions", prompt]
 
     start = time.time()
+    proc = None
     try:
-        result = subprocess.run(
-            cmd, env=env, capture_output=True, text=True, timeout=300
+        # start_new_session=True puts the child in its own process group so a
+        # timeout can kill the whole paper→claude→agent.py tree, not just the
+        # direct child (which would otherwise orphan the emulator process).
+        proc = subprocess.Popen(
+            cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            text=True, cwd=str(WORKSPACE), start_new_session=True,
         )
+        stdout, _ = proc.communicate(timeout=AGENT_TIMEOUT)
         elapsed = time.time() - start
-
-        fitness = json.loads(Path(output_path).read_text())
+        fitness = _extract_fitness(stdout)
         return {
             "agent_id": agent_id,
             "label": label,
-            "params": agent_params,
+            "params": stripped,
             "fitness": fitness,
-            "score": score(fitness),
+            "score": score(fitness) if fitness else -999,
             "elapsed": round(elapsed, 1),
-            "returncode": result.returncode,
+            "returncode": proc.returncode,
         }
-    except (subprocess.TimeoutExpired, FileNotFoundError, json.JSONDecodeError) as e:
-        elapsed = time.time() - start
+    except subprocess.TimeoutExpired:
+        _terminate_tree(proc)
         return {
-            "agent_id": agent_id,
-            "label": label,
-            "params": agent_params,
-            "fitness": {},
-            "score": -999,
-            "elapsed": round(elapsed, 1),
-            "error": str(e),
+            "agent_id": agent_id, "label": label, "params": stripped,
+            "fitness": {}, "score": -999,
+            "elapsed": round(time.time() - start, 1), "error": "timeout",
         }
-    finally:
-        try:
-            os.unlink(output_path)
-        except OSError:
-            pass
+    except Exception as e:
+        if proc is not None:
+            _terminate_tree(proc)
+        return {
+            "agent_id": agent_id, "label": label, "params": stripped,
+            "fitness": {}, "score": -999,
+            "elapsed": round(time.time() - start, 1), "error": str(e),
+        }
 
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: uv run scripts/run_10_agents.py <rom>")
+        print("Usage: python3 scripts/run_10_agents.py <rom>")
         sys.exit(1)
 
-    rom_path = sys.argv[1]
+    rom_path = str(Path(sys.argv[1]).resolve())
     if not Path(rom_path).exists():
         print(f"ROM not found: {rom_path}")
         sys.exit(1)
 
-    print(f"[run_10] Launching {len(PARAM_VARIANTS)} agents with {MAX_TURNS} max turns each")
-    print(f"[run_10] ROM: {rom_path}")
-    print(f"[run_10] Running 5 at a time...\n")
+    use_paper = _has_paper()
+    harness = "paper start claude" if use_paper else "claude --print"
+
+    print(f"[run_10] {len(PARAM_VARIANTS)} agents | harness={harness} | concurrency={CONCURRENCY} | max_turns={MAX_TURNS}")
+    print(f"[run_10] ROM: {rom_path}\n")
 
     all_results = []
     start_time = time.time()
 
-    with ProcessPoolExecutor(max_workers=5) as executor:
+    with ThreadPoolExecutor(max_workers=CONCURRENCY) as executor:
         futures = {
-            executor.submit(run_one_agent, rom_path, params, i): i
+            executor.submit(run_one_agent, rom_path, params, i, use_paper): i
             for i, params in enumerate(PARAM_VARIANTS)
         }
-
         for future in as_completed(futures):
-            result = future.result()
-            label = result["label"]
-            s = result["score"]
-            elapsed = result["elapsed"]
-            fitness = result.get("fitness", {})
-            map_id = fitness.get("final_map_id", "?")
-            party = fitness.get("party_size", "?")
-            stuck = fitness.get("stuck_count", "?")
-
-            status = "OK" if "error" not in result else "FAIL"
+            r = future.result()
+            f = r.get("fitness", {})
+            status = "OK" if "error" not in r else f"FAIL({r.get('error', '')})"
             print(
-                f"  [{status}] Agent {result['agent_id']:2d} ({label:14s}) | "
-                f"score={s:8.1f} | map={map_id} party={party} stuck={stuck} | "
-                f"{elapsed}s"
+                f"  [{status}] {r['agent_id']:2d} ({r['label']:14s}) | "
+                f"score={r['score']:8.1f} | map={f.get('final_map_id', '?')} "
+                f"party={f.get('party_size', '?')} stuck={f.get('stuck_count', '?')} | "
+                f"{r['elapsed']}s"
             )
-            all_results.append(result)
+            all_results.append(r)
 
     total_time = time.time() - start_time
-
-    # Sort by score
     all_results.sort(key=lambda r: r["score"], reverse=True)
 
     print(f"\n{'='*70}")
-    print(f"[run_10] All {len(all_results)} agents complete in {total_time:.1f}s")
+    print(f"[run_10] {len(all_results)} agents done in {total_time:.1f}s")
     print(f"{'='*70}\n")
-    print(f"{'Rank':>4} {'Label':14s} {'Score':>8} {'Map':>4} {'Party':>5} "
-          f"{'Stuck':>5} {'Turns':>5} {'Time':>6}")
+    print(f"{'Rank':>4} {'Label':14s} {'Score':>8} {'Map':>4} {'Party':>5} {'Stuck':>5} {'Turns':>5} {'Time':>6}")
     print("-" * 60)
-
     for rank, r in enumerate(all_results, 1):
         f = r.get("fitness", {})
         print(
             f"{rank:4d} {r['label']:14s} {r['score']:8.1f} "
-            f"{f.get('final_map_id', '?'):>4} {f.get('party_size', '?'):>5} "
-            f"{f.get('stuck_count', '?'):>5} {f.get('turns', '?'):>5} "
+            f"{str(f.get('final_map_id', '?')):>4} {str(f.get('party_size', '?')):>5} "
+            f"{str(f.get('stuck_count', '?')):>5} {str(f.get('turns', '?')):>5} "
             f"{r['elapsed']:5.1f}s"
         )
 
-    # Show winner
     winner = all_results[0]
     print(f"\nWinner: {winner['label']} (score={winner['score']:.1f})")
     print(f"Params: {json.dumps(winner['params'], indent=2)}")
 
-    # Save results
-    results_path = SCRIPT_DIR.parent / "pokedex" / "evolve_results.json"
+    results_path = WORKSPACE / "pokedex" / "evolve_results.json"
     results_path.parent.mkdir(parents=True, exist_ok=True)
     results_path.write_text(json.dumps(all_results, indent=2) + "\n")
-    print(f"\nFull results saved to: {results_path}")
+    print(f"\nSaved to: {results_path}")
 
 
 if __name__ == "__main__":

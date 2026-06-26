@@ -27,6 +27,6 @@ readonly = false
 
 [agent]
 harness = "claude-code"
-prompt = "cd /workspace && bash scripts/install.sh && export LD_LIBRARY_PATH=$HOME/.nix-profile/lib:$LD_LIBRARY_PATH && export PATH=/usr/local/bin:$PATH && tapes serve proxy --config-dir /workspace/.tapes --sqlite /workspace/.tapes/tapes.sqlite & sleep 2 && ~/venv/bin/python3 scripts/agent.py rom/pokemon_red.gb --strategy heuristic --max-turns 500000"
+prompt = "cd /workspace && bash scripts/install.sh && export LD_LIBRARY_PATH=$HOME/.nix-profile/lib:$LD_LIBRARY_PATH && ~/venv/bin/python3 scripts/run_10_agents.py 'rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb'"
 workdir = "/workspace"
 restart = "no"
