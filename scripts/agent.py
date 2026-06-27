@@ -16,8 +16,10 @@ import os
 import random
 import sys
 import time
+import uuid
 from collections import deque
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -43,6 +45,15 @@ from memory_reader import (
     OverworldState,
 )
 from pathfinding import astar_path
+from recorder import RunRecorder
+
+
+def build_recorder(record, runs_dir, run_id, grabber, frame_interval=10, live=None):
+    """Return a configured RunRecorder, or None when recording is disabled."""
+    if not record:
+        return None
+    return RunRecorder(run_id, runs_dir, frame_grabber=grabber, frame_interval=frame_interval, live=live)
+
 
 # ---------------------------------------------------------------------------
 # Type chart (simplified — super effective multipliers)
@@ -1240,6 +1251,11 @@ def main():
         default="config.toml",
         help="Path to config.toml (default: config.toml in cwd)",
     )
+    parser.add_argument("--record", action="store_true", help="Record a replayable run folder")
+    parser.add_argument("--runs-dir", default="runs", help="Directory for recorded runs")
+    parser.add_argument("--frame-interval", type=int, default=10, help="Capture a frame every N turns")
+    parser.add_argument("--live", action="store_true", help="Stream live to viewer over WebSocket (implies --record)")
+    parser.add_argument("--viewer-url", default="ws://127.0.0.1:8200", help="Viewer WebSocket base URL")
     args = parser.parse_args()
 
     if not Path(args.rom).exists():
@@ -1259,15 +1275,39 @@ def main():
 
     agent = PokemonAgent(args.rom, strategy=args.strategy, screenshots=args.save_screenshots)
 
-    if game_pub is not None:
-        from game_events import GameEventCollector
+    producer = None
+    run_id = None
+    if args.live:
+        from live_producer import LiveProducer as _LiveProducer
 
-        agent.collector = GameEventCollector(publisher=game_pub)
+        run_id = RunRecorder.new_run_id(datetime.now(timezone.utc), uuid.uuid4().hex[:4])
+        producer = _LiveProducer(f"{args.viewer_url}/ws/produce/{run_id}", run_id)
 
-    fitness = agent.run(max_turns=args.max_turns, battle_limit=args.battle_limit)
+    recorder = None
+    if args.record or args.live:
+        if run_id is None:
+            run_id = RunRecorder.new_run_id(datetime.now(timezone.utc), uuid.uuid4().hex[:4])
+        recorder = build_recorder(
+            record=True,
+            runs_dir=Path(args.runs_dir),
+            run_id=run_id,
+            grabber=lambda: Image.fromarray(agent.pyboy.screen.ndarray),
+            frame_interval=args.frame_interval,
+            live=producer.send if producer is not None else None,
+        )
+    if game_pub is not None or recorder is not None:
+        agent.collector = GameEventCollector(publisher=game_pub, recorder=recorder)
+    if recorder is not None:
+        recorder.start({"strategy": args.strategy, "rom": args.rom})
 
-    if game_pub is not None:
-        game_pub.close()
+    fitness = None
+    try:
+        fitness = agent.run(max_turns=args.max_turns, battle_limit=args.battle_limit)
+    finally:
+        if recorder is not None:
+            recorder.finish(fitness if fitness is not None else {})
+        if game_pub is not None:
+            game_pub.close()
 
     if args.output_json:
         Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)

@@ -1,6 +1,9 @@
 # ROM files (legally obtained, not for distribution)
 rom/
 
+# Generated agent run data (frames, events, summaries)
+runs/
+
 # Emulator save data
 *.ram
 *.sav

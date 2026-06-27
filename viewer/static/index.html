@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pokédex Viewer</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body class="pokedex">
+  <!-- Grid overview: shown when data-view="grid" -->
+  <div id="grid"></div>
+
+  <!-- Focus view: shown when data-view="focus" -->
+  <div class="pokedex-shell">
+    <div class="pokedex-header">
+      <div class="led red"></div>
+      <div class="led yellow"></div>
+      <div class="led green"></div>
+      <h1>Pokédex Viewer</h1>
+      <button id="back-btn" onclick="showGrid()">&#8592; Runs</button>
+    </div>
+
+    <div class="pokedex-body">
+      <!-- Left panel: Screen + scrubber -->
+      <div class="left-panel">
+        <div class="screen-bezel">
+          <img id="screen" src="" alt="Gameplay Frame" />
+        </div>
+        <div class="controls">
+          <div class="scrub-container">
+            <label for="scrub">Playback</label>
+            <input id="scrub" type="range" min="0" max="0" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <!-- Right panel: Chips + Feed -->
+      <div class="right-panel">
+        <div class="filter-chips">
+          <button class="chip" data-kind="milestone">Milestone</button>
+          <button class="chip" data-kind="telemetry">Telemetry</button>
+          <button class="chip" data-kind="observation">Observation</button>
+          <button class="chip" data-kind="anomaly">Anomaly</button>
+        </div>
+        <ul id="feed"></ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

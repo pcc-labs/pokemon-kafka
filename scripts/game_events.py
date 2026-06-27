@@ -122,18 +122,24 @@ class GameEventCollector:
     Confluent Cloud immediately instead of being batched after the run.
     """
 
-    def __init__(self, publisher=None):
+    def __init__(self, publisher=None, recorder=None):
         self.events: list[dict] = []
         self._publisher = publisher
+        self._recorder = recorder
 
     def _emit(self, event: dict) -> None:
-        """Append *event* to the local list and publish if a publisher is set."""
+        """Append *event* to the local list, publish, and record if configured."""
         self.events.append(event)
         if self._publisher is not None:
             try:
                 self._publisher.publish(event)
             except Exception as exc:
                 print(f"[game_events] publish error: {exc}")
+        if self._recorder is not None:
+            try:
+                self._recorder.on_event(event)
+            except Exception as exc:
+                print(f"[game_events] recorder error: {exc}")
 
     def battle(self, turn: int, player_hp: int, player_max_hp: int, enemy_hp: int, enemy_max_hp: int, action: dict):
         self._emit(build_battle_event(turn, player_hp, player_max_hp, enemy_hp, enemy_max_hp, action))

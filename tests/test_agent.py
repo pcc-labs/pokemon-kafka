@@ -3224,3 +3224,183 @@ class TestGameEventPublish:
 
         assert len(collector.events) == 1
         assert collector.events[0]["event_type"] == "milestone"
+
+
+# ===================================================================
+# build_recorder
+# ===================================================================
+
+
+def test_build_recorder_returns_none_without_flag(tmp_path):
+    from agent import build_recorder
+
+    assert build_recorder(record=False, runs_dir=tmp_path, run_id="r", grabber=None) is None
+
+
+def test_build_recorder_configures_run_dir(tmp_path):
+    from agent import build_recorder
+
+    rec = build_recorder(record=True, runs_dir=tmp_path, run_id="r", grabber=None, frame_interval=7)
+    assert rec is not None
+    assert rec.run_dir == tmp_path / "r"
+    assert rec.frame_interval == 7
+
+
+# ===================================================================
+# --record CLI flag wiring
+# ===================================================================
+
+
+class TestRecordFlag:
+    def test_record_flag_calls_recorder_start_and_finish(self, tmp_path):
+        """When --record is passed, recorder.start() and recorder.finish() are called."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 5, "battles_won": 0}
+        mock_recorder = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                ["agent.py", str(rom), "--record", "--runs-dir", str(runs_dir), "--telemetry-dir", ""],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder),
+        ):
+            main()
+
+        mock_recorder.start.assert_called_once_with({"strategy": "low", "rom": str(rom)})
+        mock_recorder.finish.assert_called_once_with({"turns": 5, "battles_won": 0})
+
+    def test_record_frame_interval_passed_to_build_recorder(self, tmp_path):
+        """--frame-interval is forwarded to build_recorder."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 3}
+
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "agent.py",
+                    str(rom),
+                    "--record",
+                    "--runs-dir",
+                    str(runs_dir),
+                    "--frame-interval",
+                    "15",
+                    "--telemetry-dir",
+                    "",
+                ],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=None) as mock_br,
+        ):
+            main()
+
+        assert mock_br.call_args.kwargs["frame_interval"] == 15
+
+
+# ===================================================================
+# --live CLI flag wiring
+# ===================================================================
+
+
+class TestLiveFlag:
+    def test_live_flag_builds_producer_and_wires_to_recorder(self, tmp_path):
+        """--live creates a LiveProducer and passes its .send as the live callback."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 5, "battles_won": 0}
+        mock_recorder = MagicMock()
+        mock_producer = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                ["agent.py", str(rom), "--live", "--runs-dir", str(runs_dir), "--telemetry-dir", ""],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder) as mock_br,
+            patch("live_producer.LiveProducer", return_value=mock_producer),
+        ):
+            main()
+
+        mock_recorder.start.assert_called_once()
+        mock_recorder.finish.assert_called_once_with({"turns": 5, "battles_won": 0})
+        # The live callback must be producer.send
+        assert mock_br.call_args.kwargs.get("live") == mock_producer.send
+
+
+# ===================================================================
+# Fix 2: try/finally — recorder always finalizes on agent.run() raise
+# ===================================================================
+
+
+class TestRecorderFinalizeOnCrash:
+    def test_recorder_finish_called_with_empty_dict_when_agent_run_raises(self, tmp_path):
+        """If agent.run() raises, recorder.finish({}) must be called and the exception propagates."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.side_effect = RuntimeError("crash")
+        mock_recorder = MagicMock()
+        mock_game_pub = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                ["agent.py", str(rom), "--record", "--runs-dir", str(runs_dir), "--telemetry-dir", ""],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder),
+            patch("publisher.make_publisher", return_value=mock_game_pub),
+            pytest.raises(RuntimeError, match="crash"),
+        ):
+            main()
+
+        mock_recorder.finish.assert_called_once_with({})
+
+    def test_game_pub_closed_when_agent_run_raises(self, tmp_path):
+        """If agent.run() raises, game_pub.close() must still be called."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.side_effect = RuntimeError("oops")
+        mock_recorder = MagicMock()
+        mock_game_pub = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                [
+                    "agent.py",
+                    str(rom),
+                    "--record",
+                    "--runs-dir",
+                    str(runs_dir),
+                    "--telemetry-dir",
+                    str(tmp_path / "tel"),
+                ],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder),
+            patch("publisher.make_publisher", return_value=mock_game_pub),
+            pytest.raises(RuntimeError, match="oops"),
+        ):
+            main()
+
+        mock_game_pub.close.assert_called_once()
