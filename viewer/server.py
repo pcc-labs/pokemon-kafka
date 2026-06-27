@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -55,4 +55,33 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
         app.mount("/static", StaticFiles(directory=_STATIC), name="static")
 
     app.state.hub = hub  # used by live task; harmless when None
+
+    @app.websocket("/ws/produce/{run_id}")
+    async def produce(ws: WebSocket, run_id: str):
+        await ws.accept()
+        hub = app.state.hub
+        try:
+            while True:
+                msg = await ws.receive_json()
+                if hub is not None:
+                    await hub.publish(run_id, msg)
+        except WebSocketDisconnect:
+            pass
+
+    @app.websocket("/ws/live/{run_id}")
+    async def live(ws: WebSocket, run_id: str):
+        await ws.accept()
+        hub = app.state.hub
+        if hub is None:
+            await ws.close()
+            return
+        q = hub.subscribe(run_id)
+        try:
+            while True:
+                await ws.send_json(await q.get())
+        except WebSocketDisconnect:
+            pass
+        finally:
+            hub.unsubscribe(run_id, q)
+
     return app
