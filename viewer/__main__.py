@@ -9,6 +9,7 @@ from pathlib import Path
 
 import uvicorn
 
+from viewer.live import LiveHub
 from viewer.server import create_app
 
 
@@ -23,7 +24,7 @@ def main() -> None:
 
     obs = Path(args.observations) if Path(args.observations).exists() else None
     alerts = Path(args.alerts) if Path(args.alerts).exists() else None
-    app = create_app(Path(args.runs_dir), observations_path=obs, alerts_path=alerts)
+    app = create_app(Path(args.runs_dir), observations_path=obs, alerts_path=alerts, hub=LiveHub())
     if not args.no_open:
         threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{args.port}")).start()
     uvicorn.run(app, host="127.0.0.1", port=args.port)

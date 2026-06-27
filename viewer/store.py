@@ -77,7 +77,7 @@ class RunStore:
             maps_visited=int(summary.get("maps_visited", 0)),
             badges=int(summary.get("badges", 0)),
             frame_count=len(frames),
-            thumbnail=frames[0] if frames else None,
+            thumbnail=frames[-1] if frames else None,
         )
 
     def list_runs(self) -> list[RunSummary]:

@@ -20,7 +20,7 @@ def test_list_and_load(tmp_path: Path):
     assert runs[0].status == "done"
     assert runs[0].battles_won == 1
     assert runs[0].frame_count == 4
-    assert runs[0].thumbnail == "000010.png"
+    assert runs[0].thumbnail == "000040.png"
 
 
 def test_load_events_skips_malformed(tmp_path: Path):

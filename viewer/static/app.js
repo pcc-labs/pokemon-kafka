@@ -2,6 +2,26 @@ const API = "";
 let frames = [], feed = [], runId = null, idx = 0, timer = null, liveWs = null;
 const active = new Set(["milestone", "telemetry", "observation", "anomaly"]);
 
+function kindForEvent(et) {
+  if (et === "milestone" || et === "map_change") return "milestone";
+  if (et === "battle" || et === "overworld" || et === "stuck") return "telemetry";
+  return null;
+}
+
+function textForEvent(msg) {
+  const et = msg.event_type;
+  const data = msg.data || {};
+  if (et === "milestone") return data.description || "milestone";
+  if (et === "map_change") return `Map ${data.prev_map} → ${data.new_map}`;
+  if (et === "battle") return `Battle — player HP ${data.player_hp}, enemy HP ${data.enemy_hp}`;
+  if (et === "overworld") {
+    const pos = data.position || {};
+    return `map ${data.map_id} (${pos.x},${pos.y}) ${data.action || ""}`.trim();
+  }
+  if (et === "stuck") return `Stuck \xd7${data.streak} at ${JSON.stringify(data.position || {})}`;
+  return et || "event";
+}
+
 function closeLive() {
   if (liveWs) { liveWs.close(); liveWs = null; }
 }
@@ -40,8 +60,11 @@ async function selectRun(id) {
     liveWs.onmessage = (e) => {
       const msg = JSON.parse(e.data);
       if (msg.type === "event") {
-        feed.push({ kind: msg.event_type, turn: msg.turn, text: JSON.stringify(msg.data || {}) });
-        renderFeed();
+        const kind = kindForEvent(msg.event_type);
+        if (kind !== null) {
+          feed.push({ kind, turn: msg.turn, text: textForEvent(msg) });
+          renderFeed();
+        }
       } else if (msg.type === "frame") {
         document.getElementById("screen").src = `data:image/png;base64,${msg.png_b64}`;
       }

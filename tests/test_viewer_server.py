@@ -61,9 +61,20 @@ def test_index_served(tmp_path: Path):
 
 def test_run_summary_has_grid_fields(tmp_path: Path):
     r = _client(tmp_path).get("/api/runs").json()["runs"][0]
-    assert r["thumbnail"] == "000010.png"
+    assert r["thumbnail"] == "000040.png"
     assert r["status"] == "done"
     assert {"run_id", "turns", "battles_won", "maps_visited", "badges", "frame_count"} <= r.keys()
+
+
+def test_ws_live_telemetry_event_roundtrip(tmp_path: Path):
+    make_fixture_run(tmp_path, "r")
+    app = create_app(tmp_path, hub=LiveHub())
+    client = TestClient(app)
+    with client.websocket_connect("/ws/live/r") as sub:
+        with client.websocket_connect("/ws/produce/r") as prod:
+            prod.send_json({"type": "event", "event_type": "battle", "turn": 5, "data": {"player_hp": 9}})
+            got = sub.receive_json()
+    assert got["event_type"] == "battle" and got["turn"] == 5
 
 
 def test_ws_producer_to_subscriber(tmp_path: Path):
