@@ -975,3 +975,37 @@ class TestMainGuard:
                 str(Path(evolve_mod.__file__).resolve()),
                 run_name="__main__",
             )
+
+
+def test_main_llm_local(tmp_path):
+    """--llm local wires autotune's local MLX model as the proposer (L3)."""
+    rom = tmp_path / "test.gb"
+    rom.write_bytes(b"\x00" * 100)
+    sentinel = object()
+    argv = [
+        "evolve.py",
+        str(rom),
+        "--generations",
+        "1",
+        "--max-turns",
+        "10",
+        "--llm",
+        "local",
+        "--no-observer",
+        "--no-historical",
+    ]
+    with (
+        patch("sys.argv", argv),
+        patch("autotune_bridge.make_local_llm_fn", return_value=sentinel) as mk,
+        patch("evolve.evolve", return_value=[EvolutionResult(generation=1, improved=False)]) as mock_evolve,
+    ):
+        main()
+    mk.assert_called_once()
+    mock_evolve.assert_called_once_with(
+        str(rom),
+        max_generations=1,
+        max_turns=10,
+        llm_fn=sentinel,
+        observer_fn=None,
+        historical_fn=None,
+    )

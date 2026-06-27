@@ -3404,3 +3404,41 @@ class TestRecorderFinalizeOnCrash:
             main()
 
         mock_game_pub.close.assert_called_once()
+
+
+def _build_agent_with_script_dir(tmp_path, script_dir):
+    """Construct a PokemonAgent with SCRIPT_DIR pinned (so notes.md = script_dir.parent)."""
+    from collections import defaultdict
+
+    mock_pb = MagicMock()
+    mock_pb.memory = defaultdict(int)
+    with (
+        patch("agent.PyBoy", return_value=mock_pb),
+        patch.object(agent, "TYPE_CHART_PATH", tmp_path / "tc.json"),
+        patch.object(agent, "ROUTES_PATH", tmp_path / "routes.json"),
+        patch.object(agent, "SCRIPT_DIR", script_dir),
+    ):
+        return PokemonAgent(str(tmp_path / "fake.gb"), strategy="low")
+
+
+def test_evolve_params_seeded_from_notes(tmp_path, monkeypatch):
+    """L2: a genome block in notes.md seeds evolve_params at startup."""
+    monkeypatch.delenv("EVOLVE_PARAMS", raising=False)
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (tmp_path / "notes.md").write_text(
+        '# Agent Notes\n<!-- autotune:genome\n{"stuck_threshold": 5, "door_cooldown": 12}\n-->\n'
+    )
+    ag = _build_agent_with_script_dir(tmp_path, scripts_dir)
+    assert ag.evolve_params["stuck_threshold"] == 5
+    assert ag._evolve_door_cooldown == 12
+
+
+def test_env_evolve_params_override_notes(tmp_path, monkeypatch):
+    """L2: EVOLVE_PARAMS env wins over the notes.md baseline."""
+    monkeypatch.setenv("EVOLVE_PARAMS", '{"door_cooldown": 4}')
+    scripts_dir = tmp_path / "scripts"
+    scripts_dir.mkdir()
+    (tmp_path / "notes.md").write_text('<!-- autotune:genome\n{"door_cooldown": 12}\n-->\n')
+    ag = _build_agent_with_script_dir(tmp_path, scripts_dir)
+    assert ag._evolve_door_cooldown == 4

@@ -546,6 +546,12 @@ class PokemonAgent:
                 self.evolve_params = json.loads(evolve_json)
             except json.JSONDecodeError:
                 pass
+        # Baseline from autotune's persisted genome in notes.md (env above overrides it).
+        from autotune_bridge import load_genome_from_notes
+
+        notes_genome = load_genome_from_notes(SCRIPT_DIR.parent / "notes.md")
+        if notes_genome:
+            self.evolve_params = {**notes_genome, **self.evolve_params}
         if "door_cooldown" in self.evolve_params:
             self._evolve_door_cooldown = int(self.evolve_params["door_cooldown"])
         else:
