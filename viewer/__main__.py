@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import threading
 import webbrowser
 from pathlib import Path
 
@@ -24,7 +25,7 @@ def main() -> None:
     alerts = Path(args.alerts) if Path(args.alerts).exists() else None
     app = create_app(Path(args.runs_dir), observations_path=obs, alerts_path=alerts)
     if not args.no_open:
-        webbrowser.open(f"http://localhost:{args.port}")
+        threading.Timer(1.0, lambda: webbrowser.open(f"http://localhost:{args.port}")).start()
     uvicorn.run(app, host="127.0.0.1", port=args.port)
 
 

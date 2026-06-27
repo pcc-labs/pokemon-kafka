@@ -14,6 +14,7 @@ async function selectRun(id) {
   feed = (await (await fetch(`${API}/api/runs/${id}/feed`)).json()).feed;
   idx = 0;
   renderFeed();
+  showFrame(idx);
   play();
 }
 
