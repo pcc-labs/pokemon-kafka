@@ -152,3 +152,47 @@ The client renders the feed with filter chips toggling each `kind`.
 
 - None blocking. Frame cadence default (e.g. every N turns or every M ms) to be
   fixed during planning; chosen to balance replay smoothness vs. disk use.
+
+## Follow-ups / Known limitations
+
+Captured from implementation (PR #29) and its reviews. None block the replay or
+live happy path; listed so they aren't lost to the conversation.
+
+**Deferred features (not yet built):**
+
+- **Grid live-refresh + "pulse"** — the grid renders once on load and does not
+  poll `/api/runs`, so a run that starts/finishes while the grid is open does
+  not appear or update without a manual reload. The design's "live runs pulse"
+  styling is also not wired. Add a periodic `/api/runs` poll and a `.live`
+  pulse style.
+- **`LiveProducer` reconnect backoff** — `send()` resets the socket on any
+  failure and reconnects lazily on the next call (`scripts/live_producer.py`).
+  A flaky-but-reachable viewer can trigger a blocking `connect()` on the game
+  loop per event. Add a consecutive-failure cap / short backoff and a small
+  `open_timeout`.
+
+**Open review findings (PR #29, not yet addressed):**
+
+- **`/ws/produce` does not catch `JSONDecodeError`** (`viewer/server.py`) — a
+  non-JSON frame from any client kills the produce coroutine and strands that
+  run's subscribers. Our own `LiveProducer` only sends valid JSON, so this is a
+  robustness gap, not a live bug.
+- **`selectRun` rapid-click race** (`viewer/static/app.js`) — sets `runId` then
+  awaits; clicking run A then B can let A's slower response overwrite `frames`
+  while `runId === "B"`, yielding 404 frame requests / a blank screen. Guard
+  with a per-call token that bails if `runId` changed after the await.
+- **Observations sort to the top of the feed** (`viewer/feed.py`) —
+  observations get `turn=0` (anomalies often too) and the feed sorts by `turn`,
+  so distilled summaries render before the gameplay that produced them. Stamp
+  them with the turn they describe, or append rather than sort-to-front.
+- **Client/server feed-logic duplication** (`viewer/static/app.js` vs
+  `viewer/feed.py`) — `kindForEvent`/`textForEvent` re-derive the server's
+  `_event_text` + kind taxonomy (two sources of truth; already diverge on
+  `stuck` formatting). Consider having the server publish already-mapped
+  `FeedEntry`-shaped messages over the live socket.
+
+**Resolved in PR #29 review (for the record):** live runs now emit a `done`
+signal (subscribers no longer hang); `agent.run()` is wrapped in `try/finally`
+so `--record` runs always finalize; observation/alerts paths are passed eagerly
+so files written after startup are picked up; the live socket derives
+`ws`/`wss` from the page protocol.
