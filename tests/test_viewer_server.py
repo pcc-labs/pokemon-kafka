@@ -42,6 +42,11 @@ def test_frame_bytes_and_404(tmp_path: Path):
     assert c.get("/runs/20260626-000001-aaaa/frames/nope.png").status_code == 404
 
 
+def test_frame_non_png_404(tmp_path: Path):
+    c = _client(tmp_path)
+    assert c.get("/runs/20260626-000001-aaaa/frames/not_an_image.txt").status_code == 404
+
+
 def test_feed_404(tmp_path: Path):
     assert _client(tmp_path).get("/api/runs/missing/feed").status_code == 404
 

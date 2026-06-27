@@ -30,6 +30,7 @@ viewer = "viewer.__main__:main"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["scripts", "tests", "."]
+filterwarnings = ["ignore::starlette.exceptions.StarletteDeprecationWarning"]
 
 [tool.coverage.run]
 source = ["scripts", "viewer"]
