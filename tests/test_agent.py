@@ -3300,8 +3300,8 @@ class TestRecordFlag:
                 ],
             ),
             patch("agent.PokemonAgent", return_value=mock_agent),
-            patch("agent.build_recorder", return_value=None),
+            patch("agent.build_recorder", return_value=None) as mock_br,
         ):
             main()
 
-        # When build_recorder returns None, recorder is None so start/finish are not called — just confirm no crash.
+        assert mock_br.call_args.kwargs["frame_interval"] == 15
