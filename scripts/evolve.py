@@ -544,6 +544,12 @@ def main():
         help="Disable LLM mutation, use random perturbation only",
     )
     parser.add_argument(
+        "--llm",
+        choices=["anthropic", "local", "none"],
+        default="anthropic",
+        help="Mutation proposer: anthropic (Claude), local (autotune MLX model), or none",
+    )
+    parser.add_argument(
         "--no-observer",
         action="store_true",
         help="Disable observational memory feedback",
@@ -564,7 +570,15 @@ def main():
         print(f"ROM not found: {args.rom}")
         sys.exit(1)
 
-    llm_fn = None if args.no_llm else _make_llm_fn()
+    if args.no_llm or args.llm == "none":
+        llm_fn = None
+    elif args.llm == "local":
+        from autotune_bridge import make_local_llm_fn
+
+        print("[evolve] Using autotune local MLX model for LLM-guided mutation")
+        llm_fn = make_local_llm_fn()
+    else:
+        llm_fn = _make_llm_fn()
     observer_fn = None if args.no_observer else _make_observer_fn()
     historical_fn = None if args.no_historical else _make_historical_fn(args.telemetry_dir)
 

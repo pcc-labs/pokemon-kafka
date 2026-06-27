@@ -66,6 +66,7 @@ pokedex/evolve_results.json
 
 # Telemetry data (generated at runtime)
 data/telemetry/*.jsonl
+data/telemetry/game/
 
 # DuckDB warehouse files
 data/*.duckdb
