@@ -297,6 +297,27 @@ class MemoryReader:
         count = self._read(self.ADDR_PARTY_COUNT)
         return [self._read(self.ADDR_PARTY_SPECIES_LIST + i) for i in range(min(count, 6))]
 
+    def read_party(self) -> list[dict]:
+        """Per-slot ``{species, level, hp, max_hp}`` for the current party.
+
+        Offsets within each 44-byte party struct: current HP @ +1, level @ +33,
+        max HP @ +34 (all confirmed against the addresses this reader already uses).
+        """
+        count = self._read(self.ADDR_PARTY_COUNT)
+        out: list[dict] = []
+        for i in range(min(count, 6)):
+            base = self.PARTY_BASE + (i * self.PARTY_STRUCT_SIZE)
+            species_id = self._read(self.ADDR_PARTY_SPECIES_LIST + i)
+            out.append(
+                {
+                    "species": SPECIES_ID_MAP.get(species_id, f"#{species_id:02X}"),
+                    "level": self._read(base + 33),
+                    "hp": self._read_16(base + self.PARTY_HP_OFFSET, base + self.PARTY_HP_OFFSET + 1),
+                    "max_hp": self._read_16(base + 34, base + 35),
+                }
+            )
+        return out
+
     def is_in_battle(self) -> bool:
         """Quick check: are we in a battle?"""
         return self._read(self.ADDR_BATTLE_TYPE) != 0

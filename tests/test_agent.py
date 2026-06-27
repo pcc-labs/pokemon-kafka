@@ -1348,6 +1348,9 @@ class TestEncounterLog:
         ag.memory.read_overworld_state = MagicMock(return_value=overworld)
         ag.memory.find_healing_item = MagicMock(return_value=None)
         ag.memory.read_party_species = MagicMock(return_value=[0xB0])
+        # Win is now derived from end-of-battle party HP (a loss/white-out flips it to False).
+        ag.memory.player_whited_out = MagicMock(return_value=False)
+        ag.memory.read_party = MagicMock(return_value=[{"species": "Charmander", "level": 5, "hp": 20, "max_hp": 20}])
 
         with patch.object(agent, "Image", None):
             ag.run(max_turns=2)
@@ -1858,6 +1861,19 @@ class TestRun:
         assert ag._map_state_saved is True
         assert any("Saved map-12 state" in e for e in ag.events)
 
+    def test_run_saves_periodic_checkpoint(self, tmp_path):
+        """--save-state-every "N:PATH" overwrites a checkpoint every N turns."""
+        ag = _make_agent(tmp_path)
+        out = tmp_path / "checkpoint.state"
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=0))
+        ag.memory.read_overworld_state = MagicMock(return_value=OverworldState(map_id=12, x=5, y=5))
+        ag.run_overworld = MagicMock()
+        with patch.object(agent, "Image", None):
+            ag.run(max_turns=4, save_state_every=f"2:{out}")
+        # Checkpoints at turn 2 and turn 4.
+        assert ag.pyboy.save_state.call_count == 2
+        assert any("Checkpoint at turn" in e for e in ag.events)
+
     def test_run_overworld_only(self, tmp_path):
         ag = _make_agent(tmp_path)
         battle_none = BattleState(battle_type=0)
@@ -1969,6 +1985,8 @@ class TestMain:
             load_state=None,
             save_state_on_battle=None,
             save_state_on_map=None,
+            save_state_on_trainer=None,
+            save_state_every=None,
         )
 
     def test_main_rom_not_found(self, tmp_path):
@@ -2001,6 +2019,8 @@ class TestMain:
             load_state=None,
             save_state_on_battle=None,
             save_state_on_map=None,
+            save_state_on_trainer=None,
+            save_state_every=None,
         )
 
     def test_main_default_args(self, tmp_path):
@@ -2022,6 +2042,8 @@ class TestMain:
             load_state=None,
             save_state_on_battle=None,
             save_state_on_map=None,
+            save_state_on_trainer=None,
+            save_state_every=None,
         )
 
 

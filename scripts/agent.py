@@ -521,6 +521,20 @@ class PokemonAgent:
         self._pre_battle_level: int = 0
         self.evolution_log: list[dict] = []
         self.level_ups: int = 0
+        # Per-battle tracking (snapshotted at battle start; battle RAM clears at end).
+        self._battle_start_turn: int = 0
+        self._battle_type: int = 0
+        self._battle_map_id: int = 0
+        self._battle_opponent_species: str = ""
+        self._battle_opponent_level: int = 0
+        # Brock (gym 1) outcome, recorded once. Map id is parameterized because the
+        # Pewter Gym interior is its own map (not Pewter City map 2); set BROCK_MAP_ID
+        # once discovered to pin detection, otherwise fall back to a level heuristic.
+        self.brock_map_id: int | None = int(os.environ["BROCK_MAP_ID"]) if os.environ.get("BROCK_MAP_ID") else None
+        self.brock_turns: int | None = None
+        self.brock_won: bool | None = None
+        self.brock_lead_species: str | None = None
+        self.brock_lead_level: int | None = None
 
         # Screenshot output directory
         self.frames_dir = SCRIPT_DIR.parent / "frames"
@@ -851,6 +865,12 @@ class PokemonAgent:
             battle.enemy_hp,
             battle.enemy_max_hp,
             action,
+            battle_type=battle.battle_type,
+            map_id=self.memory._read(self.memory.ADDR_MAP_ID),
+            enemy_species=battle.enemy_species_name,
+            enemy_level=battle.enemy_level,
+            player_species=SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
+            player_level=battle.player_level,
         )
         if action["action"] == "fight":
             # Navigate to FIGHT menu
@@ -1076,6 +1096,11 @@ class PokemonAgent:
             "encounters": len(self.encounter_log),
             "level_ups": self.level_ups,
             "evolutions": len(self.evolution_log),
+            # Brock (gym 1) outcome — None until the Brock fight resolves.
+            "brock_turns": self.brock_turns,
+            "brock_won": self.brock_won,
+            "brock_lead_species": self.brock_lead_species,
+            "brock_lead_level": self.brock_lead_level,
         }
 
     def _advance_intro(self):
@@ -1136,12 +1161,20 @@ class PokemonAgent:
         load_state=None,
         save_state_on_battle=None,
         save_state_on_map=None,
+        save_state_on_trainer=None,
+        save_state_every=None,
     ):
         """Main agent loop. Returns fitness dict at end.
 
         load_state: path to a PyBoy save state to load instead of running the intro.
         save_state_on_battle: path to dump a save state at the first detected battle.
         save_state_on_map: "MAPID:PATH" to dump a state when first reaching that map.
+        save_state_on_trainer: "MAPID:PATH" to dump a state the first time a trainer
+            battle starts on that map, or "brock:PATH" to trigger on the first
+            gym-leader-level trainer (opponent level >= 12) when the gym map is unknown.
+        save_state_every: "N:PATH" to overwrite a checkpoint state every N turns, so a
+            segmented run can resume the journey with ``--load-state PATH`` (see the
+            brock-battle-learning skill).
         """
         self.log("Agent starting.")
         self.collector.session(0, "start")
@@ -1155,10 +1188,24 @@ class PokemonAgent:
 
         self._battle_state_saved = False
         self._map_state_saved = False
+        self._trainer_state_saved = False
         save_map_target, save_map_path = None, None
         if save_state_on_map:
             _mid, save_map_path = save_state_on_map.split(":", 1)
             save_map_target = int(_mid)
+        save_trainer_target, save_trainer_path = None, None
+        save_trainer_by_level = False
+        if save_state_on_trainer:
+            _tid, save_trainer_path = save_state_on_trainer.split(":", 1)
+            if _tid == "brock":
+                save_trainer_by_level = True
+            else:
+                save_trainer_target = int(_tid)
+        save_every_n, save_every_path = 0, None
+        if save_state_every:
+            _every, save_every_path = save_state_every.split(":", 1)
+            save_every_n = int(_every)
+        self._last_checkpoint_turn = -1
         for _ in range(max_turns):
             battle = self.memory.read_battle_state()
 
@@ -1170,10 +1217,35 @@ class PokemonAgent:
                     self._battle_state_saved = True
                     self.log(f"Saved battle state to {save_state_on_battle}")
 
-                # Snapshot pre-battle state on first battle turn
+                # Snapshot pre-battle state on first battle turn (battle RAM is cleared
+                # once the fight ends, so opponent identity must be captured here).
                 if not self._pre_battle_species:
                     self._pre_battle_species = self.memory.read_party_species()
                     self._pre_battle_level = battle.player_level
+                    self._battle_start_turn = self.turn_count
+                    self._battle_type = battle.battle_type
+                    self._battle_map_id = self.memory._read(self.memory.ADDR_MAP_ID)
+                    self._battle_opponent_species = battle.enemy_species_name
+                    self._battle_opponent_level = battle.enemy_level
+
+                # Dump a save state the first time a trainer fight starts on the target
+                # map (i.e. the instant Brock's battle begins).
+                if (
+                    save_trainer_path
+                    and not self._trainer_state_saved
+                    and battle.battle_type == 2
+                    and (
+                        (
+                            save_trainer_target is not None
+                            and self.memory._read(self.memory.ADDR_MAP_ID) == save_trainer_target
+                        )
+                        or (save_trainer_by_level and battle.enemy_level >= 12)
+                    )
+                ):
+                    with open(save_trainer_path, "wb") as f:
+                        self.pyboy.save_state(f)
+                    self._trainer_state_saved = True
+                    self.log(f"Saved trainer-battle state (map {save_trainer_target}) to {save_trainer_path}")
 
                 self.run_battle_turn()
 
@@ -1181,6 +1253,12 @@ class PokemonAgent:
                 self.controller.wait(60)
                 new_battle = self.memory.read_battle_state()
                 if new_battle.battle_type == 0:
+                    # A loss also clears battle_type, so derive the real outcome from party
+                    # HP at end-of-battle (before any white-out heal-warp completes) rather
+                    # than assuming a win. battles_won is left as-is to preserve existing
+                    # fitness semantics for downstream consumers.
+                    won = not self.memory.player_whited_out()
+                    battle_turns = self.turn_count - self._battle_start_turn
                     self.battles_won += 1
                     self._last_progress_turn = self.turn_count
                     self.battle_strategy._run_attempts = 0
@@ -1188,10 +1266,10 @@ class PokemonAgent:
                         {
                             "species": self._current_enemy_species,
                             "type": self._current_enemy_type,
-                            "won": True,
+                            "won": won,
                         }
                     )
-                    self.log(f"Battle ended. Total wins: {self.battles_won}")
+                    self.log(f"Battle ended. Won: {won}. Total wins: {self.battles_won}")
 
                     # Dismiss evolution/level-up screens
                     self.controller.mash_a(10, delay=30)
@@ -1212,6 +1290,35 @@ class PokemonAgent:
                             self.log(f"EVOLUTION | Slot {slot}: {pre_name} -> {post_name}!")
                             self.evolution_log.append({"slot": slot, "from": pre_name, "to": post_name})
 
+                    # Record the Brock (gym 1) outcome once. The Pewter Gym interior is its
+                    # own map, so identify Brock by the configured map id when known, else by
+                    # a trainer fight whose opponent is gym-leader level (>=12) — this skips
+                    # the low-level Viridian Forest bug-catcher trainers. The badge bit
+                    # (Boulder Badge = bit 0) is the authoritative win signal.
+                    is_brock = self._battle_type == 2 and (
+                        (self.brock_map_id is not None and self._battle_map_id == self.brock_map_id)
+                        or (self.brock_map_id is None and self._battle_opponent_level >= 12)
+                    )
+                    if self.brock_turns is None and is_brock:
+                        badges = self.memory._read(self.memory.ADDR_BADGES)
+                        lead = self._pre_battle_species[0] if self._pre_battle_species else 0
+                        self.brock_turns = battle_turns
+                        self.brock_won = bool(badges & 0x01)
+                        self.brock_lead_species = SPECIES_ID_MAP.get(lead, f"#{lead:02X}")
+                        self.brock_lead_level = self._pre_battle_level
+
+                    # Emit a battle-end summary (turns, outcome, post-battle party).
+                    self.collector.battle_end(
+                        self.turn_count,
+                        won,
+                        battle_turns,
+                        self._battle_type,
+                        self._battle_map_id,
+                        self._battle_opponent_species,
+                        self._battle_opponent_level,
+                        self.memory.read_party(),
+                    )
+
                     # Reset pre-battle snapshots
                     self._pre_battle_species = []
                     self._pre_battle_level = 0
@@ -1231,6 +1338,19 @@ class PokemonAgent:
 
             if self.turn_count % 10 == 0:
                 self.take_screenshot()
+
+            # Periodic checkpoint so a segmented run can resume with --load-state.
+            if (
+                save_every_path
+                and save_every_n > 0
+                and self.turn_count > 0
+                and self.turn_count % save_every_n == 0
+                and self.turn_count != self._last_checkpoint_turn
+            ):
+                with open(save_every_path, "wb") as f:
+                    self.pyboy.save_state(f)
+                self._last_checkpoint_turn = self.turn_count
+                self.log(f"Checkpoint at turn {self.turn_count} -> {save_every_path}")
 
         self.log(f"Session complete. Turns: {self.turn_count} | Wins: {self.battles_won}")
         self.collector.session(
@@ -1305,6 +1425,16 @@ def main():
     parser.add_argument("--load-state", default=None, help="Load a PyBoy save state and skip the intro")
     parser.add_argument("--save-state-on-battle", default=None, help="Dump a save state at the first detected battle")
     parser.add_argument("--save-state-on-map", default=None, help='Dump a state at a map, as "MAPID:PATH"')
+    parser.add_argument(
+        "--save-state-on-trainer",
+        default=None,
+        help='Dump a state at the first trainer battle on a map, as "MAPID:PATH" (e.g. Brock)',
+    )
+    parser.add_argument(
+        "--save-state-every",
+        default=None,
+        help='Overwrite a checkpoint state every N turns, as "N:PATH" (for segmented resume)',
+    )
     args = parser.parse_args()
 
     if not Path(args.rom).exists():
@@ -1357,6 +1487,8 @@ def main():
             load_state=args.load_state,
             save_state_on_battle=args.save_state_on_battle,
             save_state_on_map=args.save_state_on_map,
+            save_state_on_trainer=args.save_state_on_trainer,
+            save_state_every=args.save_state_every,
         )
     finally:
         if recorder is not None:
