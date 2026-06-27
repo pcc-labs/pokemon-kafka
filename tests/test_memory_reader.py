@@ -6,6 +6,7 @@ from memory_reader import (
     ADDR_BAG_ITEMS,
     BAG_MAX_SLOTS,
     HEALING_ITEM_IDS,
+    ITEM_OAKS_PARCEL,
     SPECIES_ID_MAP,
     TYPE_ID_MAP,
     BattleState,
@@ -651,3 +652,56 @@ class TestCollisionMap:
     def test_player_pos_always_center(self):
         cm = CollisionMap()
         assert cm.player_pos == (4, 4)
+
+
+# ---------------------------------------------------------------------------
+# Quest helpers: parcel / pokedex / facing
+# ---------------------------------------------------------------------------
+
+
+class TestQuestHelpers:
+    def test_has_item_true_and_false(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[ADDR_BAG_COUNT] = 1
+        fake_memory[ADDR_BAG_ITEMS] = ITEM_OAKS_PARCEL
+        fake_memory[ADDR_BAG_ITEMS + 1] = 1
+        assert reader.has_item(ITEM_OAKS_PARCEL) is True
+        assert reader.has_item(0x14) is False
+
+    def test_has_item_zero_quantity_is_false(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[ADDR_BAG_COUNT] = 1
+        fake_memory[ADDR_BAG_ITEMS] = ITEM_OAKS_PARCEL
+        fake_memory[ADDR_BAG_ITEMS + 1] = 0
+        assert reader.has_item(ITEM_OAKS_PARCEL) is False
+
+    def test_has_parcel(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[ADDR_BAG_COUNT] = 0
+        assert reader.has_parcel() is False
+        fake_memory[ADDR_BAG_COUNT] = 1
+        fake_memory[ADDR_BAG_ITEMS] = ITEM_OAKS_PARCEL
+        fake_memory[ADDR_BAG_ITEMS + 1] = 1
+        assert reader.has_parcel() is True
+
+    def test_has_pokedex_bit(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[MemoryReader.ADDR_WD74B] = 0x00
+        assert reader.has_pokedex() is False
+        fake_memory[MemoryReader.ADDR_WD74B] = MemoryReader.BIT_GOT_POKEDEX
+        assert reader.has_pokedex() is True
+        # other bits set but not the pokedex bit -> still False
+        fake_memory[MemoryReader.ADDR_WD74B] = 0xFF & ~MemoryReader.BIT_GOT_POKEDEX
+        assert reader.has_pokedex() is False
+
+    def test_read_player_facing_raw_and_name(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        for raw, name in MemoryReader.FACING_NAMES.items():
+            fake_memory[MemoryReader.ADDR_PLAYER_FACING] = raw
+            assert reader.read_player_facing() == raw
+            assert reader.read_player_facing_name() == name
+
+    def test_read_player_facing_name_unknown(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[MemoryReader.ADDR_PLAYER_FACING] = 7
+        assert reader.read_player_facing_name() == "?7"

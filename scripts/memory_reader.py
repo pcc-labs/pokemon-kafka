@@ -60,6 +60,9 @@ ADDR_BAG_COUNT = 0xD31D
 ADDR_BAG_ITEMS = 0xD31E  # pairs of [item_id, quantity], terminated by 0xFF
 BAG_MAX_SLOTS = 20
 
+# Quest items
+ITEM_OAKS_PARCEL = 0x46  # given by the Viridian Mart clerk, delivered to Prof. Oak
+
 
 @dataclass
 class BattleState:
@@ -172,6 +175,16 @@ class MemoryReader:
     # bit 5: simulated joypad active (scripted movement, e.g. Oak walking)
     # bit 6: text/script display active (set by DisplayTextID)
     ADDR_WD730 = 0xD730
+
+    # Player facing direction (pokered wSpritePlayerStateData1FacingDirection).
+    # Encoded as multiples of 4: 0=down, 4=up, 8=left, 12=right.
+    ADDR_PLAYER_FACING = 0xC109
+    FACING_NAMES = {0: "down", 4: "up", 8: "left", 12: "right"}
+
+    # Early-game event flags (pokered wd74b). bit 5 (0x20) = obtained the Pokedex, set when
+    # Oak takes the parcel. Confirmed against telemetry in the discovery spike.
+    ADDR_WD74B = 0xD74B
+    BIT_GOT_POKEDEX = 0x20
 
     def __init__(self, pyboy):
         self.pyboy = pyboy
@@ -291,6 +304,27 @@ class MemoryReader:
             if item_id in HEALING_ITEM_IDS and qty > 0:
                 return (idx, item_id)
         return None
+
+    def has_item(self, item_id: int) -> bool:
+        """True if the bag holds at least one of ``item_id``."""
+        return any(iid == item_id and qty > 0 for iid, qty in self.read_bag_items())
+
+    def has_parcel(self) -> bool:
+        """True while Oak's Parcel is in the bag (between the Mart and delivering it to Oak)."""
+        return self.has_item(ITEM_OAKS_PARCEL)
+
+    def has_pokedex(self) -> bool:
+        """True once Oak takes the parcel and hands over the Pokedex (wd74b bit 5)."""
+        return bool(self._read(self.ADDR_WD74B) & self.BIT_GOT_POKEDEX)
+
+    def read_player_facing(self) -> int:
+        """Raw facing byte (0=down, 4=up, 8=left, 12=right)."""
+        return self._read(self.ADDR_PLAYER_FACING)
+
+    def read_player_facing_name(self) -> str:
+        """Facing direction as a name, or ``?<raw>`` if the byte is unrecognised."""
+        raw = self.read_player_facing()
+        return self.FACING_NAMES.get(raw, f"?{raw}")
 
     def read_party_species(self) -> list[int]:
         """Read species ID for each party member."""
