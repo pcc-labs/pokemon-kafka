@@ -10,7 +10,10 @@ async function showGrid() {
   runs.forEach(r => {
     const tile = document.createElement("div");
     tile.className = `tile ${r.status}`;
-    tile.innerHTML = `<img src="${API}/runs/${r.run_id}/frames/${r.thumbnail || ""}">
+    const thumbnailHtml = r.thumbnail
+      ? `<img src="${API}/runs/${r.run_id}/frames/${r.thumbnail}">`
+      : `<div class="tile-noframe">no preview</div>`;
+    tile.innerHTML = `${thumbnailHtml}
       <div class="meta">${r.run_id}<br>⚔️${r.battles_won} 🗺️${r.maps_visited}</div>`;
     tile.addEventListener("click", () => { document.body.dataset.view = "focus"; selectRun(r.run_id); });
     g.appendChild(tile);
