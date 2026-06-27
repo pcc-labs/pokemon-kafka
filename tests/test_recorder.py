@@ -79,3 +79,23 @@ def test_recorder_forwards_to_live(tmp_path: Path):
     sent_frame = next(m for m in sent if m["type"] == "frame")
     assert sent_frame["turn"] == 10
     assert "png_b64" in sent_frame and isinstance(sent_frame["png_b64"], str) and sent_frame["png_b64"]
+
+
+def test_finish_emits_done_to_live_before_close(tmp_path: Path):
+    """finish() must call live({"type": "done"}) before closing the events file."""
+    sent = []
+    rec = RunRecorder("rd", tmp_path, live=sent.append)
+    rec.start({})
+    rec.finish({"battles_won": 1})
+    done_msgs = [m for m in sent if m.get("type") == "done"]
+    assert len(done_msgs) == 1, "finish() must emit exactly one done message to live"
+    # summary.json must exist (finish completed successfully after emitting done)
+    assert (tmp_path / "rd" / "summary.json").exists()
+
+
+def test_finish_no_live_skips_done(tmp_path: Path):
+    """finish() without a live callback must not crash and must still write summary.json."""
+    rec = RunRecorder("rn", tmp_path, live=None)
+    rec.start({})
+    rec.finish({"battles_won": 0})
+    assert (tmp_path / "rn" / "summary.json").exists()

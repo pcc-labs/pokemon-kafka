@@ -66,7 +66,8 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
                 if hub is not None:
                     await hub.publish(run_id, msg)
         except WebSocketDisconnect:
-            pass
+            if hub is not None:
+                await hub.publish(run_id, {"type": "done"})
 
     @app.websocket("/ws/live/{run_id}")
     async def live(ws: WebSocket, run_id: str):
@@ -78,7 +79,10 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
         q = hub.subscribe(run_id)
         try:
             while True:
-                await ws.send_json(await q.get())
+                msg = await q.get()
+                await ws.send_json(msg)
+                if isinstance(msg, dict) and msg.get("type") == "done":
+                    break
         except WebSocketDisconnect:
             pass
         finally:

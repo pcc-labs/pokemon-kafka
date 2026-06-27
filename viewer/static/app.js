@@ -56,10 +56,13 @@ async function selectRun(id) {
   renderFeed();
   showFrame(idx);
   if (detail.status === "live") {
-    liveWs = new WebSocket(`ws://${location.host}/ws/live/${id}`);
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    liveWs = new WebSocket(`${proto}//${location.host}/ws/live/${id}`);
     liveWs.onmessage = (e) => {
       const msg = JSON.parse(e.data);
-      if (msg.type === "event") {
+      if (msg.type === "done") {
+        closeLive();
+      } else if (msg.type === "event") {
         const kind = kindForEvent(msg.event_type);
         if (kind !== null) {
           feed.push({ kind, turn: msg.turn, text: textForEvent(msg) });

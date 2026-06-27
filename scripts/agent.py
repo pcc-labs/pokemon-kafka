@@ -1300,12 +1300,14 @@ def main():
     if recorder is not None:
         recorder.start({"strategy": args.strategy, "rom": args.rom})
 
-    fitness = agent.run(max_turns=args.max_turns, battle_limit=args.battle_limit)
-
-    if recorder is not None:
-        recorder.finish(fitness)
-    if game_pub is not None:
-        game_pub.close()
+    fitness = None
+    try:
+        fitness = agent.run(max_turns=args.max_turns, battle_limit=args.battle_limit)
+    finally:
+        if recorder is not None:
+            recorder.finish(fitness if fitness is not None else {})
+        if game_pub is not None:
+            game_pub.close()
 
     if args.output_json:
         Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)

@@ -67,6 +67,8 @@ class RunRecorder:
         payload["params"] = self._params
         payload["run_id"] = self.run_id
         (self.run_dir / "summary.json").write_text(json.dumps(payload, indent=2))
+        if self.live is not None:
+            self.live({"type": "done"})
         if self._events_fh is not None:
             self._events_fh.close()
             self._events_fh = None

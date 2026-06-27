@@ -141,3 +141,52 @@ def test_ws_live_disconnect_covers_except(tmp_path: Path):
     # The server's finally runs before the handler returns, which happens before
     # the with-sub exit completes, so this check is race-free.
     assert hub._subs.get("r", []) == []
+
+
+def test_ws_live_breaks_after_done_message(tmp_path: Path):
+    """The /ws/live handler must forward a done message then unsubscribe (break the loop).
+
+    Verified by asserting: (a) the done message is delivered to the subscriber, and
+    (b) the subscription is removed after done (the finally block ran).
+    """
+    make_fixture_run(tmp_path, "r")
+    hub = LiveHub()
+    app = create_app(tmp_path, hub=hub)
+    client = TestClient(app)
+    with client.websocket_connect("/ws/live/r") as sub:
+        with client.websocket_connect("/ws/produce/r") as prod:
+            prod.send_json({"type": "event", "turn": 1, "data": {}})
+            event_msg = sub.receive_json()
+            assert event_msg["type"] == "event"
+            prod.send_json({"type": "done"})
+            done_msg = sub.receive_json()
+            assert done_msg == {"type": "done"}
+    # After the done message, the server handler broke the loop and the finally block
+    # ran hub.unsubscribe(). The subscription must be gone.
+    assert hub._subs.get("r", []) == []
+
+
+def test_ws_produce_disconnect_publishes_done(tmp_path: Path):
+    """When producer disconnects without sending done, a done is published to subscribers."""
+    make_fixture_run(tmp_path, "r")
+    hub = LiveHub()
+    app = create_app(tmp_path, hub=hub)
+    client = TestClient(app)
+    with client.websocket_connect("/ws/live/r") as sub:
+        with client.websocket_connect("/ws/produce/r") as prod:
+            prod.send_json({"type": "event", "turn": 1, "data": {}})
+            sub.receive_json()
+        # prod context exits → producer WS disconnects → server publishes {"type": "done"}
+        done_msg = sub.receive_json()
+        assert done_msg == {"type": "done"}
+
+
+def test_ws_produce_disconnect_no_hub(tmp_path: Path):
+    """Producer disconnect with hub=None must not raise (the hub is None branch)."""
+    make_fixture_run(tmp_path, "r")
+    app = create_app(tmp_path, hub=None)
+    client = TestClient(app)
+    # Just exercise the connect+disconnect path without crashing
+    with client.websocket_connect("/ws/produce/r") as prod:
+        prod.send_json({"type": "event", "turn": 1})
+    # No assertion needed beyond no exception being raised
