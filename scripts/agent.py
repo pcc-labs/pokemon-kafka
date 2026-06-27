@@ -44,6 +44,7 @@ from memory_reader import (
     MemoryReader,
     OverworldState,
 )
+from parcel_quest import ParcelQuest, QuestSignals
 from pathfinding import astar_path
 from recorder import RunRecorder
 
@@ -259,6 +260,9 @@ class Navigator:
         self.current_map = None
         self.stuck_threshold = stuck_threshold
         self.skip_distance = skip_distance
+        # An optional per-turn override target (same shape as EARLY_GAME_TARGETS entries) set by
+        # the Oak's Parcel quest; takes precedence over the baked early-game targets when present.
+        self.quest_target: dict | None = None
 
     def _add_direction(self, directions: list[str], direction: str | None):
         """Append a direction once while preserving order."""
@@ -340,10 +344,13 @@ class Navigator:
             self.current_map = map_key
             self.current_waypoint = 0
 
-        special_target = EARLY_GAME_TARGETS.get(state.map_id)
-        # Map 0: after getting a Pokemon, head north to Route 1 exit
-        if state.map_id == 0 and state.party_count > 0:
-            special_target = {"name": "Route 1 exit", "target": (10, 0), "axis": "y", "at_target": "up"}
+        # An active quest override wins over the baked early-game targets (e.g. the map-0 rule).
+        special_target = self.quest_target
+        if special_target is None:
+            special_target = EARLY_GAME_TARGETS.get(state.map_id)
+            # Map 0: after getting a Pokemon, head north to Route 1 exit
+            if state.map_id == 0 and state.party_count > 0:
+                special_target = {"name": "Route 1 exit", "target": (10, 0), "axis": "y", "at_target": "up"}
         if special_target:
             target_x, target_y = special_target["target"]
             # At target: use at_target hint to walk through doors/grass
@@ -514,6 +521,10 @@ class PokemonAgent:
         self.collector = GameEventCollector()
         self.collision_map = CollisionMap()
         self.door_cooldown: int = 0  # Steps to walk away from door after exiting a building
+        # Oak's Parcel quest: drives the Viridian Mart pickup → Oak delivery → Old-Man gate, the
+        # scripted progression that pure waypoint navigation cannot pass on its own.
+        self.parcel_quest = ParcelQuest()
+        self._last_logged_map: int | None = None
         self.encounter_log: list[dict] = []
         self._current_enemy_species: str = ""
         self._current_enemy_type: str = ""
@@ -724,7 +735,14 @@ class PokemonAgent:
         # the player walks toward the exit.  NPCs can block the path south
         # from the table area, so go left first, then south.
         # The exit door is at roughly (4, 11).
-        if state.map_id == 40 and state.party_count > 0:
+        # Only on the FIRST visit (no parcel yet, no Pokédex). Later lab visits — delivering the
+        # parcel and exiting afterward — are driven by the parcel quest below.
+        if (
+            state.map_id == 40
+            and state.party_count > 0
+            and not self.memory.has_parcel()
+            and not self.memory.has_pokedex()
+        ):
             if not hasattr(self, "_lab_exit_turns"):
                 self._lab_exit_turns = 0
             self._lab_exit_turns += 1
@@ -745,6 +763,10 @@ class PokemonAgent:
                 return "a"  # interact with rival when intercepted / clear text
             return "down"
 
+        # Oak's Parcel quest: override the nav target to run the errand that unblocks Viridian's
+        # north exit (Mart pickup → Oak delivery → Old-Man gate). Returns None once satisfied.
+        self.navigator.quest_target = self._quest_target(state)
+
         direction = self.navigator.next_direction(
             state,
             turn=self.turn_count,
@@ -752,6 +774,31 @@ class PokemonAgent:
             collision_grid=self.collision_map.grid,
         )
         return direction or "a"
+
+    def _quest_target(self, state: OverworldState) -> dict | None:
+        """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
+
+        Skipped until the player has a starter (party > 0) so it never disturbs the intro / lab
+        cutscene. Also emits a one-line map-transition log (map, pos, facing, parcel, pokedex,
+        phase) the first time each map is entered — the discovery signal that confirms map ids."""
+        if state.party_count <= 0:
+            return None
+        sig = QuestSignals(
+            map_id=state.map_id,
+            x=state.x,
+            y=state.y,
+            has_parcel=self.memory.has_parcel(),
+            has_pokedex=self.memory.has_pokedex(),
+        )
+        target = self.parcel_quest.next_target(sig)
+        if state.map_id != self._last_logged_map:
+            self._last_logged_map = state.map_id
+            self.log(
+                f"QUEST | map={state.map_id} pos=({state.x},{state.y}) "
+                f"facing={self.memory.read_player_facing_name()} {self.parcel_quest.describe(sig)} "
+                f"target={target['name'] if target else None}"
+            )
+        return target
 
     def log(self, msg: str):
         """Structured log line for Tapes to capture."""
