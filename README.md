@@ -268,6 +268,37 @@ uv run scripts/agent.py rom/pokemon_red.gb --strategy heuristic --max-turns 5000
 
 The two approaches complement each other. Long sessions are better for discovering new capabilities and debugging game-specific logic. The evolution loop is better for optimizing parameters once the code structure exists.
 
+## autotune Integration
+
+[autotune](https://github.com/pcc-labs/autotune) is a sibling training loop (Try → Check → Reward → Nudge) that runs this agent, scores each run against the canonical Route-1 story, and feeds what it learns back here. The agent has no runtime dependency on autotune; `scripts/autotune_bridge.py` reads autotune's output and degrades to no-ops when it is absent.
+
+There are two consumer seams:
+
+**Genome from `notes.md`.** autotune writes a genome block into `notes.md`:
+
+```
+<!-- autotune:genome
+{"stuck_threshold": 8, "door_cooldown": 10, ...}
+-->
+```
+
+The agent reads the last such block at startup and uses it as its `EVOLVE_PARAMS` baseline. The `EVOLVE_PARAMS` env var still overrides it, so behavior is unchanged when no block is present.
+
+```bash
+# With a genome block in notes.md, the agent applies it automatically:
+uv run scripts/agent.py rom/pokemon_red.gb
+```
+
+**Local model as the evolve proposer.** `evolve.py` can use autotune's locally-trained MLX model as its mutation proposer instead of Claude. No API key is needed.
+
+```bash
+uv run scripts/evolve.py rom/pokemon_red.gb --llm local
+```
+
+`--llm` accepts `anthropic` (default, Claude), `local` (autotune's model via `mlx_lm generate`), or `none` (random perturbation). `--no-llm` still works.
+
+See the [autotune integration doc](https://github.com/pcc-labs/autotune/blob/main/docs/pokemon-kafka-integration.md) for the full workflow.
+
 ## Testing
 
 100% line coverage enforced via `pytest-cov` (`fail_under = 100` in `pyproject.toml`).
