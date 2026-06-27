@@ -68,3 +68,14 @@ def test_recorder_forwards_to_live(tmp_path: Path):
     rec.finish({})
     types = [m["type"] for m in sent]
     assert "event" in types and "frame" in types
+
+    # Assert event message shape and content
+    sent_event = next(m for m in sent if m["type"] == "event")
+    assert sent_event["event_type"] == "milestone"
+    assert sent_event["turn"] == 10
+    assert sent_event["data"] == {"description": "x"}
+
+    # Assert frame message shape and content
+    sent_frame = next(m for m in sent if m["type"] == "frame")
+    assert sent_frame["turn"] == 10
+    assert "png_b64" in sent_frame and isinstance(sent_frame["png_b64"], str) and sent_frame["png_b64"]
