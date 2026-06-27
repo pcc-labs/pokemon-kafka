@@ -1809,6 +1809,55 @@ class TestRun:
         # Loop exited after 1 battle, well before max_turns
         assert ag.turn_count < 100
 
+    def test_run_load_state_skips_intro(self, tmp_path):
+        """--load-state loads a PyBoy state and skips the intro."""
+        ag = _make_agent(tmp_path)
+        state = tmp_path / "first_battle.state"
+        state.write_bytes(b"savestate")
+        ag.memory.read_overworld_state = MagicMock(return_value=OverworldState(map_id=38, x=3, y=4))
+        with patch.object(ag, "_advance_intro") as adv, patch.object(agent, "Image", None):
+            ag.run(max_turns=0, load_state=str(state))
+        adv.assert_not_called()
+        ag.pyboy.load_state.assert_called_once()
+        assert any("Loaded save state" in e for e in ag.events)
+
+    def test_run_saves_state_on_first_battle(self, tmp_path):
+        """--save-state-on-battle dumps a state at the first detected battle."""
+        ag = _make_agent(tmp_path)
+        self._mock_battle_helpers(ag)
+        out = tmp_path / "first_battle.state"
+        battle_active = BattleState(
+            battle_type=1,
+            player_hp=50,
+            player_max_hp=100,
+            enemy_hp=30,
+            enemy_max_hp=40,
+            moves=[0x01, 0x00, 0x00, 0x00],
+            move_pp=[10, 0, 0, 0],
+            player_level=5,
+        )
+        battle_none = BattleState(battle_type=0)
+        ag.memory.read_battle_state = MagicMock(side_effect=[battle_active, battle_active, battle_none])
+        ag.memory.read_overworld_state = MagicMock(return_value=OverworldState(map_id=0, x=5, y=5))
+        with patch.object(agent, "Image", None):
+            ag.run(max_turns=100, battle_limit=1, save_state_on_battle=str(out))
+        ag.pyboy.save_state.assert_called_once()
+        assert ag._battle_state_saved is True
+        assert any("Saved battle state" in e for e in ag.events)
+
+    def test_run_saves_state_on_map(self, tmp_path):
+        """--save-state-on-map dumps a state when first reaching the target map."""
+        ag = _make_agent(tmp_path)
+        out = tmp_path / "route1.state"
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=0))
+        ag.memory.read_overworld_state = MagicMock(return_value=OverworldState(map_id=12, x=5, y=33))
+        ag.run_overworld = MagicMock()
+        with patch.object(agent, "Image", None):
+            ag.run(max_turns=1, save_state_on_map=f"12:{out}")
+        ag.pyboy.save_state.assert_called_once()
+        assert ag._map_state_saved is True
+        assert any("Saved map-12 state" in e for e in ag.events)
+
     def test_run_overworld_only(self, tmp_path):
         ag = _make_agent(tmp_path)
         battle_none = BattleState(battle_type=0)
@@ -1914,7 +1963,13 @@ class TestMain:
             main()
 
         mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
-        mock_agent.run.assert_called_once_with(max_turns=5, battle_limit=0)
+        mock_agent.run.assert_called_once_with(
+            max_turns=5,
+            battle_limit=0,
+            load_state=None,
+            save_state_on_battle=None,
+            save_state_on_map=None,
+        )
 
     def test_main_rom_not_found(self, tmp_path):
         missing = tmp_path / "nope.gb"
@@ -1940,7 +1995,13 @@ class TestMain:
             main()
 
         mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=True)
-        mock_agent.run.assert_called_once_with(max_turns=10, battle_limit=0)
+        mock_agent.run.assert_called_once_with(
+            max_turns=10,
+            battle_limit=0,
+            load_state=None,
+            save_state_on_battle=None,
+            save_state_on_map=None,
+        )
 
     def test_main_default_args(self, tmp_path):
         rom = tmp_path / "game.gb"
@@ -1955,7 +2016,13 @@ class TestMain:
             main()
 
         mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
-        mock_agent.run.assert_called_once_with(max_turns=100_000, battle_limit=0)
+        mock_agent.run.assert_called_once_with(
+            max_turns=100_000,
+            battle_limit=0,
+            load_state=None,
+            save_state_on_battle=None,
+            save_state_on_map=None,
+        )
 
 
 # ===================================================================

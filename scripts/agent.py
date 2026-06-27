@@ -1078,11 +1078,8 @@ class PokemonAgent:
             "evolutions": len(self.evolution_log),
         }
 
-    def run(self, max_turns: int = 100_000, battle_limit: int = 0):
-        """Main agent loop. Returns fitness dict at end."""
-        self.log("Agent starting. Advancing through intro...")
-        self.collector.session(0, "start")
-
+    def _advance_intro(self):
+        """Advance through the title screen, Oak's intro, and name selection."""
         # Advance through title screen (needs ~1500 frames to reach "Press Start")
         self.controller.wait(1500)
         self.controller.press("start")
@@ -1132,10 +1129,47 @@ class PokemonAgent:
                 "Delete the .ram file or check intro sequence."
             )
 
+    def run(
+        self,
+        max_turns: int = 100_000,
+        battle_limit: int = 0,
+        load_state=None,
+        save_state_on_battle=None,
+        save_state_on_map=None,
+    ):
+        """Main agent loop. Returns fitness dict at end.
+
+        load_state: path to a PyBoy save state to load instead of running the intro.
+        save_state_on_battle: path to dump a save state at the first detected battle.
+        save_state_on_map: "MAPID:PATH" to dump a state when first reaching that map.
+        """
+        self.log("Agent starting.")
+        self.collector.session(0, "start")
+
+        if load_state:
+            with open(load_state, "rb") as f:
+                self.pyboy.load_state(f)
+            self.log(f"Loaded save state from {load_state}. Skipping intro.")
+        else:
+            self._advance_intro()
+
+        self._battle_state_saved = False
+        self._map_state_saved = False
+        save_map_target, save_map_path = None, None
+        if save_state_on_map:
+            _mid, save_map_path = save_state_on_map.split(":", 1)
+            save_map_target = int(_mid)
         for _ in range(max_turns):
             battle = self.memory.read_battle_state()
 
             if battle.battle_type > 0:
+                # Capture a reusable save state at the first battle (for the autotune battle test)
+                if save_state_on_battle and not self._battle_state_saved:
+                    with open(save_state_on_battle, "wb") as f:
+                        self.pyboy.save_state(f)
+                    self._battle_state_saved = True
+                    self.log(f"Saved battle state to {save_state_on_battle}")
+
                 # Snapshot pre-battle state on first battle turn
                 if not self._pre_battle_species:
                     self._pre_battle_species = self.memory.read_party_species()
@@ -1186,6 +1220,12 @@ class PokemonAgent:
                         self.log(f"Battle limit reached ({battle_limit}). Stopping.")
                         break
             else:
+                if save_map_path and not self._map_state_saved:
+                    if self.memory.read_overworld_state().map_id == save_map_target:
+                        with open(save_map_path, "wb") as f:
+                            self.pyboy.save_state(f)
+                        self._map_state_saved = True
+                        self.log(f"Saved map-{save_map_target} state to {save_map_path}")
                 self.run_overworld()
                 self.turn_count += 1
 
@@ -1262,6 +1302,9 @@ def main():
     parser.add_argument("--frame-interval", type=int, default=10, help="Capture a frame every N turns")
     parser.add_argument("--live", action="store_true", help="Stream live to viewer over WebSocket (implies --record)")
     parser.add_argument("--viewer-url", default="ws://127.0.0.1:8200", help="Viewer WebSocket base URL")
+    parser.add_argument("--load-state", default=None, help="Load a PyBoy save state and skip the intro")
+    parser.add_argument("--save-state-on-battle", default=None, help="Dump a save state at the first detected battle")
+    parser.add_argument("--save-state-on-map", default=None, help='Dump a state at a map, as "MAPID:PATH"')
     args = parser.parse_args()
 
     if not Path(args.rom).exists():
@@ -1308,7 +1351,13 @@ def main():
 
     fitness = None
     try:
-        fitness = agent.run(max_turns=args.max_turns, battle_limit=args.battle_limit)
+        fitness = agent.run(
+            max_turns=args.max_turns,
+            battle_limit=args.battle_limit,
+            load_state=args.load_state,
+            save_state_on_battle=args.save_state_on_battle,
+            save_state_on_map=args.save_state_on_map,
+        )
     finally:
         if recorder is not None:
             recorder.finish(fitness if fitness is not None else {})
