@@ -53,3 +53,10 @@ def test_feed_404(tmp_path: Path):
 
 def test_index_served(tmp_path: Path):
     assert _client(tmp_path).get("/").status_code == 200
+
+
+def test_run_summary_has_grid_fields(tmp_path: Path):
+    r = _client(tmp_path).get("/api/runs").json()["runs"][0]
+    assert r["thumbnail"] == "000010.png"
+    assert r["status"] == "done"
+    assert {"turns", "battles_won", "maps_visited", "badges", "frame_count"} <= r.keys()

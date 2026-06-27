@@ -2,9 +2,20 @@ const API = "";
 let frames = [], feed = [], runId = null, idx = 0, timer = null;
 const active = new Set(["milestone", "telemetry", "observation", "anomaly"]);
 
-async function loadRuns() {
+async function showGrid() {
+  stop();
   const { runs } = await (await fetch(`${API}/api/runs`)).json();
-  if (runs.length) selectRun(runs[0].run_id);
+  const g = document.getElementById("grid");
+  g.innerHTML = "";
+  runs.forEach(r => {
+    const tile = document.createElement("div");
+    tile.className = `tile ${r.status}`;
+    tile.innerHTML = `<img src="${API}/runs/${r.run_id}/frames/${r.thumbnail || ""}">
+      <div class="meta">${r.run_id}<br>⚔️${r.battles_won} 🗺️${r.maps_visited}</div>`;
+    tile.addEventListener("click", () => { document.body.dataset.view = "focus"; selectRun(r.run_id); });
+    g.appendChild(tile);
+  });
+  document.body.dataset.view = "grid";
 }
 
 async function selectRun(id) {
@@ -54,5 +65,5 @@ document.addEventListener("DOMContentLoaded", () => {
       active.has(c.dataset.kind) ? active.delete(c.dataset.kind) : active.add(c.dataset.kind);
       renderFeed();
     }));
-  loadRuns();
+  showGrid();
 });
