@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import io
 import json
 from datetime import datetime
 from pathlib import Path
@@ -20,12 +22,14 @@ class RunRecorder:
         runs_dir: Path,
         frame_grabber: Optional[Callable[[], "Image"]] = None,
         frame_interval: int = 10,
+        live: Optional[Callable[[dict], None]] = None,
     ) -> None:
         self.run_id = run_id
         self.run_dir = Path(runs_dir) / run_id
         self.frames_dir = self.run_dir / "frames"
         self.frame_grabber = frame_grabber
         self.frame_interval = max(1, int(frame_interval))
+        self.live = live
         self._params: dict = {}
         self._events_fh = None
 
@@ -42,6 +46,8 @@ class RunRecorder:
         if self._events_fh is not None:
             self._events_fh.write(json.dumps(event) + "\n")
             self._events_fh.flush()
+        if self.live is not None:
+            self.live({"type": "event", **event})
         turn = int(event.get("turn", 0))
         if self.frame_grabber is not None and turn % self.frame_interval == 0:
             self.capture_frame(turn)
@@ -51,6 +57,10 @@ class RunRecorder:
             return
         img = self.frame_grabber()
         img.save(self.frames_dir / f"{turn:06d}.png")
+        if self.live is not None:
+            buf = io.BytesIO()
+            img.save(buf, format="PNG")
+            self.live({"type": "frame", "turn": turn, "png_b64": base64.b64encode(buf.getvalue()).decode()})
 
     def finish(self, summary: dict) -> None:
         payload = dict(summary)

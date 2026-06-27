@@ -3305,3 +3305,37 @@ class TestRecordFlag:
             main()
 
         assert mock_br.call_args.kwargs["frame_interval"] == 15
+
+
+# ===================================================================
+# --live CLI flag wiring
+# ===================================================================
+
+
+class TestLiveFlag:
+    def test_live_flag_builds_producer_and_wires_to_recorder(self, tmp_path):
+        """--live creates a LiveProducer and passes its .send as the live callback."""
+        rom = tmp_path / "game.gb"
+        rom.write_text("fake rom")
+        runs_dir = tmp_path / "runs"
+
+        mock_agent = MagicMock()
+        mock_agent.run.return_value = {"turns": 5, "battles_won": 0}
+        mock_recorder = MagicMock()
+        mock_producer = MagicMock()
+
+        with (
+            patch(
+                "sys.argv",
+                ["agent.py", str(rom), "--live", "--runs-dir", str(runs_dir), "--telemetry-dir", ""],
+            ),
+            patch("agent.PokemonAgent", return_value=mock_agent),
+            patch("agent.build_recorder", return_value=mock_recorder) as mock_br,
+            patch("live_producer.LiveProducer", return_value=mock_producer),
+        ):
+            main()
+
+        mock_recorder.start.assert_called_once()
+        mock_recorder.finish.assert_called_once_with({"turns": 5, "battles_won": 0})
+        # The live callback must be producer.send
+        assert mock_br.call_args.kwargs.get("live") == mock_producer.send

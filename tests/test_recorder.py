@@ -58,3 +58,13 @@ def test_capture_frame_with_no_grabber(tmp_path: Path):
     rec.capture_frame(1)
     rec.finish({})
     assert list((tmp_path / "run4" / "frames").glob("*.png")) == []
+
+
+def test_recorder_forwards_to_live(tmp_path: Path):
+    sent = []
+    rec = RunRecorder("rl", tmp_path, frame_grabber=_grabber, frame_interval=10, live=sent.append)
+    rec.start({})
+    rec.on_event({"event_type": "milestone", "turn": 10, "data": {"description": "x"}})
+    rec.finish({})
+    types = [m["type"] for m in sent]
+    assert "event" in types and "frame" in types

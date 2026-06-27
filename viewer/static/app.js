@@ -1,9 +1,14 @@
 const API = "";
-let frames = [], feed = [], runId = null, idx = 0, timer = null;
+let frames = [], feed = [], runId = null, idx = 0, timer = null, liveWs = null;
 const active = new Set(["milestone", "telemetry", "observation", "anomaly"]);
+
+function closeLive() {
+  if (liveWs) { liveWs.close(); liveWs = null; }
+}
 
 async function showGrid() {
   stop();
+  closeLive();
   const { runs } = await (await fetch(`${API}/api/runs`)).json();
   const g = document.getElementById("grid");
   g.innerHTML = "";
@@ -23,13 +28,27 @@ async function showGrid() {
 
 async function selectRun(id) {
   runId = id;
+  closeLive();
   const detail = await (await fetch(`${API}/api/runs/${id}`)).json();
   frames = detail.frames;
   feed = (await (await fetch(`${API}/api/runs/${id}/feed`)).json()).feed;
   idx = 0;
   renderFeed();
   showFrame(idx);
-  play();
+  if (detail.status === "live") {
+    liveWs = new WebSocket(`ws://${location.host}/ws/live/${id}`);
+    liveWs.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === "event") {
+        feed.push({ kind: msg.event_type, turn: msg.turn, text: JSON.stringify(msg.data || {}) });
+        renderFeed();
+      } else if (msg.type === "frame") {
+        document.getElementById("screen").src = `data:image/png;base64,${msg.png_b64}`;
+      }
+    };
+  } else {
+    play();
+  }
 }
 
 function renderFeed() {
