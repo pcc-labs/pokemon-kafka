@@ -11,6 +11,7 @@ from parcel_quest import (
     TO_OAK,
     VIRIDIAN_CITY,
     VIRIDIAN_MART,
+    VIRIDIAN_NORTH,
     ParcelQuest,
     QuestSignals,
     quest_phase,
@@ -49,13 +50,15 @@ def test_pokedex_overrides_a_lingering_parcel_flag():
 # --- target routing -----------------------------------------------------------
 
 
-def test_to_mart_routes_north_then_into_mart():
+def test_to_mart_defers_outdoors_then_targets_mart():
     q = ParcelQuest()
-    assert q.next_target(sig(ROUTE_1))["name"] == "north"
+    # Northbound outdoor maps defer to the baked waypoints (overriding walks into the houses).
+    assert q.next_target(sig(ROUTE_1)) is None
+    assert q.next_target(sig(PALLET_TOWN)) is None
     assert "Mart door" in q.next_target(sig(VIRIDIAN_CITY))["name"]
-    counter = q.next_target(sig(VIRIDIAN_MART))
-    assert "counter" in counter["name"].lower()
-    assert counter["at_target"] == "a"  # press A at the clerk
+    clerk = q.next_target(sig(VIRIDIAN_MART))
+    assert "clerk" in clerk["name"].lower()
+    assert clerk["at_target"] == "a"  # press A at the clerk
 
 
 def test_to_oak_routes_south_then_to_oak():
@@ -68,12 +71,13 @@ def test_to_oak_routes_south_then_to_oak():
     assert oak["at_target"] == "a"  # press A to hand over the parcel
 
 
-def test_go_north_pushes_north_in_early_maps():
+def test_go_north_defers_outdoors_and_targets_viridian_exit():
     q = ParcelQuest()
-    for m in (PALLET_TOWN, ROUTE_1, VIRIDIAN_CITY):
-        t = q.next_target(sig(m, pokedex=True))
-        assert t["name"] == "north"
-        assert t["target"] == (5, 0)  # straight up from x=5
+    # Pallet / Route 1 defer to the northbound waypoints once the gate is open.
+    assert q.next_target(sig(PALLET_TOWN, pokedex=True)) is None
+    assert q.next_target(sig(ROUTE_1, pokedex=True)) is None
+    north = q.next_target(sig(VIRIDIAN_CITY, pokedex=True))
+    assert north["target"] == VIRIDIAN_NORTH  # steer to the now-clear north exit
 
 
 def test_go_north_exits_buildings_first():
@@ -98,10 +102,11 @@ def test_unsteered_map_returns_none():
     assert q.next_target(sig(99)) is None
 
 
-def test_north_south_targets_track_current_x():
+def test_south_target_tracks_current_x():
     q = ParcelQuest()
-    assert q.next_target(sig(ROUTE_1, x=8))["target"] == (8, 0)
-    assert q.next_target(sig(ROUTE_1, parcel=True, x=8))["target"][0] == 8
+    t = q.next_target(sig(ROUTE_1, parcel=True, x=8))  # TO_OAK pushes south from current column
+    assert t["name"] == "south"
+    assert t["target"][0] == 8
 
 
 def test_phase_attribute_updates_after_next_target():

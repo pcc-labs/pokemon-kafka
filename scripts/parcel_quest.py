@@ -36,12 +36,12 @@ TO_OAK = "TO_OAK"  # parcel in bag → carry it back to Oak in Pallet
 GO_NORTH = "GO_NORTH"  # Pokédex received → head north past the (now-cleared) Old Man
 DONE = "DONE"  # quest satisfied and already north of Viridian → hand back to normal nav
 
-# Tile targets that need fixed coordinates (the building interiors / doors). Confirmed against
-# pokered map data + first-run telemetry; ``_north``/`_south` edge-pushes need no fixed tile.
-MART_DOOR = (29, 19)  # Viridian City: tile just below the Mart entrance (verify on run)
-MART_COUNTER = (3, 3)  # Viridian Mart: in front of the clerk's counter (verify on run)
-OAKS_LAB_DOOR = (12, 11)  # Pallet Town: tile below Oak's Lab entrance (verify on run)
-OAK_TILE = (5, 2)  # Oak's Lab: in front of Prof. Oak (verify on run)
+# Tile targets, from the pret/pokered map object data (player x/y reads 1:1 onto these).
+MART_DOOR = (29, 19)  # Viridian City: the Mart entrance warp tile
+MART_COUNTER = (1, 5)  # Viridian Mart: in front of the clerk (clerk object at 0,5 facing right)
+OAKS_LAB_DOOR = (12, 11)  # Pallet Town: the Oak's Lab entrance warp tile
+OAK_TILE = (5, 3)  # Oak's Lab: in front of Prof. Oak (Oak object at 5,2 facing down)
+VIRIDIAN_NORTH = (18, 0)  # Viridian City: the north exit to Route 2, past the Old Man at (17,5)
 
 
 @dataclass(frozen=True)
@@ -93,19 +93,20 @@ class ParcelQuest:
         self.phase = phase
 
         if phase == TO_MART:
-            if sig.map_id in (ROUTE_1, PALLET_TOWN):
-                return _north(sig)  # head up toward Viridian
+            # Northbound through Pallet → Route 1 → Viridian is what the baked waypoints already do,
+            # so defer to them (returning a naive edge target here just walks into the houses).
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(MART_DOOR, "Viridian Mart door")
             if sig.map_id == VIRIDIAN_MART:
-                return _to(MART_COUNTER, "Mart counter (parcel)", at_target="a")
+                return _to(MART_COUNTER, "Mart clerk (parcel)", at_target="a")
             return None
 
         if phase == TO_OAK:
+            # Reverse course: the waypoints only go north, so the quest drives the trip back south.
             if sig.map_id == VIRIDIAN_MART:
                 return _south(sig)  # leave the Mart first
             if sig.map_id in (VIRIDIAN_CITY, ROUTE_1):
-                return _south(sig)  # head back down toward Pallet
+                return _south(sig)  # head back down toward Pallet (ledges allow southward hops)
             if sig.map_id == PALLET_TOWN:
                 return _to(OAKS_LAB_DOOR, "Oak's Lab door")
             if sig.map_id == OAKS_LAB:
@@ -113,11 +114,13 @@ class ParcelQuest:
             return None
 
         if phase == GO_NORTH:
-            # Pokédex in hand: exit any building we're in, then push north through
-            # Pallet → Route 1 → Viridian → (the now-cleared Old Man).
+            # Pokédex in hand. Walk out of any building, steer Viridian to its north exit (the
+            # Old Man has stepped aside), and defer to the northbound waypoints elsewhere.
             if sig.map_id in (OAKS_LAB, VIRIDIAN_MART):
                 return _south(sig)  # walk out the door
-            return _north(sig)
+            if sig.map_id == VIRIDIAN_CITY:
+                return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
+            return None
 
         return None  # DONE — normal waypoints handle Route 2 / Forest / Pewter
 
