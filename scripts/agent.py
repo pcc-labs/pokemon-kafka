@@ -786,38 +786,41 @@ class PokemonAgent:
         return direction or "a"
 
     def _collision_pilot(self, state: OverworldState, goal: str) -> str:
-        """Navigate ``goal`` ("north"/"south") by following the live collision grid.
+        """Navigate ``goal`` ("north"/"south") using on-screen A* over the live collision grid.
 
-        Mirrors the traced probe that crossed Route 1 reliably: prefer the goal direction when the
-        tile ahead is walkable, otherwise sidestep to an open perpendicular side (without an
-        immediate reversal), and only fall back to the opposite direction as a last resort. This
-        sidesteps the waypoint+backtrack navigator, which thrashes the agent backward on the open
-        routes."""
+        Each turn, find the cell *furthest toward the goal* that A* can reach on the visible 9x10
+        grid and step toward it. Because A* routes around obstacles, this performs the
+        down-and-around detours a ledge/tree line needs — which the old greedy sweep could not, so
+        it oscillated forever against the barrier. Only when the whole screen is walled off toward
+        the goal do we back off (step away to scroll a fresh screen) and drift laterally to find a
+        way around at a larger scale. Bypasses the thrash-prone waypoint+backtrack navigator."""
         try:
             self.collision_map.update(self.pyboy)
         except Exception:
             pass
-        g = self.collision_map.grid
-        north, south, east, west = g[3][4], g[5][4], g[4][5], g[4][3]
-        fwd, fwd_open = ("up", north) if goal == "north" else ("down", south)
+        grid = self.collision_map.grid
 
-        if fwd_open:
-            # Forward is open: advance and forget any barrier sweep in progress.
-            self._pilot_sweep = None
-            return fwd
+        # Rows ahead of the player (center is row 4), nearest the goal extreme first, so we lock
+        # onto the furthest reachable forward progress.
+        rows = range(0, 4) if goal == "north" else range(8, 4, -1)
+        for r in rows:
+            for c in sorted(range(10), key=lambda col: abs(col - 4)):  # prefer straight ahead
+                if not grid[r][c]:
+                    continue
+                res = astar_path(grid, (4, 4), (r, c))
+                if res["status"] in ("success", "partial") and res["directions"]:
+                    self._pilot_noprog = 0
+                    return res["directions"][0]
 
-        # Blocked ahead by a ledge/tree line. Sweep *consistently* along the barrier (one
-        # direction until it walls, then flip) so we scan every column for the gap, instead of
-        # oscillating in place the way the old flip-on-last-move logic did.
-        sweep = getattr(self, "_pilot_sweep", None) or "right"
-        side_open = east if sweep == "right" else west
-        if not side_open:
-            sweep = "left" if sweep == "right" else "right"
-            side_open = east if sweep == "right" else west
-        self._pilot_sweep = sweep
-        if side_open:
-            return sweep
-        # Fully walled in (rare): step back the way we came to break free.
+        # Barrier fully blocks the screen toward the goal: back off (and periodically drift
+        # sideways) so a different stretch of the route scrolls into view.
+        self._pilot_noprog = getattr(self, "_pilot_noprog", 0) + 1
+        if self._pilot_noprog % 3 == 0:
+            side = "right" if (self._pilot_noprog // 3) % 2 == 0 else "left"
+            if side == "right" and grid[4][5]:
+                return "right"
+            if side == "left" and grid[4][3]:
+                return "left"
         return "down" if goal == "north" else "up"
 
     def _quest_target(self, state: OverworldState) -> dict | None:
