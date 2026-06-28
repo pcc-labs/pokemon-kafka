@@ -1011,19 +1011,24 @@ class PokemonAgent:
         prev = self.last_overworld_state
         last_act = self.last_overworld_action
         attempted = None
+        # Require facing to have turned to the pressed direction: a real wall lets the turn happen
+        # (face == direction, but no step), whereas a script / warp-settle state ignores the input
+        # entirely (facing unchanged). Only the former is evidence of a wall — so a cutscene that
+        # swallows our inputs (e.g. the Mart clerk's parcel script) never poisons the map.
         if (
             prev is not None
             and last_act in ("up", "down", "left", "right")
             and state.map_id == prev.map_id
             and state.x == prev.x
             and state.y == prev.y
+            and self.memory.read_player_facing_name() == last_act
         ):
             bdx = {"left": -1, "right": 1}.get(last_act, 0)
             bdy = {"up": -1, "down": 1}.get(last_act, 0)
             attempted = (state.map_id, state.x + bdx, state.y + bdy)
             if attempted == getattr(self, "_last_fail_tile", None):
-                self.world.block(*attempted)  # failed twice in a row → a real wall
-        self._last_fail_tile = attempted  # None on a successful move, resetting the streak
+                self.world.block(*attempted)  # turned into it twice → a real wall
+        self._last_fail_tile = attempted  # None on a move or an ignored input, resetting the streak
 
         self.update_overworld_progress(state)
         try:
