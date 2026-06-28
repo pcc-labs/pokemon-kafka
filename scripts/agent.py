@@ -47,6 +47,7 @@ from memory_reader import (
 from parcel_quest import ParcelQuest, QuestSignals
 from pathfinding import astar_path
 from recorder import RunRecorder
+from world_map import WorldMap
 
 
 def build_recorder(record, runs_dir, run_id, grabber, frame_interval=10, live=None):
@@ -529,6 +530,9 @@ class PokemonAgent:
         # Oak's Parcel quest: drives the Viridian Mart pickup → Oak delivery → Old-Man gate, the
         # scripted progression that pure waypoint navigation cannot pass on its own.
         self.parcel_quest = ParcelQuest()
+        # Accumulated occupancy map per location: every turn's collision window is stamped in, so
+        # navigation can pathfind over the whole explored map instead of the 9x10 screen window.
+        self.world = WorldMap()
         self._last_logged_map: int | None = None
         # True while the quest is actively steering; suppresses the backtrack/stall restores that
         # were tuned around the old broken collision grid and now thrash the agent backward.
@@ -796,154 +800,22 @@ class PokemonAgent:
         return direction or "a"
 
     def _collision_pilot(self, state: OverworldState, goal: str) -> str:
-        """Navigate ``goal`` ("north"/"south") using on-screen A* over the live collision grid.
-
-        Each turn, find the cell *furthest toward the goal* that A* can reach on the visible 9x10
-        grid and step toward it. Because A* routes around obstacles, this performs the
-        down-and-around detours a ledge/tree line needs — which the old greedy sweep could not, so
-        it oscillated forever against the barrier. Only when the whole screen is walled off toward
-        the goal do we back off (step away to scroll a fresh screen) and drift laterally to find a
-        way around at a larger scale. Bypasses the thrash-prone waypoint+backtrack navigator."""
-        try:
-            self.collision_map.update(self.pyboy)
-        except Exception:
-            pass
-        grid = self.collision_map.grid
-        back = "down" if goal == "north" else "up"
-
-        # Track *forward* progress (the goal axis), not mere movement: at a ledge line the agent
-        # oscillates left/right (position keeps changing) while making zero northward headway, so a
-        # "did we move?" check never fires. Watch the best goal-axis coordinate instead, reset per
-        # map. ``cur`` improves when y decreases (north) / increases (south).
-        if getattr(self, "_pilot_map", None) != state.map_id:
-            self._pilot_map = state.map_id
-            self._pilot_best = 10**9 if goal == "north" else -1
-            self._pilot_noprog = 0
-            self._pilot_escape = 0
-        cur = state.y
-        improved = cur < self._pilot_best if goal == "north" else cur > self._pilot_best
-        if improved:
-            self._pilot_best = cur
-            self._pilot_noprog = 0
-        else:
-            self._pilot_noprog += 1
-
-        # No forward headway for a long stretch → the A* keeps oscillating against a ledge gap it
-        # can't cross at this column. Commit to a lateral drift to a *different column* (A*
-        # suppressed for the burst) so we re-approach the ledge line where there's actually a gap —
-        # the way the manual probe did. Drift is purely sideways: it never backs out of the map, so
-        # it can't undo progress or exit south. The threshold is high so normal around-a-ledge
-        # detours (which also stall the goal axis briefly) don't trip it.
-        fwd = "up" if goal == "north" else "down"
-        fwd_open = grid[3][4] if goal == "north" else grid[5][4]
-        escape = self._pilot_escape
-        if self._pilot_noprog >= 25 and escape == 0:
-            escape = 8
-            self._pilot_escape_side = "right" if grid[4][5] >= grid[4][3] else "left"
-            self._pilot_noprog = 0  # give the new column a fresh budget
-        if escape > 0:
-            self._pilot_escape = escape - 1
-            side = self._pilot_escape_side
-            side_open = grid[4][5] if side == "right" else grid[4][3]
-            if fwd_open:
-                # The gap opened as we drifted across it (the ledge line breaks at one column) —
-                # take it immediately and end the escape, instead of sliding straight past it.
-                self._pilot_escape = 0
-                d = fwd
-            elif side_open:
-                d = side  # keep sliding sideways to scan for the gap column
-            else:
-                # hit the side wall, still walled forward: flip the drift direction
-                self._pilot_escape_side = "left" if side == "right" else "right"
-                other_open = grid[4][3] if side == "right" else grid[4][5]
-                d = self._pilot_escape_side if other_open else back
-            self._pilot_last_action = d
-            return d
-
-        # Greedy first: if the tile straight ahead is open, just take it. Chasing the
-        # *furthest*-north reachable cell instead made the agent overshoot the gap — at x=9 it
-        # picked a higher cell reachable only by detouring left, stepping over the x=9 opening and
-        # oscillating x=8<->10 forever. Take the gap the moment it's straight ahead.
-        if fwd_open:
-            self._pilot_noprog = 0
-            self._pilot_last_action = fwd
-            return fwd
-
-        # Otherwise step toward the cell furthest toward the goal that A* can reach on the visible
-        # grid (A* routes around obstacles, giving the down-and-around detours a ledge line needs).
-        rows = range(0, 4) if goal == "north" else range(8, 4, -1)
-        for r in rows:
-            for c in sorted(range(10), key=lambda col: abs(col - 4)):  # prefer straight ahead
-                if not grid[r][c]:
-                    continue
-                res = astar_path(grid, (4, 4), (r, c))
-                if res["status"] in ("success", "partial") and res["directions"]:
-                    self._pilot_last_action = res["directions"][0]
-                    return res["directions"][0]
-
-        # Whole screen walled toward the goal: back off so a fresh stretch scrolls into view.
-        self._pilot_last_action = back
-        return back
+        """Cross the current map in cardinal direction ``goal`` ("north"/"south") toward the next
+        map, by pathfinding over the accumulated WorldMap toward its far edge. The planner routes
+        around every wall the agent has already seen and heads into unexplored space otherwise, so
+        it threads ledge gaps and fences that the old on-screen-only heuristics could not."""
+        ty = 0 if goal == "north" else min(255, state.y + 64)
+        d = self.world.plan_step(state.map_id, state.x, state.y, state.x, ty)
+        return d or ("up" if goal == "north" else "down")
 
     def _pilot_to(self, state: OverworldState, tx: int, ty: int) -> str | None:
-        """Navigate toward tile ``(tx, ty)`` with the same robustness as the cardinal pilot:
-        greedy step along the dominant axis, A* around obstacles on the visible grid, and a
-        lateral-drift escape when progress stalls. Returns ``None`` once standing on the tile (the
-        caller then presses the target's ``at_target`` action). Used for doors / NPCs, where the
-        old greedy navigator jammed (e.g. the Mart approach at x=29 stuck at y=28)."""
-        try:
-            self.collision_map.update(self.pyboy)
-        except Exception:
-            pass
+        """Navigate toward tile ``(tx, ty)`` by pathfinding over the accumulated WorldMap. Returns
+        ``None`` once standing on the tile (the caller then presses the target's ``at_target``
+        action). Whole-map A* routes around remembered walls — e.g. it follows the fence north of
+        the Mart all the way to the gap on the centre corridor instead of stalling beneath it."""
         if state.x == tx and state.y == ty:
-            self._pt_escape = 0
             return None
-        grid = self.collision_map.grid
-        dx, dy = tx - state.x, ty - state.y
-        opens = {"up": grid[3][4], "down": grid[5][4], "left": grid[4][3], "right": grid[4][5]}
-        h = "right" if dx > 0 else ("left" if dx < 0 else None)
-        v = "down" if dy > 0 else ("up" if dy < 0 else None)
-        primary = h if abs(dx) >= abs(dy) else v
-        secondary = v if abs(dx) >= abs(dy) else h
-
-        goal = (state.map_id, tx, ty)
-        if getattr(self, "_pt_goal", None) != goal:
-            self._pt_goal = goal
-            self._pt_follow = None
-
-        # The toward-target step on the harder axis opening means the wall broke — take it and end
-        # any wall-follow. (Only the *primary* axis ends the follow; see below for why.)
-        if primary and opens[primary]:
-            self._pt_follow = None
-            return primary
-
-        follow = getattr(self, "_pt_follow", None)
-        # Not currently following a wall: a normal lateral step toward the target is fine.
-        if not follow and secondary and opens[secondary]:
-            return secondary
-
-        # Blocked toward the target on the hard axis → wall-follow: slide along the wall in one
-        # *persistent* perpendicular direction (a fixed-length drift can't clear a long fence like
-        # the one north of the Mart). Crucially, while following we do NOT take the secondary
-        # toward-target step — that pull back to the target's column is exactly what made the agent
-        # oscillate one tile and never travel along the fence to its gap.
-        perp = ["left", "right"] if primary in ("up", "down") else ["up", "down"]
-        if follow not in perp or not opens[follow]:
-            follow = next((d for d in perp if opens[d]), None)  # flip when the side walls
-        if follow:
-            self._pt_follow = follow
-            return follow
-
-        # Boxed in on the wall axis too → A* around on the visible grid, else anything open.
-        tr = max(0, min(8, 4 + dy))
-        tc = max(0, min(9, 4 + dx))
-        res = astar_path(grid, (4, 4), (tr, tc))
-        if res["status"] in ("success", "partial") and res["directions"]:
-            return res["directions"][0]
-        for d in ("up", "right", "left", "down"):  # last resort: anywhere open
-            if opens[d]:
-                return d
-        return "up"
+        return self.world.plan_step(state.map_id, state.x, state.y, tx, ty)
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
@@ -1132,6 +1004,8 @@ class PokemonAgent:
             self.collision_map.update(self.pyboy)
         except Exception:
             pass  # game_wrapper may not be available in all contexts
+        # Remember what we can see, so navigation builds a real map of each location over time.
+        self.world.observe(state.map_id, state.x, state.y, self.collision_map.grid)
 
         # --- FLE backtracking ---
         # Skip all backtracking while in Oak's Lab (map 40).
