@@ -15,12 +15,12 @@
     "name": "Route 1",
     "_comment": "Northbound to Viridian. NOT a loop — the old grind loop never exited north, which stranded the agent before the Oak's Parcel gate (the parcel quest needs to reach Viridian).",
     "waypoints": [
-      {"x": 10, "y": 33, "note": "Enter from Pallet Town (south edge)"},
-      {"x": 5, "y": 28, "note": "Into the west grass column"},
-      {"x": 5, "y": 20, "note": "North up the west path"},
-      {"x": 9, "y": 12, "note": "Weave around the mid-route ledges"},
-      {"x": 9, "y": 4, "note": "Approach the north exit"},
-      {"x": 9, "y": 0, "note": "Exit north into Viridian City"}
+      {"x": 10, "y": 28, "note": "North from the Pallet entry"},
+      {"x": 17, "y": 27, "note": "Weave east around the first ledge"},
+      {"x": 10, "y": 18, "note": "Back to center, climbing"},
+      {"x": 15, "y": 13, "note": "Up the mid-route gap"},
+      {"x": 16, "y": 4, "note": "North column toward the exit"},
+      {"x": 16, "y": 0, "note": "Exit north into Viridian City"}
     ]
   },
 
