@@ -375,7 +375,13 @@ class CollisionMap:
 
     def update(self, pyboy) -> None:
         """Read collision data and downsample 18x20 to 9x10."""
-        raw = pyboy.game_wrapper().game_area_collision()
+        # ``game_wrapper`` is a property in modern PyBoy and a method in older versions;
+        # calling the property raises TypeError (silently swallowed by the agent), which left the
+        # grid all-walls and disabled A* pathfinding. Support both shapes.
+        gw = pyboy.game_wrapper
+        if callable(gw):
+            gw = gw()
+        raw = gw.game_area_collision()
         self.sprites = []
         for r in range(9):
             for c in range(10):
