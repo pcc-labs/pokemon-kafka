@@ -38,7 +38,8 @@ DONE = "DONE"  # quest satisfied and already north of Viridian → hand back to 
 
 # Tile targets, from the pret/pokered map object data (player x/y reads 1:1 onto these).
 MART_DOOR = (29, 19)  # Viridian City: the Mart entrance warp tile
-MART_COUNTER = (1, 5)  # Viridian Mart: in front of the clerk (clerk object at 0,5 facing right)
+MART_COUNTER = (2, 5)  # Viridian Mart: stand here and face left to talk over the counter (the
+#                        counter tile (1,5) is a wall; the clerk is behind it at (0,5))
 OAKS_LAB_DOOR = (12, 11)  # Pallet Town: the Oak's Lab entrance warp tile
 OAK_TILE = (5, 3)  # Oak's Lab: in front of Prof. Oak (Oak object at 5,2 facing down)
 VIRIDIAN_NORTH = (18, 0)  # Viridian City: the north exit to Route 2, past the Old Man at (17,5)
@@ -103,7 +104,9 @@ class ParcelQuest:
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(MART_DOOR, "Viridian Mart door")
             if sig.map_id == VIRIDIAN_MART:
-                return _to(MART_COUNTER, "Mart clerk (parcel)", at_target="a")
+                # Face left into the counter to talk to the clerk; text-mashing handles the
+                # parcel dialogue that follows.
+                return _to(MART_COUNTER, "Mart clerk (parcel)", at_target="left")
             return _pilot("north")
 
         if phase == TO_OAK:
@@ -115,7 +118,7 @@ class ParcelQuest:
             if sig.map_id == PALLET_TOWN:
                 return _to(OAKS_LAB_DOOR, "Oak's Lab door")
             if sig.map_id == OAKS_LAB:
-                return _to(OAK_TILE, "Prof. Oak (deliver)", at_target="a")
+                return _to(OAK_TILE, "Prof. Oak (deliver)", at_target="up")  # face Oak, then A
             return _pilot("south")
 
         if phase == GO_NORTH:

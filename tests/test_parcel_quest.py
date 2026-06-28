@@ -58,7 +58,7 @@ def test_to_mart_pilots_north_then_targets_mart():
     assert "Mart door" in q.next_target(sig(VIRIDIAN_CITY))["name"]
     clerk = q.next_target(sig(VIRIDIAN_MART))
     assert "clerk" in clerk["name"].lower()
-    assert clerk["at_target"] == "a"  # press A at the clerk
+    assert clerk["at_target"] == "left"  # face the clerk over the counter
 
 
 def test_to_oak_pilots_south_then_to_oak():
@@ -68,7 +68,7 @@ def test_to_oak_pilots_south_then_to_oak():
     assert "door" in q.next_target(sig(PALLET_TOWN, parcel=True))["name"].lower()
     oak = q.next_target(sig(OAKS_LAB, parcel=True))
     assert "Oak" in oak["name"]
-    assert oak["at_target"] == "a"  # press A to hand over the parcel
+    assert oak["at_target"] == "up"  # face Oak to hand over the parcel
 
 
 def test_go_north_pilots_outdoors_and_targets_viridian_exit():

@@ -788,7 +788,12 @@ class PokemonAgent:
             self.navigator.quest_target = None
             tx, ty = quest["pilot_to"]
             d = self._pilot_to(state, tx, ty)
-            return d if d is not None else quest.get("at_target", "a")
+            if d is not None:
+                return d
+            # Arrived: alternate the facing press (at_target) and A, so we both turn to face the
+            # NPC/door and then interact — talking to a clerk/Oak needs facing them first.
+            self._at_target_toggle = not getattr(self, "_at_target_toggle", False)
+            return quest.get("at_target", "a") if self._at_target_toggle else "a"
 
         self.navigator.quest_target = quest
         direction = self.navigator.next_direction(
