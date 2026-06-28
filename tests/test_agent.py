@@ -165,7 +165,8 @@ class TestGameController:
 
     def test_move(self):
         self.ctrl.move("up")
-        self.pyboy.button.assert_called_once_with("up", delay=20)
+        # hold_frames=8 commits exactly one tile (20 walked two, breaking odd-parity gaps)
+        self.pyboy.button.assert_called_once_with("up", delay=8)
         # release_frames=8 + wait(30) = 38 ticks
         assert self.pyboy.tick.call_count == 38
 
