@@ -799,9 +799,30 @@ class PokemonAgent:
         except Exception:
             pass
         grid = self.collision_map.grid
+        back = "down" if goal == "north" else "up"
 
-        # Rows ahead of the player (center is row 4), nearest the goal extreme first, so we lock
-        # onto the furthest reachable forward progress.
+        # Did last turn's move actually move us? Ledge tiles read as walkable in the collision grid
+        # but only permit a downhill hop, so A* happily routes into one and the move silently
+        # fails. Detect the no-op and escape (back off + drift) instead of pressing forever.
+        pos = (state.map_id, state.x, state.y)
+        moved = pos != getattr(self, "_pilot_last_pos", None)
+        self._pilot_last_pos = pos
+        blocked = 0 if moved else getattr(self, "_pilot_blocked", 0) + 1
+        self._pilot_blocked = blocked
+
+        if blocked >= 2:
+            # The grid is lying about a tile (ledge/NPC). Break out: back off, drifting sideways.
+            if blocked % 4 == 0 and grid[4][5]:
+                d = "right"
+            elif blocked % 4 == 2 and grid[4][3]:
+                d = "left"
+            else:
+                d = back
+            self._pilot_last_action = d
+            return d
+
+        # Step toward the cell furthest toward the goal that A* can reach on the visible grid
+        # (A* routes around obstacles, giving the down-and-around detours a ledge line needs).
         rows = range(0, 4) if goal == "north" else range(8, 4, -1)
         for r in rows:
             for c in sorted(range(10), key=lambda col: abs(col - 4)):  # prefer straight ahead
@@ -809,19 +830,12 @@ class PokemonAgent:
                     continue
                 res = astar_path(grid, (4, 4), (r, c))
                 if res["status"] in ("success", "partial") and res["directions"]:
-                    self._pilot_noprog = 0
+                    self._pilot_last_action = res["directions"][0]
                     return res["directions"][0]
 
-        # Barrier fully blocks the screen toward the goal: back off (and periodically drift
-        # sideways) so a different stretch of the route scrolls into view.
-        self._pilot_noprog = getattr(self, "_pilot_noprog", 0) + 1
-        if self._pilot_noprog % 3 == 0:
-            side = "right" if (self._pilot_noprog // 3) % 2 == 0 else "left"
-            if side == "right" and grid[4][5]:
-                return "right"
-            if side == "left" and grid[4][3]:
-                return "left"
-        return "down" if goal == "north" else "up"
+        # Whole screen walled toward the goal: back off so a fresh stretch scrolls into view.
+        self._pilot_last_action = back
+        return back
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
