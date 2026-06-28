@@ -140,7 +140,7 @@ class ParcelQuest:
                 return _to(OAK_TILE, "Prof. Oak (deliver)", at_target="up")  # face Oak, then A
             return _pilot("south")
 
-        return None  # DONE (at Pewter) — normal waypoints take over for the gym
+        return None  # pragma: no cover  # DONE/Pewter is already handled by the QUEST_MAPS guard
 
     def describe(self, sig: QuestSignals) -> str:
         """One-line status for telemetry/logging."""

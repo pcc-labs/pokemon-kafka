@@ -126,3 +126,8 @@ def test_describe_is_a_oneliner():
     q = ParcelQuest()
     s = q.describe(sig(VIRIDIAN_CITY, parcel=True))
     assert "phase=" in s and "parcel=True" in s and "\n" not in s
+
+
+def test_to_oak_on_an_unlisted_corridor_map_pilots_south():
+    q = ParcelQuest()
+    assert q.next_target(sig(ROUTE_2, parcel=True))["pilot"] == "south"

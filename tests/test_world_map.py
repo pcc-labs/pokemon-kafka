@@ -128,3 +128,26 @@ def test_accumulated_observations_inform_planning():
     wm.observe(0, 5, 5, grid)
     d = wm.plan_step(0, 5, 5, 5, 0)
     assert d != "up"  # planner respects the remembered wall
+
+
+def test_plan_step_fully_walled_falls_back_to_default():
+    wm = WorldMap()
+    for d in ((5, 4), (4, 5), (6, 5), (5, 6)):  # block all four neighbours
+        wm.block(0, *d)
+    assert wm.plan_step(0, 5, 5, 5, 0) == "up"  # greedy fallback finds nothing -> default
+
+
+def test_dir_same_point_is_none():
+    assert WorldMap._dir(5, 5, (5, 5)) is None
+
+
+def test_cross_step_fully_boxed_nudges_forward():
+    wm = WorldMap()
+    for d in ((5, 4), (4, 5), (6, 5), (5, 6)):  # boxed in: no cell can advance toward the edge
+        wm.block(0, *d)
+    assert wm.cross_step(0, 5, 5, "north") == "up"  # nothing better known -> nudge forward
+
+
+def test_greedy_picks_the_neighbour_closest_to_target():
+    wm = WorldMap()
+    assert wm._greedy(0, {}, 5, 5, 5, 0) == "up"  # open map: step toward the target (north)

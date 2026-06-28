@@ -705,3 +705,17 @@ class TestQuestHelpers:
         reader = MemoryReader(mock_pyboy)
         fake_memory[MemoryReader.ADDR_PLAYER_FACING] = 7
         assert reader.read_player_facing_name() == "?7"
+
+
+class TestReadParty:
+    def test_read_party_returns_per_slot_dicts(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[MemoryReader.ADDR_PARTY_COUNT] = 1
+        fake_memory[MemoryReader.ADDR_PARTY_SPECIES_LIST] = 0xB0  # Charmander
+        base = MemoryReader.PARTY_BASE
+        fake_memory[base + 33] = 8  # level
+        fake_memory[base + MemoryReader.PARTY_HP_OFFSET + 1] = 20  # current HP low byte
+        fake_memory[base + 35] = 26  # max HP low byte
+        party = reader.read_party()
+        assert len(party) == 1
+        assert party[0]["level"] == 8 and party[0]["hp"] == 20 and party[0]["max_hp"] == 26
