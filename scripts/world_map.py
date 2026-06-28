@@ -18,6 +18,7 @@ already exposes, remembered.
 from __future__ import annotations
 
 import heapq
+from collections import deque
 
 # Player is always at the centre of the 9x10 (rows x cols) collision window.
 _PLAYER_ROW = 4
@@ -106,6 +107,43 @@ class WorldMap:
         if step is None:
             return self._greedy(map_id, m, px, py, tx, ty)
         return self._dir(px, py, step)
+
+    def cross_step(self, map_id: int, px: int, py: int, goal: str, max_nodes: int = 6000) -> str:
+        """Step that drives the agent off the map in cardinal ``goal`` ("north"/"south").
+
+        Go toward the edge whenever the tile ahead is enterable; when it's a known wall (a learned
+        map-edge non-exit), BFS to the nearest column where forward is *still* open and head there —
+        sweeping the boundary to find the real exit, instead of giving up and drifting back the way
+        a plain "go to (x, 0)" plan does once the columns straight ahead are blocked."""
+        m = self.cells.get(map_id, {})
+        sign = -1 if goal == "north" else 1
+        fwd = "up" if goal == "north" else "down"
+        if self._passable(map_id, m, px, py + sign):
+            return fwd
+        came: dict[tuple[int, int], tuple[int, int] | None] = {(px, py): None}
+        q = deque([(px, py)])
+        nodes = 0
+        target = None
+        while q and nodes < max_nodes:
+            cur = q.popleft()
+            nodes += 1
+            cx, cy = cur
+            fy = cy + sign
+            # A useful spot: its forward neighbour is enterable AND lies past our current row
+            # toward the edge (so stepping there gains ground we don't already hold).
+            if cur != (px, py) and (fy - py) * sign > 0 and self._passable(map_id, m, cx, fy):
+                target = cur
+                break
+            for _name, dx, dy in _DIRS:
+                nb = (cx + dx, cy + dy)
+                if nb in came or not self._passable(map_id, m, nb[0], nb[1]):
+                    continue
+                came[nb] = cur
+                q.append(nb)
+        if target is None:
+            return fwd  # nothing better known; nudge forward (it'll fail+block, then we re-plan)
+        step = self._first_step(came, (px, py), target)
+        return (step and self._dir(px, py, step)) or fwd
 
     @staticmethod
     def _first_step(came, start, end):

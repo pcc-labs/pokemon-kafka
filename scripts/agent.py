@@ -801,12 +801,10 @@ class PokemonAgent:
 
     def _collision_pilot(self, state: OverworldState, goal: str) -> str:
         """Cross the current map in cardinal direction ``goal`` ("north"/"south") toward the next
-        map, by pathfinding over the accumulated WorldMap toward its far edge. The planner routes
-        around every wall the agent has already seen and heads into unexplored space otherwise, so
-        it threads ledge gaps and fences that the old on-screen-only heuristics could not."""
-        ty = 0 if goal == "north" else min(255, state.y + 64)
-        d = self.world.plan_step(state.map_id, state.x, state.y, state.x, ty)
-        return d or ("up" if goal == "north" else "down")
+        map, using the WorldMap's boundary-sweeping ``cross_step`` — it advances toward the edge
+        when it can and otherwise sweeps along the boundary to the real exit column, learning the
+        map-edge non-exits as it goes (via the failed-move hard-blocks)."""
+        return self.world.cross_step(state.map_id, state.x, state.y, goal)
 
     def _pilot_to(self, state: OverworldState, tx: int, ty: int) -> str | None:
         """Navigate toward tile ``(tx, ty)`` by pathfinding over the accumulated WorldMap. Returns
@@ -1000,11 +998,14 @@ class PokemonAgent:
         """Move in the overworld."""
         state = self.memory.read_overworld_state()
 
-        # If last turn's move didn't change our position, the tile we tried to enter is impassable
-        # even though the collision grid called it walkable (a ledge, a map-edge non-exit, an NPC).
-        # Record it so the WorldMap planner reroutes instead of pressing into it forever.
+        # If last turn's move didn't change our position, the tile we tried to enter may be
+        # impassable even though the collision grid called it walkable (a ledge, a map-edge
+        # non-exit, an NPC). But the FIRST press in a new direction only turns the character without
+        # moving, so a single failure isn't proof — only hard-block a tile after two consecutive
+        # failed steps into the *same* tile, so a mere turn never poisons the map.
         prev = self.last_overworld_state
         last_act = self.last_overworld_action
+        attempted = None
         if (
             prev is not None
             and last_act in ("up", "down", "left", "right")
@@ -1014,7 +1015,10 @@ class PokemonAgent:
         ):
             bdx = {"left": -1, "right": 1}.get(last_act, 0)
             bdy = {"up": -1, "down": 1}.get(last_act, 0)
-            self.world.block(state.map_id, state.x + bdx, state.y + bdy)
+            attempted = (state.map_id, state.x + bdx, state.y + bdy)
+            if attempted == getattr(self, "_last_fail_tile", None):
+                self.world.block(*attempted)  # failed twice in a row → a real wall
+        self._last_fail_tile = attempted  # None on a successful move, resetting the streak
 
         self.update_overworld_progress(state)
         try:

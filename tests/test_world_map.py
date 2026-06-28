@@ -106,6 +106,20 @@ def test_observe_does_not_unblock_a_failed_tile():
     assert wm.plan_step(0, 5, 5, 5, 0) != "up"
 
 
+def test_cross_step_advances_toward_edge_when_open():
+    wm = WorldMap()
+    assert wm.cross_step(0, 5, 5, "north") == "up"
+    assert wm.cross_step(0, 5, 5, "south") == "down"
+
+
+def test_cross_step_sweeps_to_an_open_column_at_a_wall():
+    wm = WorldMap()
+    wm.block(0, 5, 4)  # north of the player's column is a (learned) wall
+    wm.block(0, 4, 4)  # and the column to the left
+    # north of x=6 (i.e. (6,4)) is unknown -> open, so sweep right toward it
+    assert wm.cross_step(0, 5, 5, "north") == "right"
+
+
 def test_accumulated_observations_inform_planning():
     wm = WorldMap()
     # Observe a window that reveals a wall directly north of the player.
