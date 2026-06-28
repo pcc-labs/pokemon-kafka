@@ -801,35 +801,49 @@ class PokemonAgent:
         grid = self.collision_map.grid
         back = "down" if goal == "north" else "up"
 
-        # Did last turn's move actually move us? Ledge tiles read as walkable in the collision grid
-        # but only permit a downhill hop, so A* happily routes into one and the move silently
-        # fails. Detect the no-op and escape (back off + drift) instead of pressing forever.
-        pos = (state.map_id, state.x, state.y)
-        moved = pos != getattr(self, "_pilot_last_pos", None)
-        self._pilot_last_pos = pos
-        blocked = 0 if moved else getattr(self, "_pilot_blocked", 0) + 1
-        self._pilot_blocked = blocked
+        # Track *forward* progress (the goal axis), not mere movement: at a ledge line the agent
+        # oscillates left/right (position keeps changing) while making zero northward headway, so a
+        # "did we move?" check never fires. Watch the best goal-axis coordinate instead, reset per
+        # map. ``cur`` improves when y decreases (north) / increases (south).
+        if getattr(self, "_pilot_map", None) != state.map_id:
+            self._pilot_map = state.map_id
+            self._pilot_best = 10**9 if goal == "north" else -1
+            self._pilot_noprog = 0
+            self._pilot_escape = 0
+        cur = state.y
+        improved = cur < self._pilot_best if goal == "north" else cur > self._pilot_best
+        if improved:
+            self._pilot_best = cur
+            self._pilot_noprog = 0
+        else:
+            self._pilot_noprog += 1
 
-        # When A*'s move silently fails (ledge/NPC the grid lies about), a one-tile back-off is
-        # useless — A* just re-routes straight back into the same tile. So commit to a *sustained*
-        # escape: several steps away from the goal, then a lateral drift to a different column, with
-        # A* suppressed for the whole burst so it actually breaks out of the local trap.
-        escape = getattr(self, "_pilot_escape", 0)
-        if blocked >= 2 and escape == 0:
-            escape = 10  # length of the committed escape burst
-            # Drift toward whichever side is more open (away from the ledge A* kept hitting).
+        # No forward headway for a long stretch → the A* keeps oscillating against a ledge gap it
+        # can't cross at this column. Commit to a lateral drift to a *different column* (A*
+        # suppressed for the burst) so we re-approach the ledge line where there's actually a gap —
+        # the way the manual probe did. Drift is purely sideways: it never backs out of the map, so
+        # it can't undo progress or exit south. The threshold is high so normal around-a-ledge
+        # detours (which also stall the goal axis briefly) don't trip it.
+        fwd = "up" if goal == "north" else "down"
+        fwd_open = grid[3][4] if goal == "north" else grid[5][4]
+        escape = self._pilot_escape
+        if self._pilot_noprog >= 25 and escape == 0:
+            escape = 8
             self._pilot_escape_side = "right" if grid[4][5] >= grid[4][3] else "left"
+            self._pilot_noprog = 0  # give the new column a fresh budget
         if escape > 0:
             self._pilot_escape = escape - 1
-            step = 10 - escape  # 0,1,2,... through the burst
-            side = getattr(self, "_pilot_escape_side", "right")
+            side = self._pilot_escape_side
             side_open = grid[4][5] if side == "right" else grid[4][3]
-            if step < 3:
-                d = back  # peel away from the barrier first
-            elif side_open:
-                d = side  # then drift along the open corridor to a new column
+            if side_open:
+                d = side  # slide sideways to a new column
+            elif fwd_open:
+                d = fwd  # side walled but forward opened — take it
             else:
-                d = back
+                # hit the side wall and still walled forward: flip the drift direction
+                self._pilot_escape_side = "left" if side == "right" else "right"
+                other_open = grid[4][3] if side == "right" else grid[4][5]
+                d = self._pilot_escape_side if other_open else back
             self._pilot_last_action = d
             return d
 
