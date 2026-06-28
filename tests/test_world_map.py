@@ -151,3 +151,91 @@ def test_cross_step_fully_boxed_nudges_forward():
 def test_greedy_picks_the_neighbour_closest_to_target():
     wm = WorldMap()
     assert wm._greedy(0, {}, 5, 5, 5, 0) == "up"  # open map: step toward the target (north)
+
+
+# --- encounter-aware cost (grass avoidance) -----------------------------------
+
+
+def test_mark_encounter_records_tile_per_map():
+    wm = WorldMap()
+    wm.mark_encounter(0, 3, 3)
+    assert wm.is_encounter_tile(0, 3, 3)
+    assert not wm.is_encounter_tile(1, 3, 3)  # per-map, like walkability
+    assert not wm.is_encounter_tile(0, 9, 9)  # unmarked tile
+
+
+def test_zero_encounter_cost_ignores_grass():
+    wm = WorldMap()
+    wm.mark_encounter(0, 5, 4)  # grass directly north of the player at (5,5)
+    # default cost 0 -> behaves exactly like before: shortest path straight up.
+    assert wm.plan_step(0, 5, 5, 5, 3) == "up"
+    assert wm.plan_step(0, 5, 5, 5, 3, encounter_cost=0) == "up"
+
+
+def test_encounter_cost_detours_around_known_grass():
+    wm = WorldMap()
+    wm.mark_encounter(0, 5, 4)  # grass on the straight path north to (5,3)
+    # a 2-step straight path costs 2 + penalty; a 4-step detour costs 4. With a big
+    # penalty the planner prefers the longer encounter-free route.
+    d = wm.plan_step(0, 5, 5, 5, 3, encounter_cost=8)
+    assert d != "up"
+    assert d in ("left", "right")
+
+
+def test_encounter_tile_is_penalised_not_impassable():
+    wm = WorldMap()
+    for d in ((4, 5), (6, 5), (5, 6)):  # box in left, right, down
+        wm.block(0, *d)
+    wm.mark_encounter(0, 5, 4)  # the only open neighbour is grass
+    # grass costs more than open ground but is still passable (unlike a wall), so when it is
+    # the only way out the planner still steps onto it rather than freezing.
+    assert wm.plan_step(0, 5, 5, 5, 0, encounter_cost=8) == "up"
+
+
+def test_prefers_fewer_grass_tiles_among_equal_length_paths():
+    wm = WorldMap()
+    # Two 2-step paths from (5,5) to (6,4): via (5,4) or via (6,5). Make the (5,4)
+    # route cross grass; the planner should take the other equal-length route.
+    wm.mark_encounter(0, 5, 4)
+    d = wm.plan_step(0, 5, 5, 6, 4, encounter_cost=8)
+    assert d == "right"  # step to (6,5), avoiding the grass at (5,4)
+
+
+# --- persistence (carry observations across runs) -----------------------------
+
+
+def test_worldmap_roundtrips_through_dict():
+    wm = WorldMap()
+    grid = _full(1)
+    grid[3][3] = 0  # a wall NW of the player
+    wm.observe(5, 10, 10, grid)
+    wm.block(5, 3, 4)
+    wm.mark_encounter(7, 2, 2)
+
+    restored = WorldMap.from_dict(wm.to_dict())
+
+    assert restored.walkable(5, 10, 10) == 1
+    assert restored.walkable(5, 9, 9) == 0  # observed wall survives
+    assert restored.walkable(5, 3, 4) == 0  # hard block survives
+    assert restored.is_encounter_tile(7, 2, 2)
+    # A planner that learned a wall plans identically after a round-trip.
+    assert restored.plan_step(5, 10, 10, 10, 5) == wm.plan_step(5, 10, 10, 10, 5)
+
+
+def test_worldmap_save_load_file(tmp_path):
+    wm = WorldMap()
+    wm.observe(2, 8, 8, _full(1))
+    wm.block(2, 8, 7)
+    wm.mark_encounter(2, 9, 9)
+    path = tmp_path / "world.json"
+    wm.save(path)
+
+    loaded = WorldMap.load(path)
+    assert loaded.walkable(2, 8, 7) == 0
+    assert loaded.is_encounter_tile(2, 9, 9)
+    assert loaded.walkable(2, 8, 8) == 1
+
+
+def test_worldmap_load_missing_file_is_empty():
+    wm = WorldMap.load("/no/such/world-map-file.json")
+    assert wm.cells == {} and wm.blocked == {} and wm.encounters == {}

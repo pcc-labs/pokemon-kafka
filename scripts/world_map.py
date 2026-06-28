@@ -18,7 +18,9 @@ already exposes, remembered.
 from __future__ import annotations
 
 import heapq
+import json
 from collections import deque
+from pathlib import Path
 
 # Player is always at the centre of the 9x10 (rows x cols) collision window.
 _PLAYER_ROW = 4
@@ -39,6 +41,10 @@ class WorldMap:
         # The collision grid reports these as walkable, so this hard-block — which ``observe`` must
         # never overwrite — is the only record that they can't actually be entered.
         self.blocked: dict[int, set[tuple[int, int]]] = {}
+        # Tiles where a wild encounter has fired (tall grass). Walkable, but the planner can be
+        # asked to pay an extra ``encounter_cost`` to enter them so equal-ish paths prefer fewer
+        # battles — learned from real encounters, like walls are learned from failed steps.
+        self.encounters: dict[int, set[tuple[int, int]]] = {}
 
     def observe(self, map_id: int, px: int, py: int, grid: list[list[int]]) -> None:
         """Stamp a 9x10 collision ``grid`` (player at the centre) into the map at ``(px, py)``."""
@@ -55,6 +61,53 @@ class WorldMap:
         """Record that ``(x, y)`` can't be entered (a move into it just failed)."""
         self.blocked.setdefault(map_id, set()).add((x, y))
 
+    def mark_encounter(self, map_id: int, x: int, y: int) -> None:
+        """Record that stepping onto ``(x, y)`` triggered a wild encounter (tall grass)."""
+        self.encounters.setdefault(map_id, set()).add((x, y))
+
+    def is_encounter_tile(self, map_id: int, x: int, y: int) -> bool:
+        """Has a wild encounter fired on ``(x, y)`` before?"""
+        return (x, y) in self.encounters.get(map_id, ())
+
+    # --- persistence: carry the accumulated map across runs --------------------
+
+    def to_dict(self) -> dict:
+        """JSON-able snapshot of the learned map (occupancy + hard-blocks + encounter tiles)."""
+        return {
+            "cells": {str(m): [[x, y, v] for (x, y), v in cells.items()] for m, cells in self.cells.items()},
+            "blocked": {str(m): [[x, y] for (x, y) in s] for m, s in self.blocked.items()},
+            "encounters": {str(m): [[x, y] for (x, y) in s] for m, s in self.encounters.items()},
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> WorldMap:
+        """Rebuild a WorldMap from a :meth:`to_dict` snapshot."""
+        wm = cls()
+        for m, items in (data.get("cells") or {}).items():
+            wm.cells[int(m)] = {(int(x), int(y)): int(v) for x, y, v in items}
+        for m, items in (data.get("blocked") or {}).items():
+            wm.blocked[int(m)] = {(int(x), int(y)) for x, y in items}
+        for m, items in (data.get("encounters") or {}).items():
+            wm.encounters[int(m)] = {(int(x), int(y)) for x, y in items}
+        return wm
+
+    def save(self, path) -> None:
+        """Persist the learned map to ``path`` (creating parent dirs)."""
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(json.dumps(self.to_dict()), encoding="utf-8")
+
+    @classmethod
+    def load(cls, path) -> WorldMap:
+        """Load a learned map from ``path``; an empty map if it is missing or unreadable."""
+        p = Path(path)
+        if not p.is_file():
+            return cls()
+        try:
+            return cls.from_dict(json.loads(p.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            return cls()
+
     def walkable(self, map_id: int, x: int, y: int, default: int = 1) -> int:
         """Known walkability of a tile, or ``default`` (treat unknown as walkable) if unseen."""
         if (x, y) in self.blocked.get(map_id, ()):
@@ -68,13 +121,27 @@ class WorldMap:
             return False  # tried and failed — never enter, even if the grid claims walkable
         return m.get((x, y), 1) != 0  # unknown -> passable (optimistic, draws search to the goal)
 
-    def plan_step(self, map_id: int, px: int, py: int, tx: int, ty: int, max_nodes: int = 8000) -> str | None:
+    def plan_step(
+        self,
+        map_id: int,
+        px: int,
+        py: int,
+        tx: int,
+        ty: int,
+        max_nodes: int = 8000,
+        encounter_cost: int = 0,
+    ) -> str | None:
         """First step ("up"/"down"/"left"/"right") of an A* path from ``(px, py)`` to ``(tx, ty)``
         over the accumulated map. ``None`` only when already on the target. Falls back to a greedy
-        step toward the goal if A* can't reach it within ``max_nodes``."""
+        step toward the goal if A* can't reach it within ``max_nodes``.
+
+        ``encounter_cost`` (>= 0) is added to the g-cost of entering a known encounter tile, so the
+        planner prefers fewer-grass routes among comparable paths without treating grass as a wall.
+        """
         if (px, py) == (tx, ty):
             return None
         m = self.cells.get(map_id, {})
+        grass = self.encounters.get(map_id, ())
         start, goal = (px, py), (tx, ty)
         openh: list[tuple[int, int, tuple[int, int]]] = [(abs(px - tx) + abs(py - ty), 0, start)]
         came: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
@@ -97,7 +164,7 @@ class WorldMap:
                 nb = (cx + dx, cy + dy)
                 if not self._passable(map_id, m, nb[0], nb[1]):
                     continue
-                ng = g + 1
+                ng = g + 1 + (encounter_cost if nb in grass else 0)
                 if nb not in gscore or ng < gscore[nb]:
                     gscore[nb] = ng
                     came[nb] = cur

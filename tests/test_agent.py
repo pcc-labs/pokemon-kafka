@@ -18,6 +18,7 @@ from agent import (
     ROUTES_PATH,
     SCRIPT_DIR,
     TYPE_CHART_PATH,
+    WILD_BATTLE_PATIENCE,
     BacktrackManager,
     BattleStrategy,
     GameController,
@@ -362,6 +363,34 @@ class TestBattleStrategy:
         battle = self._make_battle(player_hp=0, player_max_hp=0, battle_type=1)
         action = self.strategy.choose_action(battle)
         assert action == {"action": "run"}
+
+    def test_choose_action_flees_stalled_wild_battle(self):
+        # Livelock guard: a wild battle the agent can't end (its only PP'd move is a 0-power
+        # status move it scores as "unknown"), HP healthy so the low-HP run never fires. After
+        # WILD_BATTLE_PATIENCE fruitless fight turns with no drop in enemy HP, it flees.
+        s = BattleStrategy(self.chart)
+        battle = self._make_battle(
+            battle_type=1,
+            player_hp=60,
+            player_max_hp=100,
+            enemy_hp=6,
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],  # Scratch dry, Growl (status)
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(battle)["action"] == "fight"
+        assert s.choose_action(battle) == {"action": "run"}
+
+    def test_choose_action_stall_counter_resets_on_progress(self):
+        # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
+        # counter, so the agent keeps fighting well past the patience window.
+        s = BattleStrategy(self.chart)
+        hp = 50
+        for _ in range(WILD_BATTLE_PATIENCE * 2):
+            battle = self._make_battle(battle_type=1, player_hp=80, player_max_hp=100, enemy_hp=hp, enemy_max_hp=50)
+            assert s.choose_action(battle)["action"] == "fight"
+            hp -= 1  # enemy losing HP every turn -> real progress
 
     def test_choose_action_custom_run_threshold(self):
         # With hp_run_threshold=0.4, hp_ratio=0.35 should trigger run
@@ -1572,6 +1601,30 @@ class TestTakeScreenshot:
         assert any("SCREENSHOT" in e for e in ag.events)
 
 
+class TestBattleMenuSelect:
+    """The 2x2 battle-menu navigation that makes RUN/PKMN reachable (and fixes flee)."""
+
+    def _buttons(self, target):
+        from agent import GameController
+
+        pyboy = MagicMock()
+        GameController(pyboy).battle_menu_select(target)
+        return [c.args[0] for c in pyboy.button.call_args_list]
+
+    def test_run_walks_to_bottom_right_after_normalizing(self):
+        # up+left normalizes the cursor to FIGHT, then down+right reaches RUN, then A confirms.
+        assert self._buttons("run") == ["up", "left", "down", "right", "a"]
+
+    def test_fight_is_top_left_after_normalizing(self):
+        assert self._buttons("fight") == ["up", "left", "a"]
+
+    def test_pkmn_is_top_right(self):
+        assert self._buttons("pkmn") == ["up", "left", "right", "a"]
+
+    def test_item_is_bottom_left(self):
+        assert self._buttons("item") == ["up", "left", "down", "a"]
+
+
 class TestRunBattleTurn:
     def _setup_agent_for_battle(self, tmp_path, action_dict):
         ag = _make_agent(tmp_path)
@@ -1601,6 +1654,12 @@ class TestRunBattleTurn:
         ag.run_battle_turn()
         assert ag.turn_count == 1
 
+    def test_run_action_selects_run_corner(self, tmp_path):
+        ag = self._setup_agent_for_battle(tmp_path, {"action": "run"})
+        ag.controller = MagicMock()
+        ag.run_battle_turn()
+        ag.controller.battle_menu_select.assert_called_once_with("run")
+
     def test_item_action(self, tmp_path):
         ag = self._setup_agent_for_battle(tmp_path, {"action": "item", "item": "Potion", "bag_index": 0})
         ag.run_battle_turn()
@@ -1610,17 +1669,16 @@ class TestRunBattleTurn:
         ag = self._setup_agent_for_battle(tmp_path, {"action": "item", "item": "Super Potion", "bag_index": 3})
         ag.controller = MagicMock()
         ag.run_battle_turn()
-        # Should navigate_menu(1) for BAG, then navigate_menu(3) for item
-        menu_calls = [c for c in ag.controller.navigate_menu.call_args_list]
-        assert menu_calls[0] == call(1)
-        assert menu_calls[1] == call(3)
+        # ITEM is selected via the 2x2 battle menu, then the bag list is a vertical navigate_menu.
+        ag.controller.battle_menu_select.assert_called_once_with("item")
+        assert ag.controller.navigate_menu.call_args_list == [call(3)]
 
     def test_item_action_default_bag_index(self, tmp_path):
         ag = self._setup_agent_for_battle(tmp_path, {"action": "item", "item": "Potion"})
         ag.controller = MagicMock()
         ag.run_battle_turn()
-        menu_calls = [c for c in ag.controller.navigate_menu.call_args_list]
-        assert menu_calls[1] == call(0)
+        ag.controller.battle_menu_select.assert_called_once_with("item")
+        assert ag.controller.navigate_menu.call_args_list == [call(0)]
 
     def test_switch_action(self, tmp_path):
         ag = self._setup_agent_for_battle(tmp_path, {"action": "switch", "slot": 2})

@@ -46,7 +46,7 @@
     "waypoints": [
       {"x": 1, "y": 43, "note": "Entrance"},
       {"x": 17, "y": 24, "note": "Mid-forest (grind zone)"},
-      {"x": 25, "y": 1,  "note": "Exit north"}
+      {"x": 2, "y": 0,  "note": "Exit north to Pewter (only walkable top-row tile; reached via the far-left x=0-1 columns)"}
     ]
   },
 

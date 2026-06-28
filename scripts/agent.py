@@ -65,6 +65,18 @@ SCRIPT_DIR = Path(__file__).parent
 TYPE_CHART_PATH = SCRIPT_DIR.parent / "references" / "type_chart.json"
 ROUTES_PATH = SCRIPT_DIR.parent / "references" / "routes.json"
 
+# Extra A* g-cost the WorldMap planner pays to re-enter a tile where a wild encounter has fired.
+# Routes equal-ish paths around already-seen tall grass (e.g. across Viridian Forest) so the agent
+# walks into far fewer battles and actually reaches the exit within its turn budget. A wall-free
+# detour up to this many tiles longer is preferred over re-crossing one known grass tile.
+GRASS_ENCOUNTER_COST = 8
+
+# Max fight turns the agent will spend in a single wild battle WITHOUT the enemy's HP dropping
+# before it gives up and flees. Escapes livelocks where the only PP'd move can't end the fight
+# (e.g. a 0-power status move scored as "unknown") — the agent would otherwise loop forever.
+# Reset whenever real damage lands, so winnable battles are never abandoned.
+WILD_BATTLE_PATIENCE = 10
+
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
 EARLY_GAME_TARGETS = {
@@ -167,6 +179,38 @@ class GameController:
         self.press("a")
         self.wait(20)
 
+    # The Gen-1 battle menu is a 2x2 grid, not a vertical list:
+    #     FIGHT  PKMN
+    #     ITEM   RUN
+    _BATTLE_MENU_PATH = {
+        "fight": (),
+        "pkmn": ("right",),
+        "item": ("down",),
+        "run": ("down", "right"),
+    }
+
+    def battle_menu_select(self, target: str):
+        """Select a corner of the 2x2 battle menu (fight/pkmn/item/run) and confirm with A.
+
+        ``navigate_menu`` only walks vertically, so it can never reach the right column
+        (PKMN/RUN) — which is why fleeing never worked and the cursor desynced (the menu
+        remembers its last position, so a stale RUN cursor made a later "press A for FIGHT"
+        re-pick RUN, freezing the fight). Normalize to FIGHT (top-left) first, then walk the
+        real grid.
+        """
+        # Use the default (longer) press timing — the same as ``navigate_menu``, which works for
+        # the move list. The 8-frame overworld timing is too short for the battle-menu cursor to
+        # register a move, which left the cursor stuck on FIGHT and the flee never happening.
+        self.press("up")  # normalize: up+left -> FIGHT (top-left)
+        self.wait(8)
+        self.press("left")
+        self.wait(8)
+        for direction in self._BATTLE_MENU_PATH[target]:
+            self.press(direction)
+            self.wait(8)
+        self.press("a")
+        self.wait(20)
+
 
 # ---------------------------------------------------------------------------
 # Battle strategy
@@ -190,6 +234,9 @@ class BattleStrategy:
         self.unknown_move_score = unknown_move_score
         self.status_move_score = status_move_score
         self._run_attempts = 0
+        # Stall guard: count fight turns in the current wild battle without enemy-HP progress.
+        self._wild_fight_turns = 0
+        self._last_enemy_hp: int | None = None
 
     def score_move(self, move_id: int, move_pp: int, enemy_type: str = "normal") -> float:
         """Score a move based on power, PP, and type effectiveness."""
@@ -225,6 +272,20 @@ class BattleStrategy:
         hp_ratio = battle.player_hp / max(battle.player_max_hp, 1)
         enemy_type = battle.enemy_type_name
 
+        # Stall guard (wild only): if the enemy's HP isn't dropping, we're in a battle we can't
+        # end (PP-dry damaging moves, a 0-power move scored as "unknown", or a stuck menu). Track
+        # progress and bail out before looping forever; real damage resets the counter so winnable
+        # fights are never abandoned.
+        if battle.battle_type == 1:
+            if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
+                self._wild_fight_turns = 0
+            self._last_enemy_hp = battle.enemy_hp
+            if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
+                # Stalled: keep fleeing until the battle actually ends. Unlike the low-HP run
+                # (capped, because fighting on can still level us), a stall means fighting is
+                # futile, so never fall back to fight here.
+                return {"action": "run"}
+
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
         if hp_ratio < self.hp_run_threshold and battle.battle_type == 1:  # Wild
@@ -246,10 +307,13 @@ class BattleStrategy:
 
         if not moves or all(score < 0 for _, score in moves):
             # No PP left — Struggle will auto-trigger, just press FIGHT
-            return {"action": "fight", "move_index": 0}
+            move_index = 0
+        else:
+            move_index = max(moves, key=lambda x: x[1])[0]
 
-        best_index, best_score = max(moves, key=lambda x: x[1])
-        return {"action": "fight", "move_index": best_index}
+        if battle.battle_type == 1:
+            self._wild_fight_turns += 1  # advance the stall guard for wild battles
+        return {"action": "fight", "move_index": move_index}
 
 
 # ---------------------------------------------------------------------------
@@ -533,6 +597,9 @@ class PokemonAgent:
         # Accumulated occupancy map per location: every turn's collision window is stamped in, so
         # navigation can pathfind over the whole explored map instead of the 9x10 screen window.
         self.world = WorldMap()
+        # When set, the accumulated WorldMap is loaded from / periodically saved to this file, so a
+        # segmented run (reset turns) keeps the geometry it has already learned across processes.
+        self.worldmap_file: str | None = None
         self._last_logged_map: int | None = None
         # True while the quest is actively steering; suppresses the backtrack/stall restores that
         # were tuned around the old broken collision grid and now thrash the agent backward.
@@ -782,6 +849,19 @@ class PokemonAgent:
                 return "a"  # interact with rival when intercepted / clear text
             return "down"
 
+        # Viridian Forest (map 51) is a maze. The legacy waypoint Navigator sees only the 9x10
+        # screen, so it wedges pressing into a tree it can't see around (run 18: frozen at (18,33)
+        # for 7000+ turns). Drive it with the persistent WorldMap planner instead — the same one
+        # the parcel quest uses — pathfinding toward the north exit, learning trees as walls from
+        # failed moves and steering around known grass via the encounter cost. ``cross_step`` then
+        # sweeps the top boundary for the real exit column into Pewter.
+        if state.map_id == 51:
+            route = self.navigator.routes.get("51", {})
+            wps = route.get("waypoints") if isinstance(route, dict) else None
+            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
+            d = self._pilot_to(state, ex, ey)
+            return d if d is not None else self._collision_pilot(state, "north")
+
         # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
         # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent
         # collision-follows directly, bypassing the thrash-prone Navigator); buildings return a
@@ -825,7 +905,7 @@ class PokemonAgent:
         the Mart all the way to the gap on the centre corridor instead of stalling beneath it."""
         if state.x == tx and state.y == ty:
             return None
-        return self.world.plan_step(state.map_id, state.x, state.y, tx, ty)
+        return self.world.plan_step(state.map_id, state.x, state.y, tx, ty, encounter_cost=GRASS_ENCOUNTER_COST)
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
@@ -972,33 +1052,27 @@ class PokemonAgent:
             player_level=battle.player_level,
         )
         if action["action"] == "fight":
-            # Navigate to FIGHT menu
-            self.controller.press("a")  # Select FIGHT
-            self.controller.wait(20)
-            # Select move
-            self.controller.navigate_menu(action["move_index"])
+            self.controller.battle_menu_select("fight")  # open the move list
+            self.controller.navigate_menu(action["move_index"])  # pick the move (vertical list)
             self.controller.wait(180)  # Wait for both attack animations
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
 
         elif action["action"] == "run":
-            # Navigate to RUN (index 3 in battle menu)
-            self.controller.navigate_menu(3)
+            self.controller.battle_menu_select("run")
             self.controller.wait(120)
             self.controller.mash_a(5, delay=30)
 
         elif action["action"] == "item":
-            # Navigate to BAG (index 1 in battle menu)
-            self.controller.navigate_menu(1)
+            self.controller.battle_menu_select("item")
             self.controller.wait(20)
-            # Navigate to the correct item slot
+            # Navigate to the correct item slot (the bag is a vertical list)
             bag_index = action.get("bag_index", 0)
             self.controller.navigate_menu(bag_index)
             self.controller.wait(120)
             self.controller.mash_a(5, delay=30)
 
         elif action["action"] == "switch":
-            # Navigate to POKEMON (index 2 in battle menu)
-            self.controller.navigate_menu(2)
+            self.controller.battle_menu_select("pkmn")
             self.controller.wait(20)
             self.controller.navigate_menu(action.get("slot", 1))
             self.controller.wait(120)
@@ -1358,6 +1432,14 @@ class PokemonAgent:
                     self._battle_opponent_species = battle.enemy_species_name
                     self._battle_opponent_level = battle.enemy_level
 
+                    # Learn the grass: a wild battle (type 1) fires on the tile the agent just
+                    # stepped onto, so mark its last overworld position as an encounter tile. The
+                    # WorldMap planner then pays GRASS_ENCOUNTER_COST to re-enter it, steering
+                    # later traversals onto the dirt path through the Forest.
+                    if battle.battle_type == 1 and self.last_overworld_state is not None:
+                        ow = self.last_overworld_state
+                        self.world.mark_encounter(ow.map_id, ow.x, ow.y)
+
                 # Dump a save state the first time a trainer fight starts on the target
                 # map (i.e. the instant Brock's battle begins).
                 if (
@@ -1392,6 +1474,8 @@ class PokemonAgent:
                     self.battles_won += 1
                     self._last_progress_turn = self.turn_count
                     self.battle_strategy._run_attempts = 0
+                    self.battle_strategy._wild_fight_turns = 0
+                    self.battle_strategy._last_enemy_hp = None
                     self.encounter_log.append(
                         {
                             "species": self._current_enemy_species,
@@ -1482,6 +1566,12 @@ class PokemonAgent:
                 self._last_checkpoint_turn = self.turn_count
                 self.log(f"Checkpoint at turn {self.turn_count} -> {save_every_path}")
 
+            # Periodically persist the learned WorldMap so a killed/reset run keeps its geometry.
+            if self.worldmap_file and self.turn_count > 0 and self.turn_count % 500 == 0:
+                self.world.save(self.worldmap_file)
+
+        if self.worldmap_file:
+            self.world.save(self.worldmap_file)  # final persist of everything learned this segment
         self.log(f"Session complete. Turns: {self.turn_count} | Wins: {self.battles_won}")
         self.collector.session(
             self.turn_count,
@@ -1565,6 +1655,11 @@ def main():
         default=None,
         help='Overwrite a checkpoint state every N turns, as "N:PATH" (for segmented resume)',
     )
+    parser.add_argument(
+        "--worldmap-file",
+        default=None,
+        help="Load/save the accumulated WorldMap (learned geometry) here, so a reset run keeps it",
+    )
     args = parser.parse_args()
 
     if not Path(args.rom).exists():
@@ -1583,6 +1678,9 @@ def main():
             print(f"[agent] game publisher setup failed: {exc}")
 
     agent = PokemonAgent(args.rom, strategy=args.strategy, screenshots=args.save_screenshots)
+    if args.worldmap_file:
+        agent.worldmap_file = args.worldmap_file
+        agent.world = WorldMap.load(args.worldmap_file)  # resume learned geometry, if any
 
     producer = None
     run_id = None
