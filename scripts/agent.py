@@ -688,6 +688,13 @@ class PokemonAgent:
         if state.text_box_active:
             return "a"
 
+        # Viridian Mart parcel cutscene (pret ViridianMartDefaultScript): entering the Mart shows
+        # the clerk's text, then SIMULATES the joypad to walk the player to the counter and hands
+        # over OAK'S PARCEL. Our own directional inputs fight that simulated movement, so until the
+        # parcel is in the bag we just advance text / wait and let the script run.
+        if state.map_id == 42 and not self.memory.has_parcel() and not self.memory.has_pokedex():
+            return "a"
+
         # After exiting a building, walk away from the door to avoid re-entry
         if self.door_cooldown > 0:
             self.door_cooldown -= 1

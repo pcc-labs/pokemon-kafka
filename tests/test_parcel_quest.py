@@ -80,15 +80,16 @@ def test_go_north_pilots_outdoors_and_targets_viridian_exit():
     assert north["pilot_to"] == VIRIDIAN_NORTH  # seek the now-clear north exit
 
 
-def test_go_north_exits_buildings_first():
+def test_go_north_exits_buildings_via_door_warp():
     q = ParcelQuest()
-    assert q.next_target(sig(OAKS_LAB, pokedex=True))["pilot"] == "south"
-    assert q.next_target(sig(VIRIDIAN_MART, pokedex=True))["pilot"] == "south"
+    assert "exit" in q.next_target(sig(OAKS_LAB, pokedex=True))["name"].lower()
+    assert "exit" in q.next_target(sig(VIRIDIAN_MART, pokedex=True))["name"].lower()
 
 
-def test_to_oak_exits_mart_before_heading_south():
+def test_to_oak_exits_mart_via_door_warp():
     q = ParcelQuest()
-    assert q.next_target(sig(VIRIDIAN_MART, parcel=True))["pilot"] == "south"
+    t = q.next_target(sig(VIRIDIAN_MART, parcel=True))
+    assert "exit" in t["name"].lower() and "pilot_to" in t
 
 
 def test_done_defers_to_normal_navigation():

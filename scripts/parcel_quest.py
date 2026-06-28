@@ -43,6 +43,8 @@ MART_COUNTER = (2, 5)  # Viridian Mart: stand here and face left to talk over th
 OAKS_LAB_DOOR = (12, 11)  # Pallet Town: the Oak's Lab entrance warp tile
 OAK_TILE = (5, 3)  # Oak's Lab: in front of Prof. Oak (Oak object at 5,2 facing down)
 VIRIDIAN_NORTH = (18, 0)  # Viridian City: the north exit to Route 2, past the Old Man at (17,5)
+MART_EXIT = (3, 7)  # Viridian Mart: the door warp back to Viridian City
+OAKS_LAB_EXIT = (5, 11)  # Oak's Lab: the door warp back to Pallet Town
 
 
 @dataclass(frozen=True)
@@ -112,7 +114,7 @@ class ParcelQuest:
         if phase == TO_OAK:
             # Reverse course back to Oak in Pallet.
             if sig.map_id == VIRIDIAN_MART:
-                return _pilot("south")  # leave the Mart first
+                return _to(MART_EXIT, "Mart exit")  # step onto the door warp to leave
             if sig.map_id in (VIRIDIAN_CITY, ROUTE_1):
                 return _pilot("south")  # back down toward Pallet
             if sig.map_id == PALLET_TOWN:
@@ -124,8 +126,10 @@ class ParcelQuest:
         if phase == GO_NORTH:
             # Pokédex in hand. Walk out of any building, steer Viridian to its now-clear north exit,
             # and pilot north elsewhere.
-            if sig.map_id in (OAKS_LAB, VIRIDIAN_MART):
-                return _pilot("south")  # walk out the door
+            if sig.map_id == OAKS_LAB:
+                return _to(OAKS_LAB_EXIT, "Oak's Lab exit")  # step onto the door warp to leave
+            if sig.map_id == VIRIDIAN_MART:
+                return _to(MART_EXIT, "Mart exit")
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
             return _pilot("north")
