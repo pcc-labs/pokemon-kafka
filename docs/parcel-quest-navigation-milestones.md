@@ -80,18 +80,40 @@ guards keep this from poisoning the map:
   cutscene or warp-settle state that ignores inputs leaves facing unchanged. Only the former counts,
   so the Mart clerk's parcel script never traps the agent by making it block walkable tiles.
 
+## Milestone 8: running the Mart parcel cutscene
+
+Per pret's `ViridianMartDefaultScript`, entering the Mart shows the clerk's text, then **simulates
+the joypad** to auto-walk the player to the counter and hands over OAK'S PARCEL. The agent's own
+directional inputs fight that simulated movement, so the fix is to recognise the Mart and simply
+advance text / wait until the parcel is in the bag. With that, the clerk's script runs and the
+parcel drops — the quest flips to `TO_OAK`.
+
+## Milestone 9: NPC interaction and building warps
+
+Two interaction details made the round-trip work:
+
+- **Talk-then-face.** The clerk sits behind a counter (the counter tile itself is a wall); the
+  player stands one tile out and faces *into* it. On arrival at a door/NPC the agent now alternates
+  the facing press and A, so it turns to face the clerk / Oak before interacting.
+- **Doormat exits.** You leave a building by walking *down* off its doormat warp, not by sitting on
+  the tile. Building exits target the warp tile and press down to step out.
+
+## Milestone 10: the full quest completes, then the corridor to Pewter
+
+With the above, the agent runs the **entire errand end to end**: gets the parcel, carries it back
+south to Pallet, **delivers it to Oak and receives the Pokédex**, then heads north — and the Old
+Man has stepped aside. It crosses into **Route 2**, walks **through the gate building**, and into
+**Viridian Forest** — past the scripted gate that flat-lined the original autotune sweep, run the
+way the game intends. Post-Pokédex navigation simply pilots north through every map (routes, gate
+buildings, the forest) until Pewter, where it hands back to normal navigation for the gym.
+
 ## Where it stands
 
-From a completely dead Route 1 grind loop, the agent now reliably: crosses Route 1, enters Viridian
-City, navigates the city, and **steps into the Viridian Mart** (map `42`) heading for the clerk.
-That is the furthest it has ever gotten, and the navigation is now general (whole-map pathfinding)
-rather than a pile of per-barrier heuristics.
-
-**Open blocker:** the parcel pickup itself. Entering the Mart triggers the clerk's scripted
-sequence, during which the agent's directional inputs are ignored; completing that interaction
-(and then the Oak delivery round-trip and the push past the now-cleared Old Man) is the remaining
-work. The quest logic and coordinates for all of it are in place behind this one scripted
-interaction.
+From a completely dead Route 1 grind loop, the agent now **completes the Oak's Parcel quest** —
+parcel pickup, delivery, Pokédex, the Old Man gate cleared — and climbs the corridor north through
+Route 2 and its gate into Viridian Forest, all on general whole-map pathfinding rather than
+per-barrier heuristics. The remaining work is the Viridian Forest maze and the final hop to Pewter
+City and the gym (Brock), which use the same pilot and should fall out of more navigation time.
 
 ## Method note
 
