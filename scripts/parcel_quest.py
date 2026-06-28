@@ -66,14 +66,14 @@ def quest_phase(sig: QuestSignals) -> str:
     return TO_MART
 
 
-def _north(sig: QuestSignals) -> dict:
-    """Push straight up to the map's north edge (triggers the northward map transition)."""
-    return {"name": "north", "target": (sig.x, 0), "axis": "y", "at_target": "up"}
+def _pilot(direction: str) -> dict:
+    """Hand control to the agent's collision-following pilot heading ``north``/``south``.
 
-
-def _south(sig: QuestSignals) -> dict:
-    """Push straight down to the map's south edge (triggers the southward map transition)."""
-    return {"name": "south", "target": (sig.x, 36), "axis": "y", "at_target": "down"}
+    The agent's waypoint+backtrack navigator thrashes the player backward on the open routes (it
+    was tuned around a broken collision grid), so for long outdoor legs the quest signals a direct
+    collision-follow instead of a coordinate target. Carried in the same dict via a ``pilot`` key.
+    """
+    return {"name": f"pilot-{direction}", "pilot": direction}
 
 
 def _to(coord: tuple[int, int], name: str, at_target: str = "up") -> dict:
@@ -92,35 +92,38 @@ class ParcelQuest:
         phase = quest_phase(sig)
         self.phase = phase
 
+        # Only steer on the early-game loop maps; everywhere else the normal navigator is fine.
+        if sig.map_id not in QUEST_MAPS:
+            return None
+
         if phase == TO_MART:
-            # Northbound through Pallet → Route 1 → Viridian is what the baked waypoints already do,
-            # so defer to them (returning a naive edge target here just walks into the houses).
+            # Pilot north through Pallet → Route 1 → Viridian, then target the Mart precisely.
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(MART_DOOR, "Viridian Mart door")
             if sig.map_id == VIRIDIAN_MART:
                 return _to(MART_COUNTER, "Mart clerk (parcel)", at_target="a")
-            return None
+            return _pilot("north")
 
         if phase == TO_OAK:
-            # Reverse course: the waypoints only go north, so the quest drives the trip back south.
+            # Reverse course back to Oak in Pallet.
             if sig.map_id == VIRIDIAN_MART:
-                return _south(sig)  # leave the Mart first
+                return _pilot("south")  # leave the Mart first
             if sig.map_id in (VIRIDIAN_CITY, ROUTE_1):
-                return _south(sig)  # head back down toward Pallet (ledges allow southward hops)
+                return _pilot("south")  # back down toward Pallet
             if sig.map_id == PALLET_TOWN:
                 return _to(OAKS_LAB_DOOR, "Oak's Lab door")
             if sig.map_id == OAKS_LAB:
                 return _to(OAK_TILE, "Prof. Oak (deliver)", at_target="a")
-            return None
+            return _pilot("south")
 
         if phase == GO_NORTH:
-            # Pokédex in hand. Walk out of any building, steer Viridian to its north exit (the
-            # Old Man has stepped aside), and defer to the northbound waypoints elsewhere.
+            # Pokédex in hand. Walk out of any building, steer Viridian to its now-clear north exit,
+            # and pilot north elsewhere.
             if sig.map_id in (OAKS_LAB, VIRIDIAN_MART):
-                return _south(sig)  # walk out the door
+                return _pilot("south")  # walk out the door
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
-            return None
+            return _pilot("north")
 
         return None  # DONE — normal waypoints handle Route 2 / Forest / Pewter
 

@@ -525,6 +525,9 @@ class PokemonAgent:
         # scripted progression that pure waypoint navigation cannot pass on its own.
         self.parcel_quest = ParcelQuest()
         self._last_logged_map: int | None = None
+        # True while the quest is actively steering; suppresses the backtrack/stall restores that
+        # were tuned around the old broken collision grid and now thrash the agent backward.
+        self._quest_nav_active = False
         self.encounter_log: list[dict] = []
         self._current_enemy_species: str = ""
         self._current_enemy_type: str = ""
@@ -763,10 +766,17 @@ class PokemonAgent:
                 return "a"  # interact with rival when intercepted / clear text
             return "down"
 
-        # Oak's Parcel quest: override the nav target to run the errand that unblocks Viridian's
-        # north exit (Mart pickup → Oak delivery → Old-Man gate). Returns None once satisfied.
-        self.navigator.quest_target = self._quest_target(state)
+        # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
+        # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent
+        # collision-follows directly, bypassing the thrash-prone Navigator); buildings return a
+        # precise coordinate target the (now-working) A* navigator handles. None once satisfied.
+        quest = self._quest_target(state)
+        self._quest_nav_active = quest is not None
+        if quest is not None and "pilot" in quest:
+            self.navigator.quest_target = None
+            return self._collision_pilot(state, quest["pilot"])
 
+        self.navigator.quest_target = quest
         direction = self.navigator.next_direction(
             state,
             turn=self.turn_count,
@@ -774,6 +784,41 @@ class PokemonAgent:
             collision_grid=self.collision_map.grid,
         )
         return direction or "a"
+
+    def _collision_pilot(self, state: OverworldState, goal: str) -> str:
+        """Navigate ``goal`` ("north"/"south") by following the live collision grid.
+
+        Mirrors the traced probe that crossed Route 1 reliably: prefer the goal direction when the
+        tile ahead is walkable, otherwise sidestep to an open perpendicular side (without an
+        immediate reversal), and only fall back to the opposite direction as a last resort. This
+        sidesteps the waypoint+backtrack navigator, which thrashes the agent backward on the open
+        routes."""
+        try:
+            self.collision_map.update(self.pyboy)
+        except Exception:
+            pass
+        g = self.collision_map.grid
+        north, south, east, west = g[3][4], g[5][4], g[4][5], g[4][3]
+        fwd, fwd_open = ("up", north) if goal == "north" else ("down", south)
+        last = getattr(self, "_pilot_last_dir", None)
+        pilot_stuck = getattr(self, "_pilot_stuck", 0)
+
+        if fwd_open and pilot_stuck < 3:
+            d = fwd
+        elif east and last != "left":
+            d = "right"
+        elif west and last != "right":
+            d = "left"
+        elif fwd_open:
+            d = fwd
+        else:
+            d = "right" if last != "right" else "left"
+
+        pos = (state.map_id, state.x, state.y)
+        self._pilot_stuck = pilot_stuck + 1 if pos == getattr(self, "_pilot_last_pos", None) else 0
+        self._pilot_last_pos = pos
+        self._pilot_last_dir = d
+        return d
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
@@ -993,9 +1038,10 @@ class PokemonAgent:
             ):
                 self.backtrack.save_snapshot(self.pyboy, state, self.turn_count)
 
-        # Force restore when no meaningful progress for 500 turns (skip in Oak's Lab)
+        # Force restore when no meaningful progress for 500 turns (skip in Oak's Lab, and while
+        # the quest pilot is driving — a restore would teleport it off the route it's crossing).
         progress_gap = self.turn_count - self._last_progress_turn
-        if not in_oaks_lab and progress_gap > 500 and self.backtrack.snapshots:
+        if not in_oaks_lab and not self._quest_nav_active and progress_gap > 500 and self.backtrack.snapshots:
             self.log(f"PROGRESS STALL | No progress for {progress_gap} turns, forcing backtrack restore")
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
@@ -1009,8 +1055,8 @@ class PokemonAgent:
                     f"attempt={snap.attempts}"
                 )
 
-        # Restore when stuck too long (skip in Oak's Lab)
-        if not in_oaks_lab and self.backtrack.should_restore(self.stuck_turns):
+        # Restore when stuck too long (skip in Oak's Lab and while the quest pilot is driving)
+        if not in_oaks_lab and not self._quest_nav_active and self.backtrack.should_restore(self.stuck_turns):
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
                 self.stuck_turns = 0

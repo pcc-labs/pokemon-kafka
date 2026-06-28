@@ -50,45 +50,45 @@ def test_pokedex_overrides_a_lingering_parcel_flag():
 # --- target routing -----------------------------------------------------------
 
 
-def test_to_mart_defers_outdoors_then_targets_mart():
+def test_to_mart_pilots_north_then_targets_mart():
     q = ParcelQuest()
-    # Northbound outdoor maps defer to the baked waypoints (overriding walks into the houses).
-    assert q.next_target(sig(ROUTE_1)) is None
-    assert q.next_target(sig(PALLET_TOWN)) is None
+    # Outdoor legs hand off to the collision pilot; the Mart itself is a precise target.
+    assert q.next_target(sig(ROUTE_1))["pilot"] == "north"
+    assert q.next_target(sig(PALLET_TOWN))["pilot"] == "north"
     assert "Mart door" in q.next_target(sig(VIRIDIAN_CITY))["name"]
     clerk = q.next_target(sig(VIRIDIAN_MART))
     assert "clerk" in clerk["name"].lower()
     assert clerk["at_target"] == "a"  # press A at the clerk
 
 
-def test_to_oak_routes_south_then_to_oak():
+def test_to_oak_pilots_south_then_to_oak():
     q = ParcelQuest()
-    assert q.next_target(sig(VIRIDIAN_CITY, parcel=True))["name"] == "south"
-    assert q.next_target(sig(ROUTE_1, parcel=True))["name"] == "south"
+    assert q.next_target(sig(VIRIDIAN_CITY, parcel=True))["pilot"] == "south"
+    assert q.next_target(sig(ROUTE_1, parcel=True))["pilot"] == "south"
     assert "door" in q.next_target(sig(PALLET_TOWN, parcel=True))["name"].lower()
     oak = q.next_target(sig(OAKS_LAB, parcel=True))
     assert "Oak" in oak["name"]
     assert oak["at_target"] == "a"  # press A to hand over the parcel
 
 
-def test_go_north_defers_outdoors_and_targets_viridian_exit():
+def test_go_north_pilots_outdoors_and_targets_viridian_exit():
     q = ParcelQuest()
-    # Pallet / Route 1 defer to the northbound waypoints once the gate is open.
-    assert q.next_target(sig(PALLET_TOWN, pokedex=True)) is None
-    assert q.next_target(sig(ROUTE_1, pokedex=True)) is None
+    # Pallet / Route 1 pilot north once the gate is open.
+    assert q.next_target(sig(PALLET_TOWN, pokedex=True))["pilot"] == "north"
+    assert q.next_target(sig(ROUTE_1, pokedex=True))["pilot"] == "north"
     north = q.next_target(sig(VIRIDIAN_CITY, pokedex=True))
     assert north["target"] == VIRIDIAN_NORTH  # steer to the now-clear north exit
 
 
 def test_go_north_exits_buildings_first():
     q = ParcelQuest()
-    assert q.next_target(sig(OAKS_LAB, pokedex=True))["name"] == "south"
-    assert q.next_target(sig(VIRIDIAN_MART, pokedex=True))["name"] == "south"
+    assert q.next_target(sig(OAKS_LAB, pokedex=True))["pilot"] == "south"
+    assert q.next_target(sig(VIRIDIAN_MART, pokedex=True))["pilot"] == "south"
 
 
 def test_to_oak_exits_mart_before_heading_south():
     q = ParcelQuest()
-    assert q.next_target(sig(VIRIDIAN_MART, parcel=True))["name"] == "south"
+    assert q.next_target(sig(VIRIDIAN_MART, parcel=True))["pilot"] == "south"
 
 
 def test_done_defers_to_normal_navigation():
@@ -102,11 +102,11 @@ def test_unsteered_map_returns_none():
     assert q.next_target(sig(99)) is None
 
 
-def test_south_target_tracks_current_x():
+def test_pilot_directives_have_no_coordinate_target():
     q = ParcelQuest()
-    t = q.next_target(sig(ROUTE_1, parcel=True, x=8))  # TO_OAK pushes south from current column
-    assert t["name"] == "south"
-    assert t["target"][0] == 8
+    t = q.next_target(sig(ROUTE_1, parcel=True))  # TO_OAK pilots south
+    assert t["pilot"] == "south"
+    assert "target" not in t  # the agent's pilot navigates by collision, not a fixed tile
 
 
 def test_phase_attribute_updates_after_next_target():
