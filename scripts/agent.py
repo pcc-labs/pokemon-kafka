@@ -753,6 +753,14 @@ class PokemonAgent:
     def choose_overworld_action(self, state: OverworldState) -> str:
         """Pick the next overworld action."""
         if state.text_box_active:
+            # Discovery capture: read the sign / NPC dialogue on screen before dismissing it.
+            # Text renders progressively and persists across frames, so only emit when the decoded
+            # string changes (dedup) to avoid spamming the same line every turn.
+            text = self.memory.read_dialogue()
+            if text and text != getattr(self, "_last_discovery", None):
+                self._last_discovery = text
+                self.log(f'DISCOVERY | map={state.map_id} pos=({state.x},{state.y}) text="{text}"')
+                self.collector.discovery(self.turn_count, state.map_id, state.x, state.y, text)
             return "a"
 
         # Viridian Mart parcel cutscene (pret ViridianMartDefaultScript): entering the Mart shows

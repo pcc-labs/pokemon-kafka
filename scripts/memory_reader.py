@@ -8,6 +8,8 @@ Swap out the address maps for other games.
 from dataclasses import dataclass, field
 from typing import List
 
+from text_decoder import decode_grid
+
 # Gen 1 type byte → name mapping (from pokered disassembly)
 TYPE_ID_MAP: dict[int, str] = {
     0x00: "normal",
@@ -206,6 +208,35 @@ class MemoryReader:
             low = byte & 0x0F
             result = result * 100 + high * 10 + low
         return result
+
+    # On-screen text box region of the 20x18 BG tilemap: the dialogue/sign box occupies the
+    # bottom rows, inside the 1-tile border. Reading just this region keeps menus/HUD noise out.
+    _TEXT_X0, _TEXT_X1 = 1, 19   # cols [1, 19)
+    _TEXT_Y0, _TEXT_Y1 = 12, 18  # rows [12, 18)
+
+    def read_dialogue(self) -> str:
+        """Decode the on-screen text box (signs / NPC dialogue / battle messages) from the tilemap.
+
+        Pokémon Red draws the text box on the *window* layer (battle/menu messages) but some
+        overworld text lands on the background, so we read the bottom message-box region of both and
+        prefer the window. Returns ``""`` if unavailable or empty. Pull this only when a text box is
+        active (``OverworldState.text_box_active``) — it walks a tilemap region, not free per frame.
+        """
+        def _read(layer) -> str:
+            try:
+                rows = [
+                    [int(layer[x, y]) for x in range(self._TEXT_X0, self._TEXT_X1)]
+                    for y in range(self._TEXT_Y0, self._TEXT_Y1)
+                ]
+            except Exception:
+                return ""
+            return decode_grid(rows)
+
+        try:
+            window = _read(self.pyboy.tilemap_window)
+            return window or _read(self.pyboy.tilemap_background)
+        except Exception:
+            return ""
 
     def read_battle_state(self) -> BattleState:
         """Read full battle context from memory."""

@@ -118,6 +118,21 @@ def build_overworld_event(
     return _envelope("overworld", turn, data)
 
 
+def build_discovery_event(
+    turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue"
+) -> dict:
+    return _envelope(
+        "discovery",
+        turn,
+        {
+            "map_id": map_id,
+            "position": {"x": x, "y": y},
+            "kind": kind,
+            "text": text,
+        },
+    )
+
+
 def build_map_change_event(turn: int, prev_map: int, new_map: int, x: int, y: int) -> dict:
     return _envelope(
         "map_change",
@@ -252,6 +267,9 @@ class GameEventCollector:
         waypoint_info: str | None = None,
     ):
         self._emit(build_overworld_event(turn, map_id, x, y, badges, party_count, action, stuck_turns, waypoint_info))
+
+    def discovery(self, turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue"):
+        self._emit(build_discovery_event(turn, map_id, x, y, text, kind))
 
     def map_change(self, turn: int, prev_map: int, new_map: int, x: int, y: int):
         self._emit(build_map_change_event(turn, prev_map, new_map, x, y))
