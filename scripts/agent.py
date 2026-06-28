@@ -780,6 +780,11 @@ class PokemonAgent:
         if quest is not None and "pilot" in quest:
             self.navigator.quest_target = None
             return self._collision_pilot(state, quest["pilot"])
+        if quest is not None and "pilot_to" in quest:
+            self.navigator.quest_target = None
+            tx, ty = quest["pilot_to"]
+            d = self._pilot_to(state, tx, ty)
+            return d if d is not None else quest.get("at_target", "a")
 
         self.navigator.quest_target = quest
         direction = self.navigator.next_direction(
@@ -879,6 +884,73 @@ class PokemonAgent:
         # Whole screen walled toward the goal: back off so a fresh stretch scrolls into view.
         self._pilot_last_action = back
         return back
+
+    def _pilot_to(self, state: OverworldState, tx: int, ty: int) -> str | None:
+        """Navigate toward tile ``(tx, ty)`` with the same robustness as the cardinal pilot:
+        greedy step along the dominant axis, A* around obstacles on the visible grid, and a
+        lateral-drift escape when progress stalls. Returns ``None`` once standing on the tile (the
+        caller then presses the target's ``at_target`` action). Used for doors / NPCs, where the
+        old greedy navigator jammed (e.g. the Mart approach at x=29 stuck at y=28)."""
+        try:
+            self.collision_map.update(self.pyboy)
+        except Exception:
+            pass
+        if state.x == tx and state.y == ty:
+            self._pt_escape = 0
+            return None
+        grid = self.collision_map.grid
+        dx, dy = tx - state.x, ty - state.y
+        dist = abs(dx) + abs(dy)
+        opens = {"up": grid[3][4], "down": grid[5][4], "left": grid[4][3], "right": grid[4][5]}
+        h = "right" if dx > 0 else ("left" if dx < 0 else None)
+        v = "down" if dy > 0 else ("up" if dy < 0 else None)
+
+        # Track closing distance to the target; reset when the target changes.
+        goal = (state.map_id, tx, ty)
+        if getattr(self, "_pt_goal", None) != goal:
+            self._pt_goal = goal
+            self._pt_best = 10**9
+            self._pt_noprog = 0
+            self._pt_escape = 0
+        if dist < self._pt_best:
+            self._pt_best = dist
+            self._pt_noprog = 0
+        else:
+            self._pt_noprog += 1
+
+        # Stalled near a wall → drift sideways to a new lane, grabbing a preferred step the instant
+        # one opens (mirrors the cardinal pilot's ledge escape).
+        esc = self._pt_escape
+        if self._pt_noprog >= 25 and esc == 0:
+            esc = 8
+            self._pt_side = "right" if grid[4][5] >= grid[4][3] else "left"
+            self._pt_noprog = 0
+        if esc > 0:
+            self._pt_escape = esc - 1
+            for d in (v, h):
+                if d and opens[d]:
+                    self._pt_escape = 0
+                    return d
+            side = self._pt_side
+            if opens[side]:
+                return side
+            self._pt_side = "left" if side == "right" else "right"
+            return self._pt_side if opens[self._pt_side] else ("up" if opens["up"] else "down")
+
+        # Greedy: step along the dominant axis toward the target when that tile is open.
+        for d in [h, v] if abs(dx) >= abs(dy) else [v, h]:
+            if d and opens[d]:
+                return d
+        # Blocked on the preferred axes → A* toward the target's on-screen cell (routes around).
+        tr = max(0, min(8, 4 + dy))
+        tc = max(0, min(9, 4 + dx))
+        res = astar_path(grid, (4, 4), (tr, tc))
+        if res["status"] in ("success", "partial") and res["directions"]:
+            return res["directions"][0]
+        for d in ("up", "right", "left", "down"):  # last resort: anywhere open
+            if opens[d]:
+                return d
+        return "up"
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.

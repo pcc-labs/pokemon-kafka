@@ -77,7 +77,7 @@ def test_go_north_pilots_outdoors_and_targets_viridian_exit():
     assert q.next_target(sig(PALLET_TOWN, pokedex=True))["pilot"] == "north"
     assert q.next_target(sig(ROUTE_1, pokedex=True))["pilot"] == "north"
     north = q.next_target(sig(VIRIDIAN_CITY, pokedex=True))
-    assert north["target"] == VIRIDIAN_NORTH  # steer to the now-clear north exit
+    assert north["pilot_to"] == VIRIDIAN_NORTH  # seek the now-clear north exit
 
 
 def test_go_north_exits_buildings_first():

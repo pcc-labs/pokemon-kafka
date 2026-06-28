@@ -77,7 +77,9 @@ def _pilot(direction: str) -> dict:
 
 
 def _to(coord: tuple[int, int], name: str, at_target: str = "up") -> dict:
-    return {"name": name, "target": coord, "axis": "x", "at_target": at_target}
+    """Seek a specific tile (a door / NPC) via the agent's coordinate pilot, then press
+    ``at_target`` on arrival (e.g. "a" to talk, "up" to step through a doorway)."""
+    return {"name": name, "pilot_to": coord, "at_target": at_target}
 
 
 class ParcelQuest:
