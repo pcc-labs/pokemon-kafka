@@ -800,25 +800,25 @@ class PokemonAgent:
         g = self.collision_map.grid
         north, south, east, west = g[3][4], g[5][4], g[4][5], g[4][3]
         fwd, fwd_open = ("up", north) if goal == "north" else ("down", south)
-        last = getattr(self, "_pilot_last_dir", None)
-        pilot_stuck = getattr(self, "_pilot_stuck", 0)
 
-        if fwd_open and pilot_stuck < 3:
-            d = fwd
-        elif east and last != "left":
-            d = "right"
-        elif west and last != "right":
-            d = "left"
-        elif fwd_open:
-            d = fwd
-        else:
-            d = "right" if last != "right" else "left"
+        if fwd_open:
+            # Forward is open: advance and forget any barrier sweep in progress.
+            self._pilot_sweep = None
+            return fwd
 
-        pos = (state.map_id, state.x, state.y)
-        self._pilot_stuck = pilot_stuck + 1 if pos == getattr(self, "_pilot_last_pos", None) else 0
-        self._pilot_last_pos = pos
-        self._pilot_last_dir = d
-        return d
+        # Blocked ahead by a ledge/tree line. Sweep *consistently* along the barrier (one
+        # direction until it walls, then flip) so we scan every column for the gap, instead of
+        # oscillating in place the way the old flip-on-last-move logic did.
+        sweep = getattr(self, "_pilot_sweep", None) or "right"
+        side_open = east if sweep == "right" else west
+        if not side_open:
+            sweep = "left" if sweep == "right" else "right"
+            side_open = east if sweep == "right" else west
+        self._pilot_sweep = sweep
+        if side_open:
+            return sweep
+        # Fully walled in (rare): step back the way we came to break free.
+        return "down" if goal == "north" else "up"
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
