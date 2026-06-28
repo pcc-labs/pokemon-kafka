@@ -64,9 +64,10 @@ class QuestSignals:
 def quest_phase(sig: QuestSignals) -> str:
     """Which leg of the errand we are on, purely from the signals."""
     if sig.has_pokedex:
-        # Delivered. Keep steering (north / out of buildings) while still in the early loop;
-        # done once we're past Viridian on a map the normal waypoints already cover.
-        return GO_NORTH if sig.map_id in QUEST_MAPS else DONE
+        # Delivered and the gate is clear: keep driving north all the way to Pewter (through Route
+        # 2, its gate buildings, and Viridian Forest), since the old navigator can't make that climb
+        # either. Hand back to normal nav only once Pewter is reached.
+        return DONE if sig.map_id == PEWTER_CITY else GO_NORTH
     if sig.has_parcel:
         return TO_OAK
     return TO_MART
@@ -100,7 +101,19 @@ class ParcelQuest:
         phase = quest_phase(sig)
         self.phase = phase
 
-        # Only steer on the early-game loop maps; everywhere else the normal navigator is fine.
+        if phase == GO_NORTH:
+            # Pokédex in hand. Walk out of any building, steer Viridian to its now-clear north exit,
+            # and pilot north on everything else — routes, gate buildings, and the forest — until
+            # Pewter. (Handled before the QUEST_MAPS guard so the gate maps aren't excluded.)
+            if sig.map_id == OAKS_LAB:
+                return _to(OAKS_LAB_EXIT, "Oak's Lab exit", at_target="down")  # walk out the door
+            if sig.map_id == VIRIDIAN_MART:
+                return _to(MART_EXIT, "Mart exit", at_target="down")
+            if sig.map_id == VIRIDIAN_CITY:
+                return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
+            return _pilot("north")
+
+        # TO_MART / TO_OAK only steer on the early-game loop maps; elsewhere defer to normal nav.
         if sig.map_id not in QUEST_MAPS:
             return None
 
@@ -127,18 +140,7 @@ class ParcelQuest:
                 return _to(OAK_TILE, "Prof. Oak (deliver)", at_target="up")  # face Oak, then A
             return _pilot("south")
 
-        if phase == GO_NORTH:
-            # Pokédex in hand. Walk out of any building, steer Viridian to its now-clear north exit,
-            # and pilot north elsewhere.
-            if sig.map_id == OAKS_LAB:
-                return _to(OAKS_LAB_EXIT, "Oak's Lab exit", at_target="down")  # walk out the door
-            if sig.map_id == VIRIDIAN_MART:
-                return _to(MART_EXIT, "Mart exit", at_target="down")
-            if sig.map_id == VIRIDIAN_CITY:
-                return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
-            return _pilot("north")
-
-        return None  # DONE — normal waypoints handle Route 2 / Forest / Pewter
+        return None  # DONE (at Pewter) — normal waypoints take over for the gym
 
     def describe(self, sig: QuestSignals) -> str:
         """One-line status for telemetry/logging."""
