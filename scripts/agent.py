@@ -867,8 +867,16 @@ class PokemonAgent:
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
             ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
-            d = self._pilot_to(state, ex, ey)
-            return d if d is not None else self._collision_pilot(state, "north")
+            # The maze trap (run 18 redux): A* toward the exit is *optimistically* reachable through
+            # unexplored space, so when the real path is walled off the planner greedily oscillates
+            # against the nearest wall (3000 turns, 29 tiles visited). Only commit to the exit once
+            # it is reachable over tiles we KNOW are walkable; until then, drive frontier
+            # exploration so we actually map our way toward it instead of grinding in place.
+            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
+                d = self._pilot_to(state, ex, ey)
+                return d if d is not None else self._collision_pilot(state, "north")
+            explore = self.world.explore_step(state.map_id, state.x, state.y)
+            return explore if explore is not None else self._collision_pilot(state, "north")
 
         # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
         # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent
@@ -1059,11 +1067,60 @@ class PokemonAgent:
             player_species=SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
             player_level=battle.player_level,
         )
+        # OBSERVE the learnset: which moves the lead knows at this level (emit on change). This is
+        # how the agent *discovers* (rather than is told) when moves like Ember come online.
+        ms_names = [MOVE_DATA.get(m, (f"#{m:02X}",))[0] for m in battle.moves if m]
+        ms_key = (battle.player_level, tuple(battle.moves))
+        if ms_key != getattr(self, "_last_moveset_key", None):
+            self._last_moveset_key = ms_key
+            self.collector.moveset(
+                self.turn_count,
+                SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
+                battle.player_level,
+                ms_names,
+            )
+            self.log(f"MOVESET | L{battle.player_level} {ms_names}")
+
         if action["action"] == "fight":
+            mv_idx = action["move_index"]
+            move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
+            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(
+                move_id, (f"#{move_id:02X}", "unknown", 0, 0)
+            )
+            enemy_hp_before = battle.enemy_hp
             self.controller.battle_menu_select("fight")  # open the move list
-            self.controller.navigate_menu(action["move_index"])  # pick the move (vertical list)
-            self.controller.wait(180)  # Wait for both attack animations
+            self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
+            # OBSERVE the raw outcome. The fight branch runs on menu/text frames too, and the HP bar
+            # animates over several frames, so a single fixed-delay read is noisy (phantom dmg=0 and
+            # post-faint reads). Instead poll until the move actually RESOLVES — enemy HP changes or
+            # the battle ends — then emit only a genuinely landed hit. We log numbers only, never a
+            # "super-effective" label, so the type chart is learned from data, not fed.
+            battle_over = False
+            after_hp = enemy_hp_before
+            for _ in range(8):
+                self.controller.wait(30)
+                battle_over = self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0
+                after_hp = self.memory.read_enemy_hp()
+                if battle_over or after_hp != enemy_hp_before:
+                    break
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
+            fainted = battle_over or after_hp <= 0
+            enemy_hp_after = 0 if fainted else after_hp
+            dmg = max(0, enemy_hp_before - enemy_hp_after)
+            # Record only a real landed hit: enemy was alive and HP actually dropped (or it fainted).
+            if enemy_hp_before > 0 and (dmg > 0 or fainted):
+                self.collector.move_result(
+                    self.turn_count,
+                    SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
+                    battle.player_level, mv_name, mv_type, mv_power,
+                    battle.enemy_species_name, battle.enemy_level, battle.enemy_type_name,
+                    dmg, enemy_hp_before, battle.enemy_max_hp, fainted,
+                )
+                self.log(
+                    f"MOVE | L{battle.player_level} {mv_name}({mv_type}) vs "
+                    f"{battle.enemy_species_name}({battle.enemy_type_name}) "
+                    f"dmg={dmg}/{battle.enemy_max_hp}{' KO' if fainted else ''}"
+                )
 
         elif action["action"] == "run":
             self.controller.battle_menu_select("run")

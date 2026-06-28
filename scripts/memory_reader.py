@@ -238,6 +238,11 @@ class MemoryReader:
         except Exception:
             return ""
 
+    def read_enemy_hp(self) -> int:
+        """Current enemy HP (lightweight — for observing a move's damage without re-reading the
+        whole battle state, which lets callers compute damage from a before/after delta)."""
+        return self._read_16(self.ADDR_ENEMY_HP_HI, self.ADDR_ENEMY_HP_LO)
+
     def read_battle_state(self) -> BattleState:
         """Read full battle context from memory."""
         battle_type = self._read(self.ADDR_BATTLE_TYPE)

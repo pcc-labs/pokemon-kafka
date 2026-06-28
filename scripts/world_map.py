@@ -212,6 +212,57 @@ class WorldMap:
         step = self._first_step(came, (px, py), target)
         return (step and self._dir(px, py, step)) or fwd
 
+    def known_reachable(self, map_id: int, px: int, py: int, tx: int, ty: int) -> bool:
+        """Can ``(tx, ty)`` be reached from ``(px, py)`` over tiles *known* to be walkable?
+
+        Strict (unlike :meth:`plan_step`'s optimism): unknown tiles do NOT count. Used to decide
+        whether to commit to the goal or keep exploring — heading for a goal that is only
+        ``optimistically`` reachable is what makes the agent oscillate against a wall."""
+        if (px, py) == (tx, ty):
+            return True
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        seen = {(px, py)}
+        q = deque([(px, py)])
+        while q:
+            cx, cy = q.popleft()
+            for _name, dx, dy in _DIRS:
+                nb = (cx + dx, cy + dy)
+                if nb in seen or nb in blocked or m.get(nb, 0) != 1:
+                    continue
+                if nb == (tx, ty):
+                    return True
+                seen.add(nb)
+                q.append(nb)
+        return False
+
+    def explore_step(self, map_id: int, px: int, py: int, max_nodes: int = 8000) -> str | None:
+        """First step toward the nearest *unexplored* tile, so the agent maps new ground instead of
+        oscillating against an unreachable goal. BFS over passable tiles (unknown counts as
+        passable); the first unknown tile reached is the frontier. ``None`` when nothing reachable
+        is still unknown (the area is fully mapped)."""
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        start = (px, py)
+        came: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+        q = deque([start])
+        nodes = 0
+        while q and nodes < max_nodes:
+            cur = q.popleft()
+            nodes += 1
+            # A frontier: a passable tile we have never observed (not in the occupancy map).
+            if cur != start and cur not in m and cur not in blocked:
+                step = self._first_step(came, start, cur)
+                return self._dir(px, py, step) if step else None
+            cx, cy = cur
+            for _name, dx, dy in _DIRS:
+                nb = (cx + dx, cy + dy)
+                if nb in came or not self._passable(map_id, m, nb[0], nb[1]):
+                    continue
+                came[nb] = cur
+                q.append(nb)
+        return None
+
     @staticmethod
     def _first_step(came, start, end):
         """The tile adjacent to ``start`` along the reconstructed path to ``end`` (or None)."""

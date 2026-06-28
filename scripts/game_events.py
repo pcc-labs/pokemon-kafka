@@ -133,6 +133,50 @@ def build_discovery_event(
     )
 
 
+def build_move_result_event(
+    turn: int,
+    user_species: str,
+    user_level: int,
+    move_name: str,
+    move_type: str,
+    move_power: int,
+    enemy_species: str,
+    enemy_level: int,
+    enemy_type: str,
+    damage_dealt: int,
+    enemy_hp_before: int,
+    enemy_max_hp: int,
+    fainted: bool,
+) -> dict:
+    """RAW observed outcome of using a move: what happened, not why. The model learns type
+    effectiveness from (move_type, enemy_type) -> damage_dealt; we deliberately do NOT label
+    'super-effective' — that knowledge is the thing the weights are meant to discover."""
+    return _envelope(
+        "move_result",
+        turn,
+        {
+            "user_species": user_species,
+            "user_level": user_level,
+            "move": move_name,
+            "move_type": move_type,
+            "move_power": move_power,
+            "enemy_species": enemy_species,
+            "enemy_level": enemy_level,
+            "enemy_type": enemy_type,
+            "damage_dealt": damage_dealt,
+            "enemy_hp_before": enemy_hp_before,
+            "enemy_max_hp": enemy_max_hp,
+            "one_shot": fainted and enemy_hp_before >= enemy_max_hp,
+            "fainted": fainted,
+        },
+    )
+
+
+def build_moveset_event(turn: int, species: str, level: int, moves: list[str]) -> dict:
+    """Observed learnset point: which moves the lead knows at this level (emit on change)."""
+    return _envelope("moveset", turn, {"species": species, "level": level, "moves": moves})
+
+
 def build_map_change_event(turn: int, prev_map: int, new_map: int, x: int, y: int) -> dict:
     return _envelope(
         "map_change",
@@ -270,6 +314,16 @@ class GameEventCollector:
 
     def discovery(self, turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue"):
         self._emit(build_discovery_event(turn, map_id, x, y, text, kind))
+
+    def move_result(self, turn, user_species, user_level, move_name, move_type, move_power,
+                    enemy_species, enemy_level, enemy_type, damage_dealt, enemy_hp_before,
+                    enemy_max_hp, fainted):
+        self._emit(build_move_result_event(
+            turn, user_species, user_level, move_name, move_type, move_power, enemy_species,
+            enemy_level, enemy_type, damage_dealt, enemy_hp_before, enemy_max_hp, fainted))
+
+    def moveset(self, turn: int, species: str, level: int, moves: list):
+        self._emit(build_moveset_event(turn, species, level, moves))
 
     def map_change(self, turn: int, prev_map: int, new_map: int, x: int, y: int):
         self._emit(build_map_change_event(turn, prev_map, new_map, x, y))
