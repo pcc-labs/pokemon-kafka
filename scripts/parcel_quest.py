@@ -114,7 +114,8 @@ class ParcelQuest:
         if phase == TO_OAK:
             # Reverse course back to Oak in Pallet.
             if sig.map_id == VIRIDIAN_MART:
-                return _to(MART_EXIT, "Mart exit")  # step onto the door warp to leave
+                # Leave by walking down off the doormat warp.
+                return _to(MART_EXIT, "Mart exit", at_target="down")
             if sig.map_id in (VIRIDIAN_CITY, ROUTE_1):
                 return _pilot("south")  # back down toward Pallet
             if sig.map_id == PALLET_TOWN:
@@ -127,9 +128,9 @@ class ParcelQuest:
             # Pokédex in hand. Walk out of any building, steer Viridian to its now-clear north exit,
             # and pilot north elsewhere.
             if sig.map_id == OAKS_LAB:
-                return _to(OAKS_LAB_EXIT, "Oak's Lab exit")  # step onto the door warp to leave
+                return _to(OAKS_LAB_EXIT, "Oak's Lab exit", at_target="down")  # walk out the door
             if sig.map_id == VIRIDIAN_MART:
-                return _to(MART_EXIT, "Mart exit")
+                return _to(MART_EXIT, "Mart exit", at_target="down")
             if sig.map_id == VIRIDIAN_CITY:
                 return _to(VIRIDIAN_NORTH, "Viridian north exit", at_target="up")
             return _pilot("north")
