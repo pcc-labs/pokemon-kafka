@@ -60,6 +60,9 @@ ADDR_BAG_COUNT = 0xD31D
 ADDR_BAG_ITEMS = 0xD31E  # pairs of [item_id, quantity], terminated by 0xFF
 BAG_MAX_SLOTS = 20
 
+# Quest items
+ITEM_OAKS_PARCEL = 0x46  # given by the Viridian Mart clerk, delivered to Prof. Oak
+
 
 @dataclass
 class BattleState:
@@ -172,6 +175,16 @@ class MemoryReader:
     # bit 5: simulated joypad active (scripted movement, e.g. Oak walking)
     # bit 6: text/script display active (set by DisplayTextID)
     ADDR_WD730 = 0xD730
+
+    # Player facing direction (pokered wSpritePlayerStateData1FacingDirection).
+    # Encoded as multiples of 4: 0=down, 4=up, 8=left, 12=right.
+    ADDR_PLAYER_FACING = 0xC109
+    FACING_NAMES = {0: "down", 4: "up", 8: "left", 12: "right"}
+
+    # Early-game event flags (pokered wd74b). bit 5 (0x20) = obtained the Pokedex, set when
+    # Oak takes the parcel. Confirmed against telemetry in the discovery spike.
+    ADDR_WD74B = 0xD74B
+    BIT_GOT_POKEDEX = 0x20
 
     def __init__(self, pyboy):
         self.pyboy = pyboy
@@ -292,10 +305,52 @@ class MemoryReader:
                 return (idx, item_id)
         return None
 
+    def has_item(self, item_id: int) -> bool:
+        """True if the bag holds at least one of ``item_id``."""
+        return any(iid == item_id and qty > 0 for iid, qty in self.read_bag_items())
+
+    def has_parcel(self) -> bool:
+        """True while Oak's Parcel is in the bag (between the Mart and delivering it to Oak)."""
+        return self.has_item(ITEM_OAKS_PARCEL)
+
+    def has_pokedex(self) -> bool:
+        """True once Oak takes the parcel and hands over the Pokedex (wd74b bit 5)."""
+        return bool(self._read(self.ADDR_WD74B) & self.BIT_GOT_POKEDEX)
+
+    def read_player_facing(self) -> int:
+        """Raw facing byte (0=down, 4=up, 8=left, 12=right)."""
+        return self._read(self.ADDR_PLAYER_FACING)
+
+    def read_player_facing_name(self) -> str:
+        """Facing direction as a name, or ``?<raw>`` if the byte is unrecognised."""
+        raw = self.read_player_facing()
+        return self.FACING_NAMES.get(raw, f"?{raw}")
+
     def read_party_species(self) -> list[int]:
         """Read species ID for each party member."""
         count = self._read(self.ADDR_PARTY_COUNT)
         return [self._read(self.ADDR_PARTY_SPECIES_LIST + i) for i in range(min(count, 6))]
+
+    def read_party(self) -> list[dict]:
+        """Per-slot ``{species, level, hp, max_hp}`` for the current party.
+
+        Offsets within each 44-byte party struct: current HP @ +1, level @ +33,
+        max HP @ +34 (all confirmed against the addresses this reader already uses).
+        """
+        count = self._read(self.ADDR_PARTY_COUNT)
+        out: list[dict] = []
+        for i in range(min(count, 6)):
+            base = self.PARTY_BASE + (i * self.PARTY_STRUCT_SIZE)
+            species_id = self._read(self.ADDR_PARTY_SPECIES_LIST + i)
+            out.append(
+                {
+                    "species": SPECIES_ID_MAP.get(species_id, f"#{species_id:02X}"),
+                    "level": self._read(base + 33),
+                    "hp": self._read_16(base + self.PARTY_HP_OFFSET, base + self.PARTY_HP_OFFSET + 1),
+                    "max_hp": self._read_16(base + 34, base + 35),
+                }
+            )
+        return out
 
     def is_in_battle(self) -> bool:
         """Quick check: are we in a battle?"""
@@ -320,7 +375,13 @@ class CollisionMap:
 
     def update(self, pyboy) -> None:
         """Read collision data and downsample 18x20 to 9x10."""
-        raw = pyboy.game_wrapper().game_area_collision()
+        # ``game_wrapper`` is a property in modern PyBoy and a method in older versions;
+        # calling the property raises TypeError (silently swallowed by the agent), which left the
+        # grid all-walls and disabled A* pathfinding. Support both shapes.
+        gw = pyboy.game_wrapper
+        if callable(gw):
+            gw = gw()
+        raw = gw.game_area_collision()
         self.sprites = []
         for r in range(9):
             for c in range(10):

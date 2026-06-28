@@ -6,6 +6,7 @@ import json
 from game_events import (
     SCHEMA_GAME_EVENT,
     GameEventCollector,
+    build_battle_end_event,
     build_battle_event,
     build_map_change_event,
     build_milestone_event,
@@ -32,6 +33,64 @@ def test_build_battle_event_has_required_fields():
     assert data["enemy_hp"] == 12
     assert data["action"] == '{"action": "fight", "move_index": 0}'
     assert "occurred_at" in event
+
+
+def test_build_battle_event_omits_context_when_unset():
+    """Backward-compat: enrichment fields appear only when supplied."""
+    event = build_battle_event(1, 10, 10, 10, 10, {"action": "fight"})
+    for key in ("battle_type", "map_id", "enemy_species", "enemy_level", "player_species"):
+        assert key not in event["data"]
+
+
+def test_build_battle_event_includes_context_when_set():
+    event = build_battle_event(
+        1,
+        10,
+        10,
+        10,
+        10,
+        {"action": "fight"},
+        battle_type=2,
+        map_id=54,
+        enemy_species="Onix",
+        enemy_level=14,
+        player_species="Squirtle",
+        player_level=14,
+    )
+    data = event["data"]
+    assert data["battle_type"] == 2
+    assert data["map_id"] == 54
+    assert data["enemy_species"] == "Onix"
+    assert data["enemy_level"] == 14
+    assert data["player_species"] == "Squirtle"
+
+
+def test_build_battle_end_event():
+    party = [{"species": "Squirtle", "level": 14, "hp": 40, "max_hp": 44}]
+    event = build_battle_end_event(
+        turn=120,
+        won=True,
+        battle_turns=8,
+        battle_type=2,
+        map_id=54,
+        opponent_species="Geodude",
+        opponent_level=12,
+        party=party,
+    )
+    assert event["event_type"] == "battle_end"
+    data = event["data"]
+    assert data["won"] is True
+    assert data["battle_turns"] == 8
+    assert data["battle_type"] == 2
+    assert data["opponent_species"] == "Geodude"
+    assert data["party"] == party
+
+
+def test_collector_battle_end_emits_and_accumulates():
+    collector = GameEventCollector()
+    collector.battle_end(120, True, 8, 2, 54, "Onix", 14, [])
+    assert len(collector.events) == 1
+    assert collector.events[0]["event_type"] == "battle_end"
 
 
 def test_build_overworld_event():

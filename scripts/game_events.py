@@ -30,18 +30,66 @@ def build_battle_event(
     enemy_hp: int,
     enemy_max_hp: int,
     action: dict,
+    *,
+    battle_type: int | None = None,
+    map_id: int | None = None,
+    enemy_species: str | None = None,
+    enemy_level: int | None = None,
+    player_species: str | None = None,
+    player_level: int | None = None,
 ) -> dict:
+    data: dict = {
+        "player_hp": player_hp,
+        "player_max_hp": player_max_hp,
+        "enemy_hp": enemy_hp,
+        "enemy_max_hp": enemy_max_hp,
+        # Serialize to string — action dicts have variable shape (fight/item/run)
+        # and Flink reads this as a STRING column.
+        "action": json.dumps(action),
+    }
+    # Additive battle context: only present when supplied so the fixed Flink ROW
+    # payload and existing positional callers stay unchanged.
+    if battle_type is not None:
+        data["battle_type"] = battle_type
+    if map_id is not None:
+        data["map_id"] = map_id
+    if enemy_species is not None:
+        data["enemy_species"] = enemy_species
+    if enemy_level is not None:
+        data["enemy_level"] = enemy_level
+    if player_species is not None:
+        data["player_species"] = player_species
+    if player_level is not None:
+        data["player_level"] = player_level
+    return _envelope("battle", turn, data)
+
+
+def build_battle_end_event(
+    turn: int,
+    won: bool,
+    battle_turns: int,
+    battle_type: int,
+    map_id: int,
+    opponent_species: str,
+    opponent_level: int,
+    party: list[dict],
+) -> dict:
+    """Summary of a finished battle.
+
+    ``party`` is a list of ``{species, level, hp, max_hp}`` for the post-battle party.
+    ``battle_turns`` is the number of in-battle turns the fight lasted.
+    """
     return _envelope(
-        "battle",
+        "battle_end",
         turn,
         {
-            "player_hp": player_hp,
-            "player_max_hp": player_max_hp,
-            "enemy_hp": enemy_hp,
-            "enemy_max_hp": enemy_max_hp,
-            # Serialize to string — action dicts have variable shape (fight/item/run)
-            # and Flink reads this as a STRING column.
-            "action": json.dumps(action),
+            "won": won,
+            "battle_turns": battle_turns,
+            "battle_type": battle_type,
+            "map_id": map_id,
+            "opponent_species": opponent_species,
+            "opponent_level": opponent_level,
+            "party": party,
         },
     )
 
@@ -141,8 +189,55 @@ class GameEventCollector:
             except Exception as exc:
                 print(f"[game_events] recorder error: {exc}")
 
-    def battle(self, turn: int, player_hp: int, player_max_hp: int, enemy_hp: int, enemy_max_hp: int, action: dict):
-        self._emit(build_battle_event(turn, player_hp, player_max_hp, enemy_hp, enemy_max_hp, action))
+    def battle(
+        self,
+        turn: int,
+        player_hp: int,
+        player_max_hp: int,
+        enemy_hp: int,
+        enemy_max_hp: int,
+        action: dict,
+        *,
+        battle_type: int | None = None,
+        map_id: int | None = None,
+        enemy_species: str | None = None,
+        enemy_level: int | None = None,
+        player_species: str | None = None,
+        player_level: int | None = None,
+    ):
+        self._emit(
+            build_battle_event(
+                turn,
+                player_hp,
+                player_max_hp,
+                enemy_hp,
+                enemy_max_hp,
+                action,
+                battle_type=battle_type,
+                map_id=map_id,
+                enemy_species=enemy_species,
+                enemy_level=enemy_level,
+                player_species=player_species,
+                player_level=player_level,
+            )
+        )
+
+    def battle_end(
+        self,
+        turn: int,
+        won: bool,
+        battle_turns: int,
+        battle_type: int,
+        map_id: int,
+        opponent_species: str,
+        opponent_level: int,
+        party: list[dict],
+    ):
+        self._emit(
+            build_battle_end_event(
+                turn, won, battle_turns, battle_type, map_id, opponent_species, opponent_level, party
+            )
+        )
 
     def overworld(
         self,
