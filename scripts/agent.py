@@ -141,8 +141,13 @@ class GameController:
             self.pyboy.tick()
 
     def move(self, direction: str):
-        """Move a single tile in the overworld."""
-        self.press(direction, hold_frames=20, release_frames=8)
+        """Move a single tile in the overworld.
+
+        hold_frames=20 held the d-pad long enough to walk *two* tiles per call, so the agent could
+        only ever land on same-parity columns — fatal where a one-tile-wide gap sits on the other
+        parity (e.g. the Route 1 ledge gap at x=9). 8 frames is enough to commit exactly one step.
+        """
+        self.press(direction, hold_frames=8, release_frames=8)
         self.wait(30)
 
     def mash_a(self, times: int = 5, delay: int = 20):
@@ -835,20 +840,32 @@ class PokemonAgent:
             self._pilot_escape = escape - 1
             side = self._pilot_escape_side
             side_open = grid[4][5] if side == "right" else grid[4][3]
-            if side_open:
-                d = side  # slide sideways to a new column
-            elif fwd_open:
-                d = fwd  # side walled but forward opened — take it
+            if fwd_open:
+                # The gap opened as we drifted across it (the ledge line breaks at one column) —
+                # take it immediately and end the escape, instead of sliding straight past it.
+                self._pilot_escape = 0
+                d = fwd
+            elif side_open:
+                d = side  # keep sliding sideways to scan for the gap column
             else:
-                # hit the side wall and still walled forward: flip the drift direction
+                # hit the side wall, still walled forward: flip the drift direction
                 self._pilot_escape_side = "left" if side == "right" else "right"
                 other_open = grid[4][3] if side == "right" else grid[4][5]
                 d = self._pilot_escape_side if other_open else back
             self._pilot_last_action = d
             return d
 
-        # Step toward the cell furthest toward the goal that A* can reach on the visible grid
-        # (A* routes around obstacles, giving the down-and-around detours a ledge line needs).
+        # Greedy first: if the tile straight ahead is open, just take it. Chasing the
+        # *furthest*-north reachable cell instead made the agent overshoot the gap — at x=9 it
+        # picked a higher cell reachable only by detouring left, stepping over the x=9 opening and
+        # oscillating x=8<->10 forever. Take the gap the moment it's straight ahead.
+        if fwd_open:
+            self._pilot_noprog = 0
+            self._pilot_last_action = fwd
+            return fwd
+
+        # Otherwise step toward the cell furthest toward the goal that A* can reach on the visible
+        # grid (A* routes around obstacles, giving the down-and-around detours a ledge line needs).
         rows = range(0, 4) if goal == "north" else range(8, 4, -1)
         for r in rows:
             for c in sorted(range(10), key=lambda col: abs(col - 4)):  # prefer straight ahead
