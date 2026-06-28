@@ -900,48 +900,41 @@ class PokemonAgent:
             return None
         grid = self.collision_map.grid
         dx, dy = tx - state.x, ty - state.y
-        dist = abs(dx) + abs(dy)
         opens = {"up": grid[3][4], "down": grid[5][4], "left": grid[4][3], "right": grid[4][5]}
         h = "right" if dx > 0 else ("left" if dx < 0 else None)
         v = "down" if dy > 0 else ("up" if dy < 0 else None)
+        primary = h if abs(dx) >= abs(dy) else v
+        secondary = v if abs(dx) >= abs(dy) else h
 
-        # Track closing distance to the target; reset when the target changes.
         goal = (state.map_id, tx, ty)
         if getattr(self, "_pt_goal", None) != goal:
             self._pt_goal = goal
-            self._pt_best = 10**9
-            self._pt_noprog = 0
-            self._pt_escape = 0
-        if dist < self._pt_best:
-            self._pt_best = dist
-            self._pt_noprog = 0
-        else:
-            self._pt_noprog += 1
+            self._pt_follow = None
 
-        # Stalled near a wall → drift sideways to a new lane, grabbing a preferred step the instant
-        # one opens (mirrors the cardinal pilot's ledge escape).
-        esc = self._pt_escape
-        if self._pt_noprog >= 25 and esc == 0:
-            esc = 8
-            self._pt_side = "right" if grid[4][5] >= grid[4][3] else "left"
-            self._pt_noprog = 0
-        if esc > 0:
-            self._pt_escape = esc - 1
-            for d in (v, h):
-                if d and opens[d]:
-                    self._pt_escape = 0
-                    return d
-            side = self._pt_side
-            if opens[side]:
-                return side
-            self._pt_side = "left" if side == "right" else "right"
-            return self._pt_side if opens[self._pt_side] else ("up" if opens["up"] else "down")
+        # The toward-target step on the harder axis opening means the wall broke — take it and end
+        # any wall-follow. (Only the *primary* axis ends the follow; see below for why.)
+        if primary and opens[primary]:
+            self._pt_follow = None
+            return primary
 
-        # Greedy: step along the dominant axis toward the target when that tile is open.
-        for d in [h, v] if abs(dx) >= abs(dy) else [v, h]:
-            if d and opens[d]:
-                return d
-        # Blocked on the preferred axes → A* toward the target's on-screen cell (routes around).
+        follow = getattr(self, "_pt_follow", None)
+        # Not currently following a wall: a normal lateral step toward the target is fine.
+        if not follow and secondary and opens[secondary]:
+            return secondary
+
+        # Blocked toward the target on the hard axis → wall-follow: slide along the wall in one
+        # *persistent* perpendicular direction (a fixed-length drift can't clear a long fence like
+        # the one north of the Mart). Crucially, while following we do NOT take the secondary
+        # toward-target step — that pull back to the target's column is exactly what made the agent
+        # oscillate one tile and never travel along the fence to its gap.
+        perp = ["left", "right"] if primary in ("up", "down") else ["up", "down"]
+        if follow not in perp or not opens[follow]:
+            follow = next((d for d in perp if opens[d]), None)  # flip when the side walls
+        if follow:
+            self._pt_follow = follow
+            return follow
+
+        # Boxed in on the wall axis too → A* around on the visible grid, else anything open.
         tr = max(0, min(8, 4 + dy))
         tc = max(0, min(9, 4 + dx))
         res = astar_path(grid, (4, 4), (tr, tc))
