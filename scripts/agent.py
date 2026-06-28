@@ -810,12 +810,24 @@ class PokemonAgent:
         blocked = 0 if moved else getattr(self, "_pilot_blocked", 0) + 1
         self._pilot_blocked = blocked
 
-        if blocked >= 2:
-            # The grid is lying about a tile (ledge/NPC). Break out: back off, drifting sideways.
-            if blocked % 4 == 0 and grid[4][5]:
-                d = "right"
-            elif blocked % 4 == 2 and grid[4][3]:
-                d = "left"
+        # When A*'s move silently fails (ledge/NPC the grid lies about), a one-tile back-off is
+        # useless — A* just re-routes straight back into the same tile. So commit to a *sustained*
+        # escape: several steps away from the goal, then a lateral drift to a different column, with
+        # A* suppressed for the whole burst so it actually breaks out of the local trap.
+        escape = getattr(self, "_pilot_escape", 0)
+        if blocked >= 2 and escape == 0:
+            escape = 10  # length of the committed escape burst
+            # Drift toward whichever side is more open (away from the ledge A* kept hitting).
+            self._pilot_escape_side = "right" if grid[4][5] >= grid[4][3] else "left"
+        if escape > 0:
+            self._pilot_escape = escape - 1
+            step = 10 - escape  # 0,1,2,... through the burst
+            side = getattr(self, "_pilot_escape_side", "right")
+            side_open = grid[4][5] if side == "right" else grid[4][3]
+            if step < 3:
+                d = back  # peel away from the barrier first
+            elif side_open:
+                d = side  # then drift along the open corridor to a new column
             else:
                 d = back
             self._pilot_last_action = d
