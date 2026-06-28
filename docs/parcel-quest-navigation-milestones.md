@@ -107,13 +107,58 @@ Man has stepped aside. It crosses into **Route 2**, walks **through the gate bui
 way the game intends. Post-Pokédex navigation simply pilots north through every map (routes, gate
 buildings, the forest) until Pewter, where it hands back to normal navigation for the gym.
 
-## Where it stands
+## Where it stands (handoff)
 
-From a completely dead Route 1 grind loop, the agent now **completes the Oak's Parcel quest** —
-parcel pickup, delivery, Pokédex, the Old Man gate cleared — and climbs the corridor north through
-Route 2 and its gate into Viridian Forest, all on general whole-map pathfinding rather than
-per-barrier heuristics. The remaining work is the Viridian Forest maze and the final hop to Pewter
-City and the gym (Brock), which use the same pilot and should fall out of more navigation time.
+From a completely dead Route 1 grind loop, the agent now **completes the Oak's Parcel quest** end
+to end — parcel pickup, delivery, Pokédex, the Old Man gate cleared — and climbs the corridor north
+through Route 2, its gate building, and **into Viridian Forest (map 51)**, all on general whole-map
+pathfinding (the WorldMap pilot) rather than per-barrier heuristics. Verified live in run 18.
+
+### Verified map sequence (run 18)
+
+`12 (Route 1) → 1 (Viridian) → 42 (Mart, parcel) → 1 → 12 → 0 (Pallet) → 40 (Oak's Lab, Pokédex) →
+0 → 12 → 1 → 13 (Route 2) → 50 (Route 2 gate) → 51 (Viridian Forest)`.
+
+### Open blocker: surviving Viridian Forest
+
+The agent reaches the Forest but **gets stuck in wild battles** (e.g. frozen on a Lv5 Weedle at
+1/26 HP, action `fight`, neither winning nor fleeing nor fainting). Root cause is in
+`BattleStrategy.choose_action` (scripts/agent.py): in a wild battle it only attempts `run` while
+`hp_ratio < hp_run_threshold` **and** `_run_attempts < 3`; after three failed runs it falls through
+to `fight` at critical HP, with no potions in the bag to heal. The Forest's dense encounters then
+trap a low-HP starter. This is a battle-survival problem, separate from navigation.
+
+Likely fixes to try next:
+- Reset `_run_attempts` per battle (it may persist across battles, capping flees too early), and/or
+  raise the flee threshold so the agent flees Forest wild battles instead of grinding them at 1 HP.
+- Or grind/heal earlier (level the starter on Route 1 / Forest edge before pushing through), or buy
+  Potions at the Viridian Mart on the way (the agent now reaches that Mart).
+- Investigate why the specific battle doesn't terminate (move selection / PP / menu), since it is
+  stuck rather than losing.
+
+### Capturing the pre-Brock state (the goal once the Forest is crossed)
+
+Runs already arm `--save-state-on-trainer "brock:<autotune>/states/pre_brock.state"`, which dumps a
+save state the instant Brock's fight begins (the first gym-leader-level trainer) — that is the
+pre-Brock state autotune's `--mode brock` loop optimises against. For the **level lever** in the
+brock loop, also capture an *overworld* pre-gym state with `--save-state-on-map
+"<pewter-gym-map-id>:..."` (the Pewter Gym is its own map id, discovered when the agent first enters
+it; see `autotune/docs/brock-loop.md`). Neither fires yet because the agent has not reached Pewter.
+
+### How to run
+
+```
+cd pokemon-kafka
+ROM="<autotune>/rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb"
+uv run python -u scripts/agent.py "$ROM" --strategy medium \
+  --load-state "<autotune>/states/route1.state" --max-turns 40000 \
+  --telemetry-dir data/run/telemetry --output-json data/run/fitness.json --config "" \
+  --save-state-on-trainer "brock:<autotune>/states/pre_brock.state"
+```
+
+`route1.state` is a post-starter Route 1 save, the fast iteration seed. Watch progress via the
+`QUEST |` and `MAP CHANGE |` log lines. All work is on branch `feat/parcel-quest` (tests green:
+`uv run pytest -q`; `uv run ruff check`).
 
 ## Method note
 
