@@ -34,6 +34,10 @@ class WorldMap:
 
     def __init__(self) -> None:
         self.cells: dict[int, dict[tuple[int, int], int]] = {}
+        # Tiles the agent *tried* to step onto but couldn't (ledges, map-edge non-exits, NPCs).
+        # The collision grid reports these as walkable, so this hard-block — which ``observe`` must
+        # never overwrite — is the only record that they can't actually be entered.
+        self.blocked: dict[int, set[tuple[int, int]]] = {}
 
     def observe(self, map_id: int, px: int, py: int, grid: list[list[int]]) -> None:
         """Stamp a 9x10 collision ``grid`` (player at the centre) into the map at ``(px, py)``."""
@@ -46,13 +50,21 @@ class WorldMap:
                 if 0 <= gx <= _MAX_COORD and 0 <= gy <= _MAX_COORD:
                     m[(gx, gy)] = 1 if row[c] else 0
 
+    def block(self, map_id: int, x: int, y: int) -> None:
+        """Record that ``(x, y)`` can't be entered (a move into it just failed)."""
+        self.blocked.setdefault(map_id, set()).add((x, y))
+
     def walkable(self, map_id: int, x: int, y: int, default: int = 1) -> int:
         """Known walkability of a tile, or ``default`` (treat unknown as walkable) if unseen."""
+        if (x, y) in self.blocked.get(map_id, ()):
+            return 0
         return self.cells.get(map_id, {}).get((x, y), default)
 
-    def _passable(self, m: dict[tuple[int, int], int], x: int, y: int) -> bool:
+    def _passable(self, map_id: int, m: dict[tuple[int, int], int], x: int, y: int) -> bool:
         if x < 0 or y < 0 or x > _MAX_COORD or y > _MAX_COORD:
             return False
+        if (x, y) in self.blocked.get(map_id, ()):
+            return False  # tried and failed — never enter, even if the grid claims walkable
         return m.get((x, y), 1) != 0  # unknown -> passable (optimistic, draws search to the goal)
 
     def plan_step(self, map_id: int, px: int, py: int, tx: int, ty: int, max_nodes: int = 8000) -> str | None:
@@ -82,7 +94,7 @@ class WorldMap:
             cx, cy = cur
             for _name, dx, dy in _DIRS:
                 nb = (cx + dx, cy + dy)
-                if not self._passable(m, nb[0], nb[1]):
+                if not self._passable(map_id, m, nb[0], nb[1]):
                     continue
                 ng = g + 1
                 if nb not in gscore or ng < gscore[nb]:
@@ -92,7 +104,7 @@ class WorldMap:
         end = reached if reached is not None else best
         step = self._first_step(came, start, end)
         if step is None:
-            return self._greedy(m, px, py, tx, ty)
+            return self._greedy(map_id, m, px, py, tx, ty)
         return self._dir(px, py, step)
 
     @staticmethod
@@ -118,12 +130,12 @@ class WorldMap:
             return "up"
         return None
 
-    def _greedy(self, m, px, py, tx, ty) -> str:
+    def _greedy(self, map_id, m, px, py, tx, ty) -> str:
         """Step toward the target along an open neighbour, minimising remaining distance."""
         best_dir, best_score = "up", None
         for name, dx, dy in _DIRS:
             nx, ny = px + dx, py + dy
-            if not self._passable(m, nx, ny):
+            if not self._passable(map_id, m, nx, ny):
                 continue
             score = abs(nx - tx) + abs(ny - ty)
             if best_score is None or score < best_score:

@@ -999,6 +999,23 @@ class PokemonAgent:
     def run_overworld(self):
         """Move in the overworld."""
         state = self.memory.read_overworld_state()
+
+        # If last turn's move didn't change our position, the tile we tried to enter is impassable
+        # even though the collision grid called it walkable (a ledge, a map-edge non-exit, an NPC).
+        # Record it so the WorldMap planner reroutes instead of pressing into it forever.
+        prev = self.last_overworld_state
+        last_act = self.last_overworld_action
+        if (
+            prev is not None
+            and last_act in ("up", "down", "left", "right")
+            and state.map_id == prev.map_id
+            and state.x == prev.x
+            and state.y == prev.y
+        ):
+            bdx = {"left": -1, "right": 1}.get(last_act, 0)
+            bdy = {"up": -1, "down": 1}.get(last_act, 0)
+            self.world.block(state.map_id, state.x + bdx, state.y + bdy)
+
         self.update_overworld_progress(state)
         try:
             self.collision_map.update(self.pyboy)

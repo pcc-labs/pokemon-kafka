@@ -89,6 +89,23 @@ def test_plan_step_boxed_in_takes_the_only_opening():
     assert d == "down"
 
 
+def test_block_makes_a_tile_impassable_and_reroutes():
+    wm = WorldMap()
+    wm.block(0, 5, 4)  # the tile straight north of the player at (5,5)
+    d = wm.plan_step(0, 5, 5, 5, 0)
+    assert d in ("left", "right")  # routes around the blocked tile
+    assert d != "up"
+
+
+def test_observe_does_not_unblock_a_failed_tile():
+    wm = WorldMap()
+    wm.block(0, 5, 4)
+    grid = _full(1)  # collision grid claims everything (incl. 5,4) is walkable
+    wm.observe(0, 5, 5, grid)
+    assert wm.walkable(0, 5, 4) == 0  # the hard block survives the optimistic observation
+    assert wm.plan_step(0, 5, 5, 5, 0) != "up"
+
+
 def test_accumulated_observations_inform_planning():
     wm = WorldMap()
     # Observe a window that reveals a wall directly north of the player.
