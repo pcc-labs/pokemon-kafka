@@ -5,6 +5,7 @@ from parcel_quest import (
     GO_NORTH,
     OAKS_LAB,
     PALLET_TOWN,
+    PEWTER_CITY,
     ROUTE_1,
     ROUTE_2,
     TO_MART,
@@ -38,8 +39,11 @@ def test_phase_with_pokedex_in_early_loop_is_go_north():
         assert quest_phase(sig(m, pokedex=True)) == GO_NORTH
 
 
-def test_phase_with_pokedex_past_viridian_is_done():
-    assert quest_phase(sig(ROUTE_2, pokedex=True)) == DONE
+def test_phase_keeps_going_north_through_route2_and_forest():
+    # The corridor up to Pewter is all GO_NORTH; only Pewter itself is DONE.
+    assert quest_phase(sig(ROUTE_2, pokedex=True)) == GO_NORTH
+    assert quest_phase(sig(51, pokedex=True)) == GO_NORTH  # Viridian Forest
+    assert quest_phase(sig(PEWTER_CITY, pokedex=True)) == DONE
 
 
 def test_pokedex_overrides_a_lingering_parcel_flag():
@@ -92,9 +96,11 @@ def test_to_oak_exits_mart_via_door_warp():
     assert "exit" in t["name"].lower() and "pilot_to" in t
 
 
-def test_done_defers_to_normal_navigation():
+def test_route2_and_forest_pilot_north_then_pewter_defers():
     q = ParcelQuest()
-    assert q.next_target(sig(ROUTE_2, pokedex=True)) is None
+    assert q.next_target(sig(ROUTE_2, pokedex=True))["pilot"] == "north"
+    assert q.next_target(sig(51, pokedex=True))["pilot"] == "north"  # Viridian Forest
+    assert q.next_target(sig(PEWTER_CITY, pokedex=True)) is None  # DONE at Pewter
 
 
 def test_unsteered_map_returns_none():

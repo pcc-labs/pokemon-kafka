@@ -21,14 +21,17 @@ from dataclasses import dataclass
 # VIRIDIAN_MART is the documented constant, verified via map-transition logging on the first run.
 PALLET_TOWN = 0
 VIRIDIAN_CITY = 1
+PEWTER_CITY = 2
 ROUTE_1 = 12
 ROUTE_2 = 13
+VIRIDIAN_FOREST = 51
 OAKS_LAB = 40
 VIRIDIAN_MART = 42
 
-# Maps the quest actively steers through. On any other map it returns no override and lets the
-# normal waypoint navigation (which already covers Route 2 / Forest / Pewter) take over.
-QUEST_MAPS = frozenset({PALLET_TOWN, VIRIDIAN_CITY, ROUTE_1, OAKS_LAB, VIRIDIAN_MART})
+# Maps the quest actively steers through. It covers the whole corridor from Pallet up to (but not
+# including) Pewter, because the old waypoint navigator can't reliably make the Route 2 / Forest
+# climb either — the WorldMap pilot does. On Pewter and anywhere else it hands back to normal nav.
+QUEST_MAPS = frozenset({PALLET_TOWN, VIRIDIAN_CITY, ROUTE_1, ROUTE_2, VIRIDIAN_FOREST, OAKS_LAB, VIRIDIAN_MART})
 
 # --- Phases ---
 TO_MART = "TO_MART"  # no parcel yet → go to the Viridian Mart and pick it up
