@@ -334,3 +334,46 @@ def test_plan_step_does_not_step_onto_a_hard_blocked_goal():
     m[(2, 0)] = 0
     wm.block(51, 2, 0)  # a real wall — must not be entered even as a goal
     assert wm.plan_step(51, 2, 1, 2, 0) != "up"
+
+
+# --- warp APPROACH also reads as a wall (the real Viridian Forest exit case) --------------------
+# The forest exit (2,0) is a warp; the tile you step from to use it, (2,1), is ITSELF reported
+# impassable by the collision grid (warp-adjacent tiles read as walls too). With only the goal
+# special-cased, the warp's every neighbour is a wall, so the planner can't reach it at all:
+# `_pilot_to` returns None, the agent falls to frontier-exploration and wedges. ``goal_is_warp``
+# lets the path traverse the warp's immediate approach (still barring hard-blocks).
+
+
+def test_known_reachable_warp_through_walled_approach():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(2, 8):
+        m[(2, y)] = 1  # known-walkable column up to the approach
+    m[(2, 1)] = 0  # warp APPROACH — collision grid also calls it a wall
+    m[(2, 0)] = 0  # the exit warp itself
+    # Default: unreachable (every neighbour of the warp is a wall).
+    assert wm.known_reachable(51, 2, 5, 2, 0) is False
+    # As a warp goal, the steppable approach lets the path reach it.
+    assert wm.known_reachable(51, 2, 5, 2, 0, goal_is_warp=True) is True
+
+
+def test_plan_step_routes_through_walled_warp_approach():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(1, 8):
+        m[(2, y)] = 1
+    m[(2, 1)] = 0  # walled approach
+    m[(2, 0)] = 0  # warp
+    # Heading up the column toward the exit.
+    assert wm.plan_step(51, 2, 5, 2, 0, goal_is_warp=True) == "up"
+
+
+def test_warp_approach_still_respects_hard_block():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(2, 8):
+        m[(2, y)] = 1
+    m[(2, 1)] = 0
+    m[(2, 0)] = 0
+    wm.block(51, 2, 1)  # a real failed step on the approach — never traverse it
+    assert wm.known_reachable(51, 2, 5, 2, 0, goal_is_warp=True) is False

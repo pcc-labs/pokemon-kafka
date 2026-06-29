@@ -121,6 +121,19 @@ class WorldMap:
             return False  # tried and failed — never enter, even if the grid claims walkable
         return m.get((x, y), 1) != 0  # unknown -> passable (optimistic, draws search to the goal)
 
+    def _warp_approach_ok(self, map_id: int, cell: tuple[int, int], goal: tuple[int, int]) -> bool:
+        """A warp exit's immediate approach tile reads impassable (the collision grid stamps
+        warp-adjacent tiles as walls) but is actually steppable. Allow the search to traverse a tile
+        orthogonally adjacent to the warp goal — unless it's off-map or a hard-block (a real failed
+        step). Without this, the Viridian Forest exit (2,0) has every neighbour stamped a wall, so no
+        path can reach it and the agent wedges on frontier exploration instead of crossing."""
+        x, y = cell
+        if abs(x - goal[0]) + abs(y - goal[1]) != 1:
+            return False
+        if x < 0 or y < 0 or x > _MAX_COORD or y > _MAX_COORD:
+            return False
+        return cell not in self.blocked.get(map_id, ())
+
     def plan_step(
         self,
         map_id: int,
@@ -130,6 +143,7 @@ class WorldMap:
         ty: int,
         max_nodes: int = 8000,
         encounter_cost: int = 0,
+        goal_is_warp: bool = False,
     ) -> str | None:
         """First step ("up"/"down"/"left"/"right") of an A* path from ``(px, py)`` to ``(tx, ty)``
         over the accumulated map. ``None`` only when already on the target. Falls back to a greedy
@@ -137,6 +151,10 @@ class WorldMap:
 
         ``encounter_cost`` (>= 0) is added to the g-cost of entering a known encounter tile, so the
         planner prefers fewer-grass routes among comparable paths without treating grass as a wall.
+
+        ``goal_is_warp`` lets the path traverse the goal's immediate approach tile even if the grid
+        stamped it a wall (warp-adjacent tiles read impassable but are steppable) — see
+        :meth:`_warp_approach_ok`.
         """
         if (px, py) == (tx, ty):
             return None
@@ -175,7 +193,8 @@ class WorldMap:
                     ):
                         continue
                 elif not self._passable(map_id, m, nb[0], nb[1]):
-                    continue
+                    if not (goal_is_warp and self._warp_approach_ok(map_id, nb, goal)):
+                        continue
                 ng = g + 1 + (encounter_cost if nb in grass else 0)
                 if nb not in gscore or ng < gscore[nb]:
                     gscore[nb] = ng
@@ -224,12 +243,15 @@ class WorldMap:
         step = self._first_step(came, (px, py), target)
         return (step and self._dir(px, py, step)) or fwd
 
-    def known_reachable(self, map_id: int, px: int, py: int, tx: int, ty: int) -> bool:
+    def known_reachable(self, map_id: int, px: int, py: int, tx: int, ty: int, goal_is_warp: bool = False) -> bool:
         """Can ``(tx, ty)`` be reached from ``(px, py)`` over tiles *known* to be walkable?
 
         Strict (unlike :meth:`plan_step`'s optimism): unknown tiles do NOT count. Used to decide
         whether to commit to the goal or keep exploring — heading for a goal that is only
-        ``optimistically`` reachable is what makes the agent oscillate against a wall."""
+        ``optimistically`` reachable is what makes the agent oscillate against a wall.
+
+        ``goal_is_warp`` additionally lets the search traverse the goal's stamped-wall approach tile
+        (warp-adjacent tiles read impassable but are steppable) — see :meth:`_warp_approach_ok`."""
         if (px, py) == (tx, ty):
             return True
         m = self.cells.get(map_id, {})
@@ -247,7 +269,9 @@ class WorldMap:
                     # warp/door (the forest exit at (2,0)) reads as impassable but is steppable. A
                     # hard-block (checked above) is the only thing that bars entering the goal.
                     return True
-                if m.get(nb, 0) != 1:
+                # The warp's immediate approach also reads as a wall but is steppable; let the
+                # strict search pass through it so a fully walled-off warp is still reachable.
+                if m.get(nb, 0) != 1 and not (goal_is_warp and self._warp_approach_ok(map_id, nb, (tx, ty))):
                     continue
                 seen.add(nb)
                 q.append(nb)

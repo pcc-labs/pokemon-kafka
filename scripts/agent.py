@@ -882,9 +882,11 @@ class PokemonAgent:
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
             ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (2, 0)
-            # Once the exit is reachable over KNOWN-walkable tiles, commit to it.
-            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
-                d = self._pilot_to(state, ex, ey)
+            # Once the exit is reachable over KNOWN-walkable tiles, commit to it. The exit is a warp:
+            # its tile AND its approach read as walls but are steppable, so pass goal_is_warp so the
+            # planner can actually route onto it instead of treating it as fully walled off.
+            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=True):
+                d = self._pilot_to(state, ex, ey, goal_is_warp=True)
                 return d if d is not None else self._collision_pilot(state, "north")
             # Otherwise head toward the exit optimistically (A* treats unknown tiles as passable).
             # With the now-correct two-failed-steps wall learning, real walls get recorded and A*
@@ -894,7 +896,7 @@ class PokemonAgent:
             # is the fallback when the optimistic plan has nowhere to go. Persisting the WorldMap
             # across runs (load -> run -> save) lets successive epochs accumulate the whole maze, so
             # known_reachable eventually fires and the commit branch above carries it out the exit.
-            d = self._pilot_to(state, ex, ey)
+            d = self._pilot_to(state, ex, ey, goal_is_warp=True)
             if d is not None:
                 return d
             explore = self.world.explore_step(state.map_id, state.x, state.y)
@@ -936,14 +938,25 @@ class PokemonAgent:
         map-edge non-exits as it goes (via the failed-move hard-blocks)."""
         return self.world.cross_step(state.map_id, state.x, state.y, goal)
 
-    def _pilot_to(self, state: OverworldState, tx: int, ty: int) -> str | None:
+    def _pilot_to(self, state: OverworldState, tx: int, ty: int, goal_is_warp: bool = False) -> str | None:
         """Navigate toward tile ``(tx, ty)`` by pathfinding over the accumulated WorldMap. Returns
         ``None`` once standing on the tile (the caller then presses the target's ``at_target``
         action). Whole-map A* routes around remembered walls — e.g. it follows the fence north of
-        the Mart all the way to the gap on the centre corridor instead of stalling beneath it."""
+        the Mart all the way to the gap on the centre corridor instead of stalling beneath it.
+
+        ``goal_is_warp`` routes through the goal's stamped-wall approach tile (e.g. the forest exit
+        warp, whose approach the collision grid also reports impassable)."""
         if state.x == tx and state.y == ty:
             return None
-        return self.world.plan_step(state.map_id, state.x, state.y, tx, ty, encounter_cost=GRASS_ENCOUNTER_COST)
+        return self.world.plan_step(
+            state.map_id,
+            state.x,
+            state.y,
+            tx,
+            ty,
+            encounter_cost=GRASS_ENCOUNTER_COST,
+            goal_is_warp=goal_is_warp,
+        )
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
