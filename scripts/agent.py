@@ -227,10 +227,17 @@ class BattleStrategy:
         hp_heal_threshold: float = 0.25,
         unknown_move_score: float = 10.0,
         status_move_score: float = 1.0,
+        force_fight: bool | None = None,
     ):
         self.type_chart = type_chart
         self.hp_run_threshold = hp_run_threshold
         self.hp_heal_threshold = hp_heal_threshold
+        # Data-collection mode: never flee on low HP, so every battle resolves to a win or a
+        # faint — yielding clean win/loss labels for the win-probability dataset. The stall guard
+        # still breaks truly unwinnable loops. Off by default; AUTOTUNE_FORCE_FIGHT=1 turns it on.
+        if force_fight is None:
+            force_fight = os.environ.get("AUTOTUNE_FORCE_FIGHT", "") not in ("", "0", "false", "False")
+        self.force_fight = force_fight
         self.unknown_move_score = unknown_move_score
         self.status_move_score = status_move_score
         self._run_attempts = 0
@@ -288,7 +295,7 @@ class BattleStrategy:
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
-        if hp_ratio < self.hp_run_threshold and battle.battle_type == 1:  # Wild
+        if hp_ratio < self.hp_run_threshold and battle.battle_type == 1 and not self.force_fight:
             if self._run_attempts < 3:
                 self._run_attempts += 1
                 return {"action": "run"}
