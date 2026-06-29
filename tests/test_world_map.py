@@ -244,6 +244,12 @@ def test_worldmap_load_missing_file_is_empty():
 # --- known_reachable / explore_step (forest exit-wedge fix) -------------------
 
 
+def test_known_reachable_true_when_already_at_target():
+    # Standing on the target is trivially reachable, even on a wholly unknown map.
+    wm = WorldMap()
+    assert wm.known_reachable(1, 5, 5, 5, 5) is True
+
+
 def test_known_reachable_strict_about_unknown():
     wm = WorldMap()
     # A known-walkable corridor (0,0)->(2,0); (3,0) is unknown (never observed).
@@ -284,3 +290,47 @@ def test_explore_step_none_when_fully_mapped():
     for nb in [(4, 5), (6, 5), (5, 4), (5, 6)]:
         m[nb] = 0
     assert wm.explore_step(1, 5, 5) is None
+
+
+# --- warp/exit goal tiles read as walls by the collision grid ------------------
+# A warp tile (a forest/door exit) is reported impassable by game_area_collision, so `observe`
+# stamps it walkable=0. The planner must still be able to route a path that *ends* on its goal —
+# you step onto a warp to use it — while never treating a hard-blocked (tried-and-failed) tile as
+# steppable. Without this, the Viridian Forest exit (2,0) is unreachable and the agent never crosses.
+
+
+def test_known_reachable_to_a_warp_goal_stamped_wall():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for x in range(2, 6):
+        m[(x, 1)] = 1  # known-walkable corridor along y=1
+    m[(2, 0)] = 0  # the exit warp — collision grid calls it a wall
+    # From the corridor, the warp goal is reachable: walk to (2,1), then step up onto the warp.
+    assert wm.known_reachable(51, 5, 1, 2, 0) is True
+
+
+def test_known_reachable_false_when_goal_is_hard_blocked():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    m[(2, 1)] = 1
+    m[(2, 0)] = 0
+    wm.block(51, 2, 0)  # tried to enter and failed twice — a real wall, not a warp
+    assert wm.known_reachable(51, 2, 1, 2, 0) is False
+
+
+def test_plan_step_steps_onto_an_adjacent_warp_goal_stamped_wall():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    m[(2, 1)] = 1  # standing here
+    m[(2, 0)] = 0  # warp directly north, stamped wall
+    # Greedy skips the "wall" goal and drifts away; only routing-onto-goal yields the step up.
+    assert wm.plan_step(51, 2, 1, 2, 0) == "up"
+
+
+def test_plan_step_does_not_step_onto_a_hard_blocked_goal():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    m[(2, 1)] = 1
+    m[(2, 0)] = 0
+    wm.block(51, 2, 0)  # a real wall — must not be entered even as a goal
+    assert wm.plan_step(51, 2, 1, 2, 0) != "up"

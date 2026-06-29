@@ -44,6 +44,22 @@ class TestOverworldQuestBranches:
         state = OverworldState(map_id=42, x=4, y=5, party_count=1)
         assert ag.choose_overworld_action(state) == "a"  # line 763
 
+    def test_text_box_emits_discovery_once_then_dedupes(self, tmp_path):
+        # An active text box: decode the dialogue, emit a discovery event the first time, press A.
+        # A second identical decode is deduped (no duplicate emit) but still presses A.
+        ag = _make_agent(tmp_path)
+        ag.memory.read_dialogue = MagicMock(return_value="TRAINER TIPS")
+        ag.collector.discovery = MagicMock()
+        state = OverworldState(map_id=51, x=3, y=4, party_count=1, text_box_active=True)
+
+        assert ag.choose_overworld_action(state) == "a"
+        assert ag._last_discovery == "TRAINER TIPS"
+        ag.collector.discovery.assert_called_once_with(ag.turn_count, 51, 3, 4, "TRAINER TIPS")
+
+        # Same text again -> deduped, no second emit.
+        assert ag.choose_overworld_action(state) == "a"
+        ag.collector.discovery.assert_called_once()
+
     def test_forest_pilots_toward_exit_when_known_reachable(self, tmp_path):
         # When the exit is reachable over KNOWN-walkable tiles, commit to it via plan_step.
         ag = _make_agent(tmp_path)
@@ -54,12 +70,25 @@ class TestOverworldQuestBranches:
         assert ag.choose_overworld_action(state) == "up"
         ag.world.plan_step.assert_called_once()
 
-    def test_forest_explores_when_exit_not_known_reachable(self, tmp_path):
-        # The maze-trap fix: when the exit is only optimistically reachable (walled off in the
-        # known map), explore unmapped ground instead of oscillating toward it.
+    def test_forest_optimistic_pilots_toward_exit_when_not_known_reachable(self, tmp_path):
+        # When the exit is not yet known-reachable, head toward it optimistically (plan_step treats
+        # unknown tiles as passable) so the agent pushes into the unexplored exit pocket instead of
+        # plateauing on nearby frontiers the way pure nearest-frontier exploration did.
         ag = _make_agent(tmp_path)
         ag.door_cooldown = 0
         ag.world.known_reachable = MagicMock(return_value=False)
+        ag.world.plan_step = MagicMock(return_value="left")
+        state = OverworldState(map_id=51, x=10, y=20, party_count=1)
+        assert ag.choose_overworld_action(state) == "left"
+        ag.world.plan_step.assert_called()
+
+    def test_forest_explores_when_optimistic_plan_is_empty(self, tmp_path):
+        # Fallback: only when the optimistic plan has nowhere to go does the agent fall to frontier
+        # exploration.
+        ag = _make_agent(tmp_path)
+        ag.door_cooldown = 0
+        ag.world.known_reachable = MagicMock(return_value=False)
+        ag.world.plan_step = MagicMock(return_value=None)
         ag.world.explore_step = MagicMock(return_value="left")
         state = OverworldState(map_id=51, x=10, y=20, party_count=1)
         assert ag.choose_overworld_action(state) == "left"
@@ -68,10 +97,11 @@ class TestOverworldQuestBranches:
     def test_forest_falls_back_to_cross_step_at_exit(self, tmp_path):
         ag = _make_agent(tmp_path)
         ag.door_cooldown = 0
+        ag.world.known_reachable = MagicMock(return_value=True)
         ag.world.cross_step = MagicMock(return_value="down")
-        # No "51" route -> default exit (25, 1); standing on it makes _pilot_to return None.
-        state = OverworldState(map_id=51, x=25, y=1, party_count=1)
-        assert ag.choose_overworld_action(state) == "down"  # 863 + _pilot_to 906-907 + 899
+        # Default exit (2, 0); standing on it makes _pilot_to return None -> cross_step sweep.
+        state = OverworldState(map_id=51, x=2, y=0, party_count=1)
+        assert ag.choose_overworld_action(state) == "down"
         ag.world.cross_step.assert_called_once()
 
     def test_quest_pilot_uses_cross_step(self, tmp_path):

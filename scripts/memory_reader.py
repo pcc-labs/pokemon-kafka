@@ -211,7 +211,7 @@ class MemoryReader:
 
     # On-screen text box region of the 20x18 BG tilemap: the dialogue/sign box occupies the
     # bottom rows, inside the 1-tile border. Reading just this region keeps menus/HUD noise out.
-    _TEXT_X0, _TEXT_X1 = 1, 19   # cols [1, 19)
+    _TEXT_X0, _TEXT_X1 = 1, 19  # cols [1, 19)
     _TEXT_Y0, _TEXT_Y1 = 12, 18  # rows [12, 18)
 
     def read_dialogue(self) -> str:
@@ -222,6 +222,7 @@ class MemoryReader:
         prefer the window. Returns ``""`` if unavailable or empty. Pull this only when a text box is
         active (``OverworldState.text_box_active``) — it walks a tilemap region, not free per frame.
         """
+
         def _read(layer) -> str:
             try:
                 rows = [

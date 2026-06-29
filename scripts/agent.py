@@ -227,10 +227,17 @@ class BattleStrategy:
         hp_heal_threshold: float = 0.25,
         unknown_move_score: float = 10.0,
         status_move_score: float = 1.0,
+        force_fight: bool | None = None,
     ):
         self.type_chart = type_chart
         self.hp_run_threshold = hp_run_threshold
         self.hp_heal_threshold = hp_heal_threshold
+        # Data-collection mode: never flee on low HP, so every battle resolves to a win or a
+        # faint — yielding clean win/loss labels for the win-probability dataset. The stall guard
+        # still breaks truly unwinnable loops. Off by default; AUTOTUNE_FORCE_FIGHT=1 turns it on.
+        if force_fight is None:
+            force_fight = os.environ.get("AUTOTUNE_FORCE_FIGHT", "") not in ("", "0", "false", "False")
+        self.force_fight = force_fight
         self.unknown_move_score = unknown_move_score
         self.status_move_score = status_move_score
         self._run_attempts = 0
@@ -288,7 +295,7 @@ class BattleStrategy:
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
-        if hp_ratio < self.hp_run_threshold and battle.battle_type == 1:  # Wild
+        if hp_ratio < self.hp_run_threshold and battle.battle_type == 1 and not self.force_fight:
             if self._run_attempts < 3:
                 self._run_attempts += 1
                 return {"action": "run"}
@@ -864,17 +871,32 @@ class PokemonAgent:
         # failed moves and steering around known grass via the encounter cost. ``cross_step`` then
         # sweeps the top boundary for the real exit column into Pewter.
         if state.map_id == 51:
+            # Drive the maze with the persistent WorldMap planner. Walls — and bug-catcher NPCs,
+            # whose tiles collision reports impassable — are learned by run_overworld's normal
+            # two-consecutive-failed-steps rule and routed around: we don't need to battle a catcher
+            # to *cross*, and any catcher whose line of sight we enter still starts a battle on its
+            # own. (An earlier "press A when blocked to engage the catcher" hack backfired badly: the
+            # A reset run_overworld's failed-step streak, and acting on a single failed step mistook
+            # a mere turn-in-place — the first press only turns the character — for a wall, so it
+            # hard-blocked walkable tiles and trapped the agent in the entrance pocket.)
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
-            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
-            # The maze trap (run 18 redux): A* toward the exit is *optimistically* reachable through
-            # unexplored space, so when the real path is walled off the planner greedily oscillates
-            # against the nearest wall (3000 turns, 29 tiles visited). Only commit to the exit once
-            # it is reachable over tiles we KNOW are walkable; until then, drive frontier
-            # exploration so we actually map our way toward it instead of grinding in place.
+            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (2, 0)
+            # Once the exit is reachable over KNOWN-walkable tiles, commit to it.
             if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
                 d = self._pilot_to(state, ex, ey)
                 return d if d is not None else self._collision_pilot(state, "north")
+            # Otherwise head toward the exit optimistically (A* treats unknown tiles as passable).
+            # With the now-correct two-failed-steps wall learning, real walls get recorded and A*
+            # reroutes around them — so the agent snakes toward the far-left exit column instead of
+            # plateauing on nearby frontiers the way pure nearest-frontier exploration does (it kept
+            # mapping the forest body but never trekked to the NW exit pocket). Frontier exploration
+            # is the fallback when the optimistic plan has nowhere to go. Persisting the WorldMap
+            # across runs (load -> run -> save) lets successive epochs accumulate the whole maze, so
+            # known_reachable eventually fires and the commit branch above carries it out the exit.
+            d = self._pilot_to(state, ex, ey)
+            if d is not None:
+                return d
             explore = self.world.explore_step(state.map_id, state.x, state.y)
             return explore if explore is not None else self._collision_pilot(state, "north")
 
@@ -1084,9 +1106,7 @@ class PokemonAgent:
         if action["action"] == "fight":
             mv_idx = action["move_index"]
             move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
-            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(
-                move_id, (f"#{move_id:02X}", "unknown", 0, 0)
-            )
+            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
             enemy_hp_before = battle.enemy_hp
             self.controller.battle_menu_select("fight")  # open the move list
             self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
@@ -1107,9 +1127,17 @@ class PokemonAgent:
                 self.collector.move_result(
                     self.turn_count,
                     SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
-                    battle.player_level, mv_name, mv_type, mv_power,
-                    battle.enemy_species_name, battle.enemy_level, battle.enemy_type_name,
-                    dmg, enemy_hp_before, battle.enemy_max_hp, fainted,
+                    battle.player_level,
+                    mv_name,
+                    mv_type,
+                    mv_power,
+                    battle.enemy_species_name,
+                    battle.enemy_level,
+                    battle.enemy_type_name,
+                    dmg,
+                    enemy_hp_before,
+                    battle.enemy_max_hp,
+                    fainted,
                 )
                 self.log(
                     f"MOVE | L{battle.player_level} {mv_name}({mv_type}) vs "
@@ -1185,6 +1213,11 @@ class PokemonAgent:
         # that look "stuck" but are progressing.  Restoring mid-sequence
         # undoes progress even after the player picks up a Pokemon.
         in_oaks_lab = state.map_id == 40
+        # Viridian Forest (map 51) is a forward-only maze: there is no earlier good state to fall
+        # back to, so a stall-triggered restore teleports the agent clear back to a pre-forest
+        # snapshot (observed: turn 137, 51 -> Pallet -> Red's house) and the crossing never happens.
+        # Like Oak's Lab, the forest must push forward (interact + explore), never restore.
+        in_forest = state.map_id == 51
 
         # Snapshot on map change (skip in Oak's Lab)
         if not in_oaks_lab:
@@ -1212,7 +1245,13 @@ class PokemonAgent:
         # Force restore when no meaningful progress for 500 turns (skip in Oak's Lab, and while
         # the quest pilot is driving — a restore would teleport it off the route it's crossing).
         progress_gap = self.turn_count - self._last_progress_turn
-        if not in_oaks_lab and not self._quest_nav_active and progress_gap > 500 and self.backtrack.snapshots:
+        if (
+            not in_oaks_lab
+            and not in_forest
+            and not self._quest_nav_active
+            and progress_gap > 500
+            and self.backtrack.snapshots
+        ):
             self.log(f"PROGRESS STALL | No progress for {progress_gap} turns, forcing backtrack restore")
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
@@ -1226,8 +1265,13 @@ class PokemonAgent:
                     f"attempt={snap.attempts}"
                 )
 
-        # Restore when stuck too long (skip in Oak's Lab and while the quest pilot is driving)
-        if not in_oaks_lab and not self._quest_nav_active and self.backtrack.should_restore(self.stuck_turns):
+        # Restore when stuck too long (skip in Oak's Lab / Forest and while the quest pilot drives)
+        if (
+            not in_oaks_lab
+            and not in_forest
+            and not self._quest_nav_active
+            and self.backtrack.should_restore(self.stuck_turns)
+        ):
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
                 self.stuck_turns = 0
@@ -1496,9 +1540,7 @@ class PokemonAgent:
                     self._battle_my_hp_start = battle.player_hp
                     self._battle_my_max_hp = battle.player_max_hp
                     self._battle_enemy_type = battle.enemy_type_name
-                    self._battle_my_move_types = [
-                        MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m
-                    ]
+                    self._battle_my_move_types = [MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m]
                     self._battle_had_healing = self.memory.find_healing_item() is not None
 
                     # Learn the grass: a wild battle (type 1) fires on the tile the agent just
@@ -1605,9 +1647,7 @@ class PokemonAgent:
                     # Emit the labeled WIN-PROBABILITY row: start-of-battle features + result.
                     self.collector.battle_outcome(
                         self.turn_count,
-                        SPECIES_ID_MAP.get(
-                            self._pre_battle_species[0] if self._pre_battle_species else 0, ""
-                        ),
+                        SPECIES_ID_MAP.get(self._pre_battle_species[0] if self._pre_battle_species else 0, ""),
                         self._pre_battle_level,
                         getattr(self, "_battle_my_hp_start", 0),
                         getattr(self, "_battle_my_max_hp", 0),
