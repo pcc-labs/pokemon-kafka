@@ -239,3 +239,48 @@ def test_worldmap_save_load_file(tmp_path):
 def test_worldmap_load_missing_file_is_empty():
     wm = WorldMap.load("/no/such/world-map-file.json")
     assert wm.cells == {} and wm.blocked == {} and wm.encounters == {}
+
+
+# --- known_reachable / explore_step (forest exit-wedge fix) -------------------
+
+
+def test_known_reachable_strict_about_unknown():
+    wm = WorldMap()
+    # A known-walkable corridor (0,0)->(2,0); (3,0) is unknown (never observed).
+    for x in range(3):
+        wm.cells.setdefault(1, {})[(x, 0)] = 1
+    assert wm.known_reachable(1, 0, 0, 2, 0) is True
+    # (4,0) is only reachable through the unknown (3,0): NOT known-reachable.
+    assert wm.known_reachable(1, 0, 0, 4, 0) is False
+
+
+def test_known_reachable_blocked_by_wall():
+    wm = WorldMap()
+    m = wm.cells.setdefault(1, {})
+    m[(0, 0)] = 1
+    m[(1, 0)] = 0  # wall
+    m[(2, 0)] = 1
+    assert wm.known_reachable(1, 0, 0, 2, 0) is False
+
+
+def test_explore_step_heads_to_nearest_unknown():
+    wm = WorldMap()
+    m = wm.cells.setdefault(1, {})
+    # An enclosed known corridor (0,0)->(3,0): walls above and below, so the only unknown frontier
+    # is off the right end at (4,0) -> the agent must walk "right" to reach unexplored ground.
+    for x in range(0, 4):
+        m[(x, 0)] = 1
+        m[(x, -1)] = 0
+        m[(x, 1)] = 0
+    m[(-1, 0)] = 0
+    assert wm.explore_step(1, 0, 0) == "right"
+
+
+def test_explore_step_none_when_fully_mapped():
+    wm = WorldMap()
+    m = wm.cells.setdefault(1, {})
+    # A fully-enclosed 1x1 known cell: walls on all sides, nothing unknown reachable.
+    m[(5, 5)] = 1
+    for nb in [(4, 5), (6, 5), (5, 4), (5, 6)]:
+        m[nb] = 0
+    assert wm.explore_step(1, 5, 5) is None

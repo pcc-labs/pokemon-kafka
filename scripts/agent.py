@@ -753,6 +753,14 @@ class PokemonAgent:
     def choose_overworld_action(self, state: OverworldState) -> str:
         """Pick the next overworld action."""
         if state.text_box_active:
+            # Discovery capture: read the sign / NPC dialogue on screen before dismissing it.
+            # Text renders progressively and persists across frames, so only emit when the decoded
+            # string changes (dedup) to avoid spamming the same line every turn.
+            text = self.memory.read_dialogue()
+            if text and text != getattr(self, "_last_discovery", None):
+                self._last_discovery = text
+                self.log(f'DISCOVERY | map={state.map_id} pos=({state.x},{state.y}) text="{text}"')
+                self.collector.discovery(self.turn_count, state.map_id, state.x, state.y, text)
             return "a"
 
         # Viridian Mart parcel cutscene (pret ViridianMartDefaultScript): entering the Mart shows
@@ -859,8 +867,16 @@ class PokemonAgent:
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
             ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
-            d = self._pilot_to(state, ex, ey)
-            return d if d is not None else self._collision_pilot(state, "north")
+            # The maze trap (run 18 redux): A* toward the exit is *optimistically* reachable through
+            # unexplored space, so when the real path is walled off the planner greedily oscillates
+            # against the nearest wall (3000 turns, 29 tiles visited). Only commit to the exit once
+            # it is reachable over tiles we KNOW are walkable; until then, drive frontier
+            # exploration so we actually map our way toward it instead of grinding in place.
+            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
+                d = self._pilot_to(state, ex, ey)
+                return d if d is not None else self._collision_pilot(state, "north")
+            explore = self.world.explore_step(state.map_id, state.x, state.y)
+            return explore if explore is not None else self._collision_pilot(state, "north")
 
         # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
         # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent
@@ -1051,11 +1067,55 @@ class PokemonAgent:
             player_species=SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
             player_level=battle.player_level,
         )
+        # OBSERVE the learnset: which moves the lead knows at this level (emit on change). This is
+        # how the agent *discovers* (rather than is told) when moves like Ember come online.
+        ms_names = [MOVE_DATA.get(m, (f"#{m:02X}",))[0] for m in battle.moves if m]
+        ms_key = (battle.player_level, tuple(battle.moves))
+        if ms_key != getattr(self, "_last_moveset_key", None):
+            self._last_moveset_key = ms_key
+            self.collector.moveset(
+                self.turn_count,
+                SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
+                battle.player_level,
+                ms_names,
+            )
+            self.log(f"MOVESET | L{battle.player_level} {ms_names}")
+
         if action["action"] == "fight":
+            mv_idx = action["move_index"]
+            move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
+            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(
+                move_id, (f"#{move_id:02X}", "unknown", 0, 0)
+            )
+            enemy_hp_before = battle.enemy_hp
             self.controller.battle_menu_select("fight")  # open the move list
-            self.controller.navigate_menu(action["move_index"])  # pick the move (vertical list)
+            self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
             self.controller.wait(180)  # Wait for both attack animations
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
+            # OBSERVE the raw outcome via a before/after enemy-HP delta. The fight branch also runs
+            # on menu/text frames (no move landed) and post-faint frames, so we EMIT ONLY a real
+            # landed hit (enemy was alive and HP dropped, or it fainted) — that filters the phantom
+            # dmg=0 noise without changing battle timing. Numbers only, never a "super-effective"
+            # label: the type chart is learned from data, not fed.
+            battle_over = self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0
+            after_hp = self.memory.read_enemy_hp()
+            fainted = battle_over or after_hp <= 0
+            enemy_hp_after = 0 if fainted else after_hp
+            dmg = max(0, enemy_hp_before - enemy_hp_after)
+            # Record only a real landed hit: enemy was alive and HP actually dropped (or it fainted).
+            if enemy_hp_before > 0 and (dmg > 0 or fainted):
+                self.collector.move_result(
+                    self.turn_count,
+                    SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
+                    battle.player_level, mv_name, mv_type, mv_power,
+                    battle.enemy_species_name, battle.enemy_level, battle.enemy_type_name,
+                    dmg, enemy_hp_before, battle.enemy_max_hp, fainted,
+                )
+                self.log(
+                    f"MOVE | L{battle.player_level} {mv_name}({mv_type}) vs "
+                    f"{battle.enemy_species_name}({battle.enemy_type_name}) "
+                    f"dmg={dmg}/{battle.enemy_max_hp}{' KO' if fainted else ''}"
+                )
 
         elif action["action"] == "run":
             self.controller.battle_menu_select("run")
@@ -1431,6 +1491,15 @@ class PokemonAgent:
                     self._battle_map_id = self.memory._read(self.memory.ADDR_MAP_ID)
                     self._battle_opponent_species = battle.enemy_species_name
                     self._battle_opponent_level = battle.enemy_level
+                    # Win-probability features observed at battle start: HP buffer, my move types,
+                    # and whether a heal item is on hand.
+                    self._battle_my_hp_start = battle.player_hp
+                    self._battle_my_max_hp = battle.player_max_hp
+                    self._battle_enemy_type = battle.enemy_type_name
+                    self._battle_my_move_types = [
+                        MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m
+                    ]
+                    self._battle_had_healing = self.memory.find_healing_item() is not None
 
                     # Learn the grass: a wild battle (type 1) fires on the tile the agent just
                     # stepped onto, so mark its last overworld position as an encounter tile. The
@@ -1531,6 +1600,27 @@ class PokemonAgent:
                         self._battle_opponent_species,
                         self._battle_opponent_level,
                         self.memory.read_party(),
+                    )
+
+                    # Emit the labeled WIN-PROBABILITY row: start-of-battle features + result.
+                    self.collector.battle_outcome(
+                        self.turn_count,
+                        SPECIES_ID_MAP.get(
+                            self._pre_battle_species[0] if self._pre_battle_species else 0, ""
+                        ),
+                        self._pre_battle_level,
+                        getattr(self, "_battle_my_hp_start", 0),
+                        getattr(self, "_battle_my_max_hp", 0),
+                        # Post-battle lead HP from the PARTY struct (the battle struct is cleared).
+                        (self.memory._read_party_hp(1) or [0])[0],
+                        getattr(self, "_battle_my_move_types", []),
+                        getattr(self, "_battle_had_healing", False),
+                        self._battle_opponent_species,
+                        self._battle_opponent_level,
+                        getattr(self, "_battle_enemy_type", ""),
+                        self._battle_type,
+                        battle_turns,
+                        won,
                     )
 
                     # Reset pre-battle snapshots

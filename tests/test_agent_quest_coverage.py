@@ -44,13 +44,26 @@ class TestOverworldQuestBranches:
         state = OverworldState(map_id=42, x=4, y=5, party_count=1)
         assert ag.choose_overworld_action(state) == "a"  # line 763
 
-    def test_forest_pilots_toward_exit(self, tmp_path):
+    def test_forest_pilots_toward_exit_when_known_reachable(self, tmp_path):
+        # When the exit is reachable over KNOWN-walkable tiles, commit to it via plan_step.
         ag = _make_agent(tmp_path)
         ag.door_cooldown = 0
+        ag.world.known_reachable = MagicMock(return_value=True)
         ag.world.plan_step = MagicMock(return_value="up")
         state = OverworldState(map_id=51, x=10, y=20, party_count=1)
-        assert ag.choose_overworld_action(state) == "up"  # 859-862 + _pilot_to 908
+        assert ag.choose_overworld_action(state) == "up"
         ag.world.plan_step.assert_called_once()
+
+    def test_forest_explores_when_exit_not_known_reachable(self, tmp_path):
+        # The maze-trap fix: when the exit is only optimistically reachable (walled off in the
+        # known map), explore unmapped ground instead of oscillating toward it.
+        ag = _make_agent(tmp_path)
+        ag.door_cooldown = 0
+        ag.world.known_reachable = MagicMock(return_value=False)
+        ag.world.explore_step = MagicMock(return_value="left")
+        state = OverworldState(map_id=51, x=10, y=20, party_count=1)
+        assert ag.choose_overworld_action(state) == "left"
+        ag.world.explore_step.assert_called_once()
 
     def test_forest_falls_back_to_cross_step_at_exit(self, tmp_path):
         ag = _make_agent(tmp_path)
