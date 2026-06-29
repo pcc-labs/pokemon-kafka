@@ -162,7 +162,16 @@ class WorldMap:
             cx, cy = cur
             for _name, dx, dy in _DIRS:
                 nb = (cx + dx, cy + dy)
-                if not self._passable(map_id, m, nb[0], nb[1]):
+                if nb == goal:
+                    # A path may end on its goal even if the collision grid stamped it a wall — a
+                    # warp/door (the forest exit) reads as impassable but is steppable. Still honor
+                    # map bounds and hard-blocks (tiles a real move already failed on).
+                    if (
+                        nb[0] < 0 or nb[1] < 0 or nb[0] > _MAX_COORD or nb[1] > _MAX_COORD
+                        or nb in self.blocked.get(map_id, ())
+                    ):
+                        continue
+                elif not self._passable(map_id, m, nb[0], nb[1]):
                     continue
                 ng = g + 1 + (encounter_cost if nb in grass else 0)
                 if nb not in gscore or ng < gscore[nb]:
@@ -228,10 +237,15 @@ class WorldMap:
             cx, cy = q.popleft()
             for _name, dx, dy in _DIRS:
                 nb = (cx + dx, cy + dy)
-                if nb in seen or nb in blocked or m.get(nb, 0) != 1:
+                if nb in seen or nb in blocked:
                     continue
                 if nb == (tx, ty):
+                    # The goal counts as reachable even if the collision grid stamped it a wall: a
+                    # warp/door (the forest exit at (2,0)) reads as impassable but is steppable. A
+                    # hard-block (checked above) is the only thing that bars entering the goal.
                     return True
+                if m.get(nb, 0) != 1:
+                    continue
                 seen.add(nb)
                 q.append(nb)
         return False

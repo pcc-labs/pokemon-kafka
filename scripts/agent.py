@@ -871,28 +871,32 @@ class PokemonAgent:
         # failed moves and steering around known grass via the encounter cost. ``cross_step`` then
         # sweeps the top boundary for the real exit column into Pewter.
         if state.map_id == 51:
-            # A bug catcher (an NPC) stands at each turn of the route. Collision reports its tile as
-            # impassable, so the old code just walled it and steered away — treating a person you
-            # must battle as a wall. When our last forest step was blocked, press A FIRST to engage
-            # whatever is ahead: a catcher starts a battle, a sign is read, a real wall is harmless.
-            # Only after that interaction do we fall through to normal pathing/walling.
-            if getattr(self, "_last_fail_tile", None) is not None and not getattr(
-                self, "_forest_interacted", False
-            ):
-                self._forest_interacted = True
-                return "a"
-            self._forest_interacted = False
+            # Drive the maze with the persistent WorldMap planner. Walls — and bug-catcher NPCs,
+            # whose tiles collision reports impassable — are learned by run_overworld's normal
+            # two-consecutive-failed-steps rule and routed around: we don't need to battle a catcher
+            # to *cross*, and any catcher whose line of sight we enter still starts a battle on its
+            # own. (An earlier "press A when blocked to engage the catcher" hack backfired badly: the
+            # A reset run_overworld's failed-step streak, and acting on a single failed step mistook
+            # a mere turn-in-place — the first press only turns the character — for a wall, so it
+            # hard-blocked walkable tiles and trapped the agent in the entrance pocket.)
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
-            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
-            # The maze trap (run 18 redux): A* toward the exit is *optimistically* reachable through
-            # unexplored space, so when the real path is walled off the planner greedily oscillates
-            # against the nearest wall (3000 turns, 29 tiles visited). Only commit to the exit once
-            # it is reachable over tiles we KNOW are walkable; until then, drive frontier
-            # exploration so we actually map our way toward it instead of grinding in place.
+            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (2, 0)
+            # Once the exit is reachable over KNOWN-walkable tiles, commit to it.
             if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
                 d = self._pilot_to(state, ex, ey)
                 return d if d is not None else self._collision_pilot(state, "north")
+            # Otherwise head toward the exit optimistically (A* treats unknown tiles as passable).
+            # With the now-correct two-failed-steps wall learning, real walls get recorded and A*
+            # reroutes around them — so the agent snakes toward the far-left exit column instead of
+            # plateauing on nearby frontiers the way pure nearest-frontier exploration does (it kept
+            # mapping the forest body but never trekked to the NW exit pocket). Frontier exploration
+            # is the fallback when the optimistic plan has nowhere to go. Persisting the WorldMap
+            # across runs (load -> run -> save) lets successive epochs accumulate the whole maze, so
+            # known_reachable eventually fires and the commit branch above carries it out the exit.
+            d = self._pilot_to(state, ex, ey)
+            if d is not None:
+                return d
             explore = self.world.explore_step(state.map_id, state.x, state.y)
             return explore if explore is not None else self._collision_pilot(state, "north")
 
