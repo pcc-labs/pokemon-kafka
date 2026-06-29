@@ -8,6 +8,7 @@ from game_events import (
     GameEventCollector,
     build_battle_end_event,
     build_battle_event,
+    build_discovery_event,
     build_map_change_event,
     build_milestone_event,
     build_overworld_event,
@@ -170,6 +171,23 @@ def test_collector_map_change():
     c = GameEventCollector()
     c.map_change(50, 0, 1, 3, 10)
     assert c.events[0]["event_type"] == "map_change"
+
+
+def test_build_discovery_event():
+    event = build_discovery_event(turn=12, map_id=51, x=3, y=4, text="TRAINER TIPS")
+    assert event["event_type"] == "discovery"
+    assert event["data"]["map_id"] == 51
+    assert event["data"]["position"] == {"x": 3, "y": 4}
+    assert event["data"]["text"] == "TRAINER TIPS"
+    assert event["data"]["kind"] == "dialogue"  # default
+
+
+def test_collector_discovery():
+    c = GameEventCollector()
+    c.discovery(12, 51, 3, 4, "TRAINER TIPS", kind="sign")
+    assert c.events[0]["event_type"] == "discovery"
+    assert c.events[0]["data"]["kind"] == "sign"
+    assert c.events[0]["data"]["text"] == "TRAINER TIPS"
 
 
 def test_collector_stuck():

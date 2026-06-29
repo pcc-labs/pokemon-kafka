@@ -719,3 +719,29 @@ class TestReadParty:
         party = reader.read_party()
         assert len(party) == 1
         assert party[0]["level"] == 8 and party[0]["hp"] == 20 and party[0]["max_hp"] == 26
+
+
+class TestReadDialogue:
+    def test_returns_empty_when_tiles_unreadable(self):
+        # Indexing a tilemap layer raises, so each per-layer read is caught and both window and
+        # background decode to "".
+        class _IndexBoom:
+            def __getitem__(self, idx):
+                raise RuntimeError("boom")
+
+        class _PyBoy:
+            tilemap_window = _IndexBoom()
+            tilemap_background = _IndexBoom()
+
+        reader = MemoryReader(_PyBoy())
+        assert reader.read_dialogue() == ""
+
+    def test_returns_empty_on_layer_access_error(self):
+        # Accessing the tilemap layer itself raises -> the outer guard returns "".
+        class _BoomPyBoy:
+            @property
+            def tilemap_window(self):
+                raise RuntimeError("boom")
+
+        reader = MemoryReader(_BoomPyBoy())
+        assert reader.read_dialogue() == ""

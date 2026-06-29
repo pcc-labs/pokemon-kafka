@@ -167,7 +167,10 @@ class WorldMap:
                     # warp/door (the forest exit) reads as impassable but is steppable. Still honor
                     # map bounds and hard-blocks (tiles a real move already failed on).
                     if (
-                        nb[0] < 0 or nb[1] < 0 or nb[0] > _MAX_COORD or nb[1] > _MAX_COORD
+                        nb[0] < 0
+                        or nb[1] < 0
+                        or nb[0] > _MAX_COORD
+                        or nb[1] > _MAX_COORD
                         or nb in self.blocked.get(map_id, ())
                     ):
                         continue

@@ -44,6 +44,22 @@ class TestOverworldQuestBranches:
         state = OverworldState(map_id=42, x=4, y=5, party_count=1)
         assert ag.choose_overworld_action(state) == "a"  # line 763
 
+    def test_text_box_emits_discovery_once_then_dedupes(self, tmp_path):
+        # An active text box: decode the dialogue, emit a discovery event the first time, press A.
+        # A second identical decode is deduped (no duplicate emit) but still presses A.
+        ag = _make_agent(tmp_path)
+        ag.memory.read_dialogue = MagicMock(return_value="TRAINER TIPS")
+        ag.collector.discovery = MagicMock()
+        state = OverworldState(map_id=51, x=3, y=4, party_count=1, text_box_active=True)
+
+        assert ag.choose_overworld_action(state) == "a"
+        assert ag._last_discovery == "TRAINER TIPS"
+        ag.collector.discovery.assert_called_once_with(ag.turn_count, 51, 3, 4, "TRAINER TIPS")
+
+        # Same text again -> deduped, no second emit.
+        assert ag.choose_overworld_action(state) == "a"
+        ag.collector.discovery.assert_called_once()
+
     def test_forest_pilots_toward_exit_when_known_reachable(self, tmp_path):
         # When the exit is reachable over KNOWN-walkable tiles, commit to it via plan_step.
         ag = _make_agent(tmp_path)

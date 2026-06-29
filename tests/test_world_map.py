@@ -244,6 +244,12 @@ def test_worldmap_load_missing_file_is_empty():
 # --- known_reachable / explore_step (forest exit-wedge fix) -------------------
 
 
+def test_known_reachable_true_when_already_at_target():
+    # Standing on the target is trivially reachable, even on a wholly unknown map.
+    wm = WorldMap()
+    assert wm.known_reachable(1, 5, 5, 5, 5) is True
+
+
 def test_known_reachable_strict_about_unknown():
     wm = WorldMap()
     # A known-walkable corridor (0,0)->(2,0); (3,0) is unknown (never observed).

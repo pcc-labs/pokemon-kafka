@@ -118,9 +118,7 @@ def build_overworld_event(
     return _envelope("overworld", turn, data)
 
 
-def build_discovery_event(
-    turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue"
-) -> dict:
+def build_discovery_event(turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue") -> dict:
     return _envelope(
         "discovery",
         turn,
@@ -356,23 +354,78 @@ class GameEventCollector:
     def discovery(self, turn: int, map_id: int, x: int, y: int, text: str, kind: str = "dialogue"):
         self._emit(build_discovery_event(turn, map_id, x, y, text, kind))
 
-    def move_result(self, turn, user_species, user_level, move_name, move_type, move_power,
-                    enemy_species, enemy_level, enemy_type, damage_dealt, enemy_hp_before,
-                    enemy_max_hp, fainted):
-        self._emit(build_move_result_event(
-            turn, user_species, user_level, move_name, move_type, move_power, enemy_species,
-            enemy_level, enemy_type, damage_dealt, enemy_hp_before, enemy_max_hp, fainted))
+    def move_result(
+        self,
+        turn,
+        user_species,
+        user_level,
+        move_name,
+        move_type,
+        move_power,
+        enemy_species,
+        enemy_level,
+        enemy_type,
+        damage_dealt,
+        enemy_hp_before,
+        enemy_max_hp,
+        fainted,
+    ):
+        self._emit(
+            build_move_result_event(
+                turn,
+                user_species,
+                user_level,
+                move_name,
+                move_type,
+                move_power,
+                enemy_species,
+                enemy_level,
+                enemy_type,
+                damage_dealt,
+                enemy_hp_before,
+                enemy_max_hp,
+                fainted,
+            )
+        )
 
     def moveset(self, turn: int, species: str, level: int, moves: list):
         self._emit(build_moveset_event(turn, species, level, moves))
 
-    def battle_outcome(self, turn, user_species, user_level, user_hp_start, user_max_hp,
-                       user_hp_end, user_move_types, had_healing, enemy_species, enemy_level,
-                       enemy_type, battle_type, turns, won):
-        self._emit(build_battle_outcome_event(
-            turn, user_species, user_level, user_hp_start, user_max_hp, user_hp_end,
-            user_move_types, had_healing, enemy_species, enemy_level, enemy_type, battle_type,
-            turns, won))
+    def battle_outcome(
+        self,
+        turn,
+        user_species,
+        user_level,
+        user_hp_start,
+        user_max_hp,
+        user_hp_end,
+        user_move_types,
+        had_healing,
+        enemy_species,
+        enemy_level,
+        enemy_type,
+        battle_type,
+        turns,
+        won,
+    ):
+        self._emit(
+            build_battle_outcome_event(
+                turn,
+                user_species,
+                user_level,
+                user_hp_start,
+                user_max_hp,
+                user_hp_end,
+                user_move_types,
+                had_healing,
+                enemy_species,
+                enemy_level,
+                enemy_type,
+                battle_type,
+                turns,
+                won,
+            )
+        )
 
     def map_change(self, turn: int, prev_map: int, new_map: int, x: int, y: int):
         self._emit(build_map_change_event(turn, prev_map, new_map, x, y))

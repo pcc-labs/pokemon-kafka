@@ -1106,9 +1106,7 @@ class PokemonAgent:
         if action["action"] == "fight":
             mv_idx = action["move_index"]
             move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
-            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(
-                move_id, (f"#{move_id:02X}", "unknown", 0, 0)
-            )
+            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
             enemy_hp_before = battle.enemy_hp
             self.controller.battle_menu_select("fight")  # open the move list
             self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
@@ -1129,9 +1127,17 @@ class PokemonAgent:
                 self.collector.move_result(
                     self.turn_count,
                     SPECIES_ID_MAP.get(battle.player_species, f"#{battle.player_species:02X}"),
-                    battle.player_level, mv_name, mv_type, mv_power,
-                    battle.enemy_species_name, battle.enemy_level, battle.enemy_type_name,
-                    dmg, enemy_hp_before, battle.enemy_max_hp, fainted,
+                    battle.player_level,
+                    mv_name,
+                    mv_type,
+                    mv_power,
+                    battle.enemy_species_name,
+                    battle.enemy_level,
+                    battle.enemy_type_name,
+                    dmg,
+                    enemy_hp_before,
+                    battle.enemy_max_hp,
+                    fainted,
                 )
                 self.log(
                     f"MOVE | L{battle.player_level} {mv_name}({mv_type}) vs "
@@ -1534,9 +1540,7 @@ class PokemonAgent:
                     self._battle_my_hp_start = battle.player_hp
                     self._battle_my_max_hp = battle.player_max_hp
                     self._battle_enemy_type = battle.enemy_type_name
-                    self._battle_my_move_types = [
-                        MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m
-                    ]
+                    self._battle_my_move_types = [MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m]
                     self._battle_had_healing = self.memory.find_healing_item() is not None
 
                     # Learn the grass: a wild battle (type 1) fires on the tile the agent just
@@ -1643,9 +1647,7 @@ class PokemonAgent:
                     # Emit the labeled WIN-PROBABILITY row: start-of-battle features + result.
                     self.collector.battle_outcome(
                         self.turn_count,
-                        SPECIES_ID_MAP.get(
-                            self._pre_battle_species[0] if self._pre_battle_species else 0, ""
-                        ),
+                        SPECIES_ID_MAP.get(self._pre_battle_species[0] if self._pre_battle_species else 0, ""),
                         self._pre_battle_level,
                         getattr(self, "_battle_my_hp_start", 0),
                         getattr(self, "_battle_my_max_hp", 0),
