@@ -871,6 +871,17 @@ class PokemonAgent:
         # failed moves and steering around known grass via the encounter cost. ``cross_step`` then
         # sweeps the top boundary for the real exit column into Pewter.
         if state.map_id == 51:
+            # A bug catcher (an NPC) stands at each turn of the route. Collision reports its tile as
+            # impassable, so the old code just walled it and steered away — treating a person you
+            # must battle as a wall. When our last forest step was blocked, press A FIRST to engage
+            # whatever is ahead: a catcher starts a battle, a sign is read, a real wall is harmless.
+            # Only after that interaction do we fall through to normal pathing/walling.
+            if getattr(self, "_last_fail_tile", None) is not None and not getattr(
+                self, "_forest_interacted", False
+            ):
+                self._forest_interacted = True
+                return "a"
+            self._forest_interacted = False
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
             ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (25, 1)
@@ -1192,6 +1203,11 @@ class PokemonAgent:
         # that look "stuck" but are progressing.  Restoring mid-sequence
         # undoes progress even after the player picks up a Pokemon.
         in_oaks_lab = state.map_id == 40
+        # Viridian Forest (map 51) is a forward-only maze: there is no earlier good state to fall
+        # back to, so a stall-triggered restore teleports the agent clear back to a pre-forest
+        # snapshot (observed: turn 137, 51 -> Pallet -> Red's house) and the crossing never happens.
+        # Like Oak's Lab, the forest must push forward (interact + explore), never restore.
+        in_forest = state.map_id == 51
 
         # Snapshot on map change (skip in Oak's Lab)
         if not in_oaks_lab:
@@ -1219,7 +1235,13 @@ class PokemonAgent:
         # Force restore when no meaningful progress for 500 turns (skip in Oak's Lab, and while
         # the quest pilot is driving — a restore would teleport it off the route it's crossing).
         progress_gap = self.turn_count - self._last_progress_turn
-        if not in_oaks_lab and not self._quest_nav_active and progress_gap > 500 and self.backtrack.snapshots:
+        if (
+            not in_oaks_lab
+            and not in_forest
+            and not self._quest_nav_active
+            and progress_gap > 500
+            and self.backtrack.snapshots
+        ):
             self.log(f"PROGRESS STALL | No progress for {progress_gap} turns, forcing backtrack restore")
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
@@ -1233,8 +1255,13 @@ class PokemonAgent:
                     f"attempt={snap.attempts}"
                 )
 
-        # Restore when stuck too long (skip in Oak's Lab and while the quest pilot is driving)
-        if not in_oaks_lab and not self._quest_nav_active and self.backtrack.should_restore(self.stuck_turns):
+        # Restore when stuck too long (skip in Oak's Lab / Forest and while the quest pilot drives)
+        if (
+            not in_oaks_lab
+            and not in_forest
+            and not self._quest_nav_active
+            and self.backtrack.should_restore(self.stuck_turns)
+        ):
             snap = self.backtrack.restore(self.pyboy)
             if snap is not None:
                 self.stuck_turns = 0
