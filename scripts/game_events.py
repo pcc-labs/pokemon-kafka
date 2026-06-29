@@ -177,6 +177,47 @@ def build_moveset_event(turn: int, species: str, level: int, moves: list[str]) -
     return _envelope("moveset", turn, {"species": species, "level": level, "moves": moves})
 
 
+def build_battle_outcome_event(
+    turn: int,
+    user_species: str,
+    user_level: int,
+    user_hp_start: int,
+    user_max_hp: int,
+    user_hp_end: int,
+    user_move_types: list[str],
+    had_healing: bool,
+    enemy_species: str,
+    enemy_level: int,
+    enemy_type: str,
+    battle_type: int,
+    turns: int,
+    won: bool,
+) -> dict:
+    """One labeled training row for a WIN-PROBABILITY model: the situation at battle start (level
+    gap, my move types vs the enemy's type, HP buffer, whether a heal item was on hand) paired with
+    the observed result. The features are raw observations; P(win | features) is to be learned."""
+    return _envelope(
+        "battle_outcome",
+        turn,
+        {
+            "user_species": user_species,
+            "user_level": user_level,
+            "user_hp_start": user_hp_start,
+            "user_max_hp": user_max_hp,
+            "user_hp_end": user_hp_end,
+            "user_move_types": user_move_types,
+            "had_healing": had_healing,
+            "enemy_species": enemy_species,
+            "enemy_level": enemy_level,
+            "enemy_type": enemy_type,
+            "level_gap": user_level - enemy_level,
+            "battle_type": battle_type,
+            "turns": turns,
+            "won": won,
+        },
+    )
+
+
 def build_map_change_event(turn: int, prev_map: int, new_map: int, x: int, y: int) -> dict:
     return _envelope(
         "map_change",
@@ -324,6 +365,14 @@ class GameEventCollector:
 
     def moveset(self, turn: int, species: str, level: int, moves: list):
         self._emit(build_moveset_event(turn, species, level, moves))
+
+    def battle_outcome(self, turn, user_species, user_level, user_hp_start, user_max_hp,
+                       user_hp_end, user_move_types, had_healing, enemy_species, enemy_level,
+                       enemy_type, battle_type, turns, won):
+        self._emit(build_battle_outcome_event(
+            turn, user_species, user_level, user_hp_start, user_max_hp, user_hp_end,
+            user_move_types, had_healing, enemy_species, enemy_level, enemy_type, battle_type,
+            turns, won))
 
     def map_change(self, turn: int, prev_map: int, new_map: int, x: int, y: int):
         self._emit(build_map_change_event(turn, prev_map, new_map, x, y))

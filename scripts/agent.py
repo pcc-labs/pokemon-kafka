@@ -1090,20 +1090,15 @@ class PokemonAgent:
             enemy_hp_before = battle.enemy_hp
             self.controller.battle_menu_select("fight")  # open the move list
             self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
-            # OBSERVE the raw outcome. The fight branch runs on menu/text frames too, and the HP bar
-            # animates over several frames, so a single fixed-delay read is noisy (phantom dmg=0 and
-            # post-faint reads). Instead poll until the move actually RESOLVES — enemy HP changes or
-            # the battle ends — then emit only a genuinely landed hit. We log numbers only, never a
-            # "super-effective" label, so the type chart is learned from data, not fed.
-            battle_over = False
-            after_hp = enemy_hp_before
-            for _ in range(8):
-                self.controller.wait(30)
-                battle_over = self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0
-                after_hp = self.memory.read_enemy_hp()
-                if battle_over or after_hp != enemy_hp_before:
-                    break
+            self.controller.wait(180)  # Wait for both attack animations
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
+            # OBSERVE the raw outcome via a before/after enemy-HP delta. The fight branch also runs
+            # on menu/text frames (no move landed) and post-faint frames, so we EMIT ONLY a real
+            # landed hit (enemy was alive and HP dropped, or it fainted) — that filters the phantom
+            # dmg=0 noise without changing battle timing. Numbers only, never a "super-effective"
+            # label: the type chart is learned from data, not fed.
+            battle_over = self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0
+            after_hp = self.memory.read_enemy_hp()
             fainted = battle_over or after_hp <= 0
             enemy_hp_after = 0 if fainted else after_hp
             dmg = max(0, enemy_hp_before - enemy_hp_after)
@@ -1496,6 +1491,15 @@ class PokemonAgent:
                     self._battle_map_id = self.memory._read(self.memory.ADDR_MAP_ID)
                     self._battle_opponent_species = battle.enemy_species_name
                     self._battle_opponent_level = battle.enemy_level
+                    # Win-probability features observed at battle start: HP buffer, my move types,
+                    # and whether a heal item is on hand.
+                    self._battle_my_hp_start = battle.player_hp
+                    self._battle_my_max_hp = battle.player_max_hp
+                    self._battle_enemy_type = battle.enemy_type_name
+                    self._battle_my_move_types = [
+                        MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m
+                    ]
+                    self._battle_had_healing = self.memory.find_healing_item() is not None
 
                     # Learn the grass: a wild battle (type 1) fires on the tile the agent just
                     # stepped onto, so mark its last overworld position as an encounter tile. The
@@ -1596,6 +1600,27 @@ class PokemonAgent:
                         self._battle_opponent_species,
                         self._battle_opponent_level,
                         self.memory.read_party(),
+                    )
+
+                    # Emit the labeled WIN-PROBABILITY row: start-of-battle features + result.
+                    self.collector.battle_outcome(
+                        self.turn_count,
+                        SPECIES_ID_MAP.get(
+                            self._pre_battle_species[0] if self._pre_battle_species else 0, ""
+                        ),
+                        self._pre_battle_level,
+                        getattr(self, "_battle_my_hp_start", 0),
+                        getattr(self, "_battle_my_max_hp", 0),
+                        # Post-battle lead HP from the PARTY struct (the battle struct is cleared).
+                        (self.memory._read_party_hp(1) or [0])[0],
+                        getattr(self, "_battle_my_move_types", []),
+                        getattr(self, "_battle_had_healing", False),
+                        self._battle_opponent_species,
+                        self._battle_opponent_level,
+                        getattr(self, "_battle_enemy_type", ""),
+                        self._battle_type,
+                        battle_turns,
+                        won,
                     )
 
                     # Reset pre-battle snapshots
