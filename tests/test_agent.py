@@ -14,6 +14,7 @@ import agent
 import pytest
 from agent import (
     EARLY_GAME_TARGETS,
+    FOREST_ROTATE,
     MOVE_DATA,
     ROUTES_PATH,
     SCRIPT_DIR,
@@ -1309,6 +1310,67 @@ class TestChooseOverworldAction:
         ag.navigator.next_direction = MagicMock(return_value="left")
         state = OverworldState(map_id=99, x=5, y=5)
         assert ag.choose_overworld_action(state) == "left"
+
+
+class TestForestNavigation:
+    """Map 51 (Viridian Forest) crossing: commit to a reachable exit, otherwise thread the
+    waypoint chain, with rotation-based unstuck (restore is disabled in the forest)."""
+
+    FOREST_ROUTE = {
+        "51": {"waypoints": [{"x": 1, "y": 43}, {"x": 17, "y": 24}, {"x": 2, "y": 0}]}
+    }
+
+    def _agent(self, tmp_path):
+        ag = _make_agent(tmp_path, routes=self.FOREST_ROUTE)
+        ag.world.known_reachable = MagicMock(return_value=False)
+        ag.world.explore_step = MagicMock(return_value=None)
+        ag.stuck_turns = 0
+        return ag
+
+    def test_commits_to_exit_when_reachable(self, tmp_path):
+        ag = self._agent(tmp_path)
+        ag.world.known_reachable = MagicMock(return_value=True)
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=2, y=5)
+        assert ag.choose_overworld_action(state) == "up"
+        ag._pilot_to.assert_called_once_with(state, 2, 0, goal_is_warp=True)
+
+    def test_threads_waypoint_chain_not_just_exit(self, tmp_path):
+        # Not reachable yet -> head to the FIRST waypoint (entrance 1,43), not the exit (2,0).
+        ag = self._agent(tmp_path)
+        seen = []
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: seen.append((x, y)) or "down")
+        state = OverworldState(map_id=51, x=5, y=40)
+        assert ag.choose_overworld_action(state) == "down"
+        assert seen[-1] == (1, 43)
+
+    def test_advances_waypoint_when_reached(self, tmp_path):
+        ag = self._agent(tmp_path)
+        seen = []
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: seen.append((x, y)) or "up")
+        # Standing on the entrance waypoint -> advance to the mid waypoint (17,24).
+        state = OverworldState(map_id=51, x=1, y=43)
+        ag.choose_overworld_action(state)
+        assert ag._forest_wp_idx == 1
+        assert seen[-1] == (17, 24)
+
+    def test_last_waypoint_uses_warp_goal(self, tmp_path):
+        ag = self._agent(tmp_path)
+        ag._forest_wp_idx = 2  # already at the exit waypoint
+        kwargs = {}
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: kwargs.update(kw) or "left")
+        state = OverworldState(map_id=51, x=3, y=2)
+        ag.choose_overworld_action(state)
+        assert kwargs.get("goal_is_warp") is True
+
+    def test_rotates_to_unstick_when_wedged(self, tmp_path):
+        # Restore is disabled in the forest, so a wall-pressing pilot must be broken by rotation.
+        ag = self._agent(tmp_path)
+        ag._pilot_to = MagicMock(return_value="down")  # pilot keeps choosing a wall
+        ag.stuck_turns = 8
+        state = OverworldState(map_id=51, x=1, y=18)
+        result = ag.choose_overworld_action(state)
+        assert result == FOREST_ROTATE[(8 // 2) % len(FOREST_ROTATE)]
 
 
 class TestLog:

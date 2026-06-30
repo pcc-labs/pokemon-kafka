@@ -77,6 +77,13 @@ GRASS_ENCOUNTER_COST = 8
 # Reset whenever real damage lands, so winnable battles are never abandoned.
 WILD_BATTLE_PATIENCE = 10
 
+# Viridian Forest is a forward-only maze with restore disabled (see run_overworld), so a pilot
+# that keeps pressing a wall would wedge forever (observed: 3800+ turns frozen at (1,18)). Once
+# this many oscillation/stuck turns accumulate, rotate through directions to break free — failed
+# steps are learned as walls, so the planner reroutes once unstuck.
+FOREST_UNSTUCK_AFTER = 8
+FOREST_ROTATE = ["up", "left", "right", "down"]
+
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
 EARLY_GAME_TARGETS = {
@@ -895,22 +902,36 @@ class PokemonAgent:
             # hard-blocked walkable tiles and trapped the agent in the entrance pocket.)
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
-            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (2, 0)
+            chain = [(w["x"], w["y"]) for w in wps] if wps else [(2, 0)]
+            ex, ey = chain[-1]
             # Once the exit is reachable over KNOWN-walkable tiles, commit to it. The exit is a warp:
             # its tile AND its approach read as walls but are steppable, so pass goal_is_warp so the
             # planner can actually route onto it instead of treating it as fully walled off.
             if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=True):
                 d = self._pilot_to(state, ex, ey, goal_is_warp=True)
                 return d if d is not None else self._collision_pilot(state, "north")
-            # Otherwise head toward the exit optimistically (A* treats unknown tiles as passable).
-            # With the now-correct two-failed-steps wall learning, real walls get recorded and A*
-            # reroutes around them — so the agent snakes toward the far-left exit column instead of
-            # plateauing on nearby frontiers the way pure nearest-frontier exploration does (it kept
-            # mapping the forest body but never trekked to the NW exit pocket). Frontier exploration
-            # is the fallback when the optimistic plan has nowhere to go. Persisting the WorldMap
-            # across runs (load -> run -> save) lets successive epochs accumulate the whole maze, so
-            # known_reachable eventually fires and the commit branch above carries it out the exit.
-            d = self._pilot_to(state, ex, ey, goal_is_warp=True)
+            # Restore is disabled here, so a pilot stuck against a wall would press it forever. When
+            # oscillation builds up, rotate through directions to break the wedge; the failed steps
+            # are learned as walls so the planner reroutes once we move again.
+            if self.stuck_turns >= FOREST_UNSTUCK_AFTER:
+                return FOREST_ROTATE[(self.stuck_turns // 2) % len(FOREST_ROTATE)]
+            # Otherwise thread the hand-authored waypoint chain (entrance -> mid -> exit, which the
+            # route note says is reached via the far-left x=0-1 columns). Beelining to the exit tile
+            # alone ignored the maze path and plateaued on nearby frontiers; advancing through the
+            # chain pulls the agent across the forest body toward the NW exit pocket. A* treats
+            # unknown tiles as passable, and persisting the WorldMap across runs lets known_reachable
+            # eventually fire so the commit branch above carries it out the exit.
+            if not hasattr(self, "_forest_wp_idx"):
+                self._forest_wp_idx = 0
+            while self._forest_wp_idx < len(chain) - 1:
+                wx, wy = chain[self._forest_wp_idx]
+                if abs(state.x - wx) + abs(state.y - wy) <= 1:
+                    self._forest_wp_idx += 1
+                else:
+                    break
+            is_last = self._forest_wp_idx == len(chain) - 1
+            wx, wy = chain[self._forest_wp_idx]
+            d = self._pilot_to(state, wx, wy, goal_is_warp=is_last)
             if d is not None:
                 return d
             explore = self.world.explore_step(state.map_id, state.x, state.y)
