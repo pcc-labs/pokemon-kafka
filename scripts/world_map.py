@@ -304,6 +304,56 @@ class WorldMap:
                 q.append(nb)
         return None
 
+    def frontier_step(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> str | None:
+        """First step toward the nearest *frontier* — a known-walkable tile that borders an
+        unobserved tile — routing ONLY over tiles known to be walkable.
+
+        This is the robust maze-explorer. :meth:`explore_step` treats unknown tiles as passable, so
+        it heads at frontiers that can only be reached by walking *through* unknown walls and wedges
+        against them (observed: trapped at (12,26) for 7000+ turns). Here the BFS expands strictly
+        over known-walkable tiles, and a frontier is a known-walkable cell with at least one
+        unobserved (and not hard-blocked, in-bounds) neighbour — so the agent always walks a route it
+        knows it can travel, then probes the unknown at its edge. Returns ``None`` when the whole
+        reachable area is mapped (no known-walkable tile borders the unknown), at which point the
+        caller's :meth:`known_reachable` check carries it to the goal."""
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        start = (px, py)
+
+        def _unknown_neighbour(cx: int, cy: int) -> tuple[int, int] | None:
+            for _name, dx, dy in _DIRS:
+                nx, ny = cx + dx, cy + dy
+                if nx < 0 or ny < 0 or nx > _MAX_COORD or ny > _MAX_COORD:
+                    continue
+                if (nx, ny) in blocked:
+                    continue
+                if (nx, ny) not in m:  # never observed -> the frontier we want to reveal
+                    return (nx, ny)
+            return None
+
+        came: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
+        q = deque([start])
+        nodes = 0
+        while q and nodes < max_nodes:
+            cur = q.popleft()
+            nodes += 1
+            cx, cy = cur
+            unknown = _unknown_neighbour(cx, cy)
+            if unknown is not None:
+                if cur == start:
+                    return self._dir(px, py, unknown)  # already on the frontier: probe the unknown
+                step = self._first_step(came, start, cur)
+                return self._dir(px, py, step) if step else None
+            for _name, dx, dy in _DIRS:
+                nb = (cx + dx, cy + dy)
+                if nb in came or nb in blocked:
+                    continue
+                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map: never in m)
+                    continue
+                came[nb] = cur
+                q.append(nb)
+        return None
+
     @staticmethod
     def _first_step(came, start, end):
         """The tile adjacent to ``start`` along the reconstructed path to ``end`` (or None)."""

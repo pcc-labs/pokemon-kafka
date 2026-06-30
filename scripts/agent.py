@@ -910,17 +910,50 @@ class PokemonAgent:
             if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=True):
                 d = self._pilot_to(state, ex, ey, goal_is_warp=True)
                 return d if d is not None else self._collision_pilot(state, "north")
-            # Restore is disabled here, so a pilot stuck against a wall would press it forever. When
-            # oscillation builds up, rotate through directions to break the wedge; the failed steps
-            # are learned as walls so the planner reroutes once we move again.
+            # Facing-independent persistent-wall detection. run_overworld's two-failed-steps rule is
+            # gated on the player's facing register, which doesn't reliably update in the forest, so
+            # a tile that reads walkable but can't be entered (a bug-catcher NPC, a ledge) is never
+            # hard-blocked and frontier_step routes into it forever (observed: 11000+ turns pressing
+            # "left" into (28,33)). Count consecutive turns we chose the SAME step from the SAME tile
+            # without moving; after a few, block the tile directly ahead so the planner abandons it.
+            # Gating on a repeated *same* direction is what keeps this safe — the rotation fallback
+            # below changes direction every turn, so it never trips this and never seals us in by
+            # blocking the (enterable) tile we arrived through.
+            if not hasattr(self, "_forest_try_n"):
+                self._forest_try_n, self._forest_try_pos, self._forest_try_dir = 0, None, None
+            here = (state.x, state.y)
+            if self.last_overworld_action == self._forest_try_dir and here == self._forest_try_pos:
+                self._forest_try_n += 1
+            else:
+                self._forest_try_n = 0
+            self._forest_try_pos, self._forest_try_dir = here, self.last_overworld_action
+            if self._forest_try_n >= 2 and self.last_overworld_action in ("up", "down", "left", "right"):
+                bdx = {"left": -1, "right": 1}.get(self.last_overworld_action, 0)
+                bdy = {"up": -1, "down": 1}.get(self.last_overworld_action, 0)
+                self.world.block(state.map_id, state.x + bdx, state.y + bdy)
+                self._forest_try_n = 0
+            # PRIMARY: systematically map the maze with the robust frontier explorer. It walks only
+            # KNOWN-walkable tiles to the edge of the observed region and probes the unknown there,
+            # so it can never wedge against an unknown wall the way explore_step did (trapped at
+            # (12,26) for 7000+ turns); when a "walkable" first step turns out blocked, the
+            # two-failed-steps wall learning hard-blocks it and frontier_step reroutes next turn —
+            # self-healing without rotation. As the reachable area fills in, the far-left exit pocket
+            # gets mapped and the known_reachable commit branch above fires and carries it out. This
+            # must run BEFORE the stuck-rotation below: rotating first would, once oscillation
+            # builds, preempt exploration forever (observed: frozen at (29,33), stuck 11752).
+            d = self.world.frontier_step(state.map_id, state.x, state.y)
+            if d is not None:
+                return d
+            # Reachable area fully mapped but the exit still isn't committed. Restore is disabled in
+            # the forest, so if we're also wedged here, rotate through directions to dislodge before
+            # falling to the optimistic waypoint pilot (which could otherwise press a wall forever).
+            # One direction per turn (not held for two) so rotation never trips the same-direction
+            # wall-block above — otherwise it would block every neighbour and seal the agent in.
             if self.stuck_turns >= FOREST_UNSTUCK_AFTER:
-                return FOREST_ROTATE[(self.stuck_turns // 2) % len(FOREST_ROTATE)]
-            # Otherwise thread the hand-authored waypoint chain (entrance -> mid -> exit, which the
-            # route note says is reached via the far-left x=0-1 columns). Beelining to the exit tile
-            # alone ignored the maze path and plateaued on nearby frontiers; advancing through the
-            # chain pulls the agent across the forest body toward the NW exit pocket. A* treats
-            # unknown tiles as passable, and persisting the WorldMap across runs lets known_reachable
-            # eventually fire so the commit branch above carries it out the exit.
+                return FOREST_ROTATE[self.stuck_turns % len(FOREST_ROTATE)]
+            # Optimistically thread the hand-authored waypoint chain (entrance -> mid -> exit via the
+            # far-left columns; A* treats unknown tiles as passable), then nudge north as a last
+            # resort.
             if not hasattr(self, "_forest_wp_idx"):
                 self._forest_wp_idx = 0
             while self._forest_wp_idx < len(chain) - 1:
@@ -932,10 +965,7 @@ class PokemonAgent:
             is_last = self._forest_wp_idx == len(chain) - 1
             wx, wy = chain[self._forest_wp_idx]
             d = self._pilot_to(state, wx, wy, goal_is_warp=is_last)
-            if d is not None:
-                return d
-            explore = self.world.explore_step(state.map_id, state.x, state.y)
-            return explore if explore is not None else self._collision_pilot(state, "north")
+            return d if d is not None else self._collision_pilot(state, "north")
 
         # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
         # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent

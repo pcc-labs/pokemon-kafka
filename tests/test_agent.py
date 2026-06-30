@@ -1323,6 +1323,9 @@ class TestForestNavigation:
     def _agent(self, tmp_path):
         ag = _make_agent(tmp_path, routes=self.FOREST_ROUTE)
         ag.world.known_reachable = MagicMock(return_value=False)
+        # Default frontier exploration to "exhausted" so the waypoint-fallback tests below run; the
+        # primary-explorer test overrides it.
+        ag.world.frontier_step = MagicMock(return_value=None)
         ag.world.explore_step = MagicMock(return_value=None)
         ag.stuck_turns = 0
         return ag
@@ -1335,8 +1338,20 @@ class TestForestNavigation:
         assert ag.choose_overworld_action(state) == "up"
         ag._pilot_to.assert_called_once_with(state, 2, 0, goal_is_warp=True)
 
+    def test_frontier_step_is_primary_even_when_stuck(self, tmp_path):
+        # frontier_step must run BEFORE the stuck-rotation. The earlier bug rotated first, so once
+        # oscillation built up the agent rotated forever and never explored (frozen at (29,33)).
+        # With a high stuck count, exploration must still win over rotation.
+        ag = self._agent(tmp_path)
+        ag.world.frontier_step = MagicMock(return_value="right")
+        ag._pilot_to = MagicMock(return_value="down")  # fallback only
+        ag.stuck_turns = 50
+        state = OverworldState(map_id=51, x=10, y=24)
+        assert ag.choose_overworld_action(state) == "right"
+        ag.world.frontier_step.assert_called_once()
+
     def test_threads_waypoint_chain_not_just_exit(self, tmp_path):
-        # Not reachable yet -> head to the FIRST waypoint (entrance 1,43), not the exit (2,0).
+        # Frontier exhausted (None) -> fall back to the FIRST waypoint (entrance 1,43), not exit.
         ag = self._agent(tmp_path)
         seen = []
         ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: seen.append((x, y)) or "down")
@@ -1363,14 +1378,42 @@ class TestForestNavigation:
         ag.choose_overworld_action(state)
         assert kwargs.get("goal_is_warp") is True
 
+    def test_wedge_breaker_blocks_repeatedly_failed_tile(self, tmp_path):
+        # Choosing the SAME step from the SAME tile without moving, several turns running, means the
+        # tile ahead reads walkable but can't be entered (catcher/ledge the facing-gated learning
+        # misses): block it so frontier_step abandons it. Requires repetition — a single press does
+        # not block (that would falsely wall off tiles during rotation).
+        ag = self._agent(tmp_path)
+        ag.stuck_turns = 8
+        ag.last_overworld_action = "left"
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=29, y=33)
+        assert (28, 33) not in ag.world.blocked.get(51, set())  # not after one press
+        for _ in range(3):
+            ag.choose_overworld_action(state)
+        assert (28, 33) in ag.world.blocked.get(51, set())
+
+    def test_wedge_breaker_does_not_block_on_changing_directions(self, tmp_path):
+        # Rotation presses a different direction each turn; that must never hard-block a neighbour
+        # (which previously sealed the agent in by walling off the tile it arrived through).
+        ag = self._agent(tmp_path)
+        ag.stuck_turns = 8
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=29, y=33)
+        for act in ("left", "down", "right", "up", "left"):
+            ag.last_overworld_action = act
+            ag.choose_overworld_action(state)
+        assert not ag.world.blocked.get(51, set())
+
     def test_rotates_to_unstick_when_wedged(self, tmp_path):
-        # Restore is disabled in the forest, so a wall-pressing pilot must be broken by rotation.
+        # Restore is disabled in the forest, so a wall-pressing pilot must be broken by rotation
+        # (one direction per turn) once the reachable area is fully mapped (frontier_step None).
         ag = self._agent(tmp_path)
         ag._pilot_to = MagicMock(return_value="down")  # pilot keeps choosing a wall
         ag.stuck_turns = 8
         state = OverworldState(map_id=51, x=1, y=18)
         result = ag.choose_overworld_action(state)
-        assert result == FOREST_ROTATE[(8 // 2) % len(FOREST_ROTATE)]
+        assert result == FOREST_ROTATE[8 % len(FOREST_ROTATE)]
 
 
 class TestLog:
