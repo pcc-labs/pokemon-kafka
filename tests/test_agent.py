@@ -1414,6 +1414,53 @@ class TestForestNavigation:
         assert result == FOREST_ROTATE[8 % len(FOREST_ROTATE)]
 
 
+class TestForestWarpLearning:
+    """Detect and block Viridian Forest warp tiles so routing stops treating them as normal cells."""
+
+    def test_blocks_intra_map_warp_tile(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=0)
+        state = OverworldState(map_id=51, x=17, y=47)  # "down" jumped across the map -> warp
+        ag._learn_forest_warp(prev, state, "down")
+        assert (5, 1) in ag.world.blocked.get(51, set())  # the tile stepped onto
+
+    def test_blocks_warp_on_map_change(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=2)
+        state = OverworldState(map_id=0, x=2, y=7)  # stepped out of the forest -> warp
+        ag._learn_forest_warp(prev, state, "down")
+        assert (5, 3) in ag.world.blocked.get(51, set())
+
+    def test_does_not_block_the_exit_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=2, y=1)
+        state = OverworldState(map_id=13, x=10, y=5)  # crossed via the exit (2,0)
+        ag._learn_forest_warp(prev, state, "up")
+        assert (2, 0) not in ag.world.blocked.get(51, set())
+
+    def test_normal_step_is_not_a_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=5)
+        state = OverworldState(map_id=51, x=5, y=6)  # ordinary one-tile step
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(51, set())
+
+    def test_failed_step_is_not_a_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=5)
+        state = OverworldState(map_id=51, x=5, y=5)  # pressed into a wall, didn't move
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(51, set())
+
+    def test_ignored_outside_forest(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=12, x=5, y=5)
+        state = OverworldState(map_id=2, x=1, y=1)  # a warp, but not in the forest -> left alone
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(12, set())
+        ag._learn_forest_warp(None, state, "down")  # no prev -> no-op
+
+
 class TestLog:
     def test_log_appends_event(self, tmp_path):
         ag = _make_agent(tmp_path)

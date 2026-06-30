@@ -1246,6 +1246,28 @@ class PokemonAgent:
 
         self.turn_count += 1
 
+    def _learn_forest_warp(self, prev, state, last_act):
+        """Detect and hard-block Viridian Forest warp tiles.
+
+        A directional press that lands somewhere other than the adjacent tile — a different map, or
+        an intra-map jump (observed: "down" from (5,0) teleports to (17,47)) — means the tile we
+        stepped onto is a WARP. The occupancy map records warps as ordinary walkable cells, so
+        plan_step/known_reachable route THROUGH them as if they connect to their grid-neighbours
+        (phantom connectivity that makes known_reachable(exit) lie), and the agent also warps
+        backward out of the forest by accident (51 -> 0 -> a house). Block the warp tile so routing
+        treats it as the dead end it is — except the exit (2,0), which we deliberately step onto to
+        cross into Route 2."""
+        if prev is None or prev.map_id != 51 or last_act not in ("up", "down", "left", "right"):
+            return
+        edx = {"left": -1, "right": 1}.get(last_act, 0)
+        edy = {"up": -1, "down": 1}.get(last_act, 0)
+        expected = (prev.x + edx, prev.y + edy)
+        moved_unexpectedly = state.map_id != prev.map_id or (
+            (state.x, state.y) != expected and (state.x, state.y) != (prev.x, prev.y)
+        )
+        if moved_unexpectedly and expected != (2, 0):
+            self.world.block(prev.map_id, *expected)
+
     def run_overworld(self):
         """Move in the overworld."""
         state = self.memory.read_overworld_state()
@@ -1276,6 +1298,8 @@ class PokemonAgent:
             if attempted == getattr(self, "_last_fail_tile", None):
                 self.world.block(*attempted)  # turned into it twice → a real wall
         self._last_fail_tile = attempted  # None on a move or an ignored input, resetting the streak
+
+        self._learn_forest_warp(prev, state, last_act)
 
         self.update_overworld_progress(state)
         try:
