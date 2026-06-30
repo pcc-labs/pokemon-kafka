@@ -1316,9 +1316,7 @@ class TestForestNavigation:
     """Map 51 (Viridian Forest) crossing: commit to a reachable exit, otherwise thread the
     waypoint chain, with rotation-based unstuck (restore is disabled in the forest)."""
 
-    FOREST_ROUTE = {
-        "51": {"waypoints": [{"x": 1, "y": 43}, {"x": 17, "y": 24}, {"x": 2, "y": 0}]}
-    }
+    FOREST_ROUTE = {"51": {"waypoints": [{"x": 1, "y": 43}, {"x": 17, "y": 24}, {"x": 2, "y": 0}]}}
 
     def _agent(self, tmp_path):
         ag = _make_agent(tmp_path, routes=self.FOREST_ROUTE)

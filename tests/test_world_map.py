@@ -217,10 +217,16 @@ def test_frontier_step_routes_over_known_walkable_to_a_frontier():
     # right toward the frontier — NOT press into a wall.
     wm = WorldMap()
     wm.cells[0] = {
-        (5, 5): 1, (6, 5): 1, (7, 5): 1,
-        (5, 4): 0, (5, 6): 0, (4, 5): 0,
-        (6, 4): 0, (6, 6): 0,
-        (7, 4): 0, (7, 6): 0,
+        (5, 5): 1,
+        (6, 5): 1,
+        (7, 5): 1,
+        (5, 4): 0,
+        (5, 6): 0,
+        (4, 5): 0,
+        (6, 4): 0,
+        (6, 6): 0,
+        (7, 4): 0,
+        (7, 6): 0,
     }
     assert wm.frontier_step(0, 5, 5) == "right"
 
@@ -264,7 +270,10 @@ def test_frontier_step_does_not_route_through_unknown_walls():
     # (5,5) is boxed by known walls except down to (5,6); the only frontier is reached going down.
     wm = WorldMap()
     wm.cells[0] = {
-        (5, 5): 1, (5, 4): 0, (4, 5): 0, (6, 5): 0,  # up/left/right known walls
+        (5, 5): 1,
+        (5, 4): 0,
+        (4, 5): 0,
+        (6, 5): 0,  # up/left/right known walls
         (5, 6): 1,  # down is open and borders unknown (5,7)
     }
     assert wm.frontier_step(0, 5, 5) == "down"
