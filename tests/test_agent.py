@@ -269,14 +269,20 @@ class TestBattleStrategy:
         assert score == 40 * 1.0 * 1.0  # 40.0
 
     def test_score_move_super_effective(self):
-        # Ember (fire) vs grass: 40 * 1.0 * 2.0 = 80
-        score = self.strategy.score_move(0x2D, 10, "grass")
+        # Ember (fire, 0x34) vs grass: 40 * 1.0 * 2.0 = 80
+        score = self.strategy.score_move(0x34, 10, "grass")
         assert score == 80.0
 
     def test_score_move_not_very_effective(self):
-        # Ember (fire) vs water: 40 * 1.0 * 0.5 = 20
-        score = self.strategy.score_move(0x2D, 10, "water")
+        # Ember (fire, 0x34) vs water: 40 * 1.0 * 0.5 = 20
+        score = self.strategy.score_move(0x34, 10, "water")
         assert score == 20.0
+
+    def test_score_move_growl_is_status_not_ember(self):
+        # 0x2D (45) is GROWL, a 0-power status move — NOT Ember (0x34). Mislabelling it as a
+        # 40-power fire move made the agent pick Growl over Scratch (scored it 80 vs a Kakuna),
+        # deal 0 damage, and stall every wild fight in Viridian Forest. Growl must score as status.
+        assert self.strategy.score_move(0x2D, 10, "grass") == self.strategy.status_move_score
 
     def test_score_move_type_not_in_chart(self):
         # Psychic type not in our chart -> effectiveness = 1.0
@@ -284,8 +290,8 @@ class TestBattleStrategy:
         assert score == 90 * 1.0 * 1.0
 
     def test_score_move_enemy_not_in_chart_entry(self):
-        # Ember (fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
-        score = self.strategy.score_move(0x2D, 10, "dragon")
+        # Ember (fire, 0x34) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
+        score = self.strategy.score_move(0x34, 10, "dragon")
         assert score == 40 * 1.0 * 1.0
 
     def test_score_move_accuracy_factor(self):
@@ -474,9 +480,9 @@ class TestBattleStrategy:
 
     def test_choose_action_uses_enemy_type(self):
         """choose_action passes enemy_type_name to score_move for effectiveness."""
-        # Ember (fire) vs grass enemy -> super effective
+        # Ember (fire, 0x34) vs grass enemy -> super effective
         battle = self._make_battle(
-            moves=[0x2D, 0x01, 0x00, 0x00],  # Ember, Pound
+            moves=[0x34, 0x01, 0x00, 0x00],  # Ember, Pound
             move_pp=[10, 10, 0, 0],
             enemy_type1=0x17,  # grass
         )
@@ -1635,17 +1641,26 @@ class TestBattleMenuSelect:
         return [c.args[0] for c in pyboy.button.call_args_list]
 
     def test_run_walks_to_bottom_right_after_normalizing(self):
-        # up+left normalizes the cursor to FIGHT, then down+right reaches RUN, then A confirms.
-        assert self._buttons("run") == ["up", "left", "down", "right", "a"]
+        # b,b backs out of any open sub-menu; up+left normalizes to FIGHT; down+right reaches RUN.
+        assert self._buttons("run") == ["b", "b", "up", "left", "down", "right", "a"]
 
     def test_fight_is_top_left_after_normalizing(self):
-        assert self._buttons("fight") == ["up", "left", "a"]
+        assert self._buttons("fight") == ["b", "b", "up", "left", "a"]
 
     def test_pkmn_is_top_right(self):
-        assert self._buttons("pkmn") == ["up", "left", "right", "a"]
+        assert self._buttons("pkmn") == ["b", "b", "up", "left", "right", "a"]
 
     def test_item_is_bottom_left(self):
-        assert self._buttons("item") == ["up", "left", "down", "a"]
+        assert self._buttons("item") == ["b", "b", "up", "left", "down", "a"]
+
+    def test_backs_out_of_open_submenu_before_normalizing(self):
+        # If a sub-menu (move list, bag) is already open, up/left would navigate IT, not the main
+        # 2x2 menu — so the cursor lands on the wrong corner and (observed) opens the empty bag
+        # instead of FIGHT, freezing the turn. Pressing B first returns to the main menu (a no-op
+        # there), so normalization is reliable. The B presses must come before any d-pad input.
+        seq = self._buttons("fight")
+        assert seq[:2] == ["b", "b"]
+        assert "up" in seq and seq.index("b") < seq.index("up")
 
 
 class TestRunBattleTurn:

@@ -92,7 +92,8 @@ MOVE_DATA = {
     0x01: ("Pound", "normal", 40, 100),
     0x0A: ("Scratch", "normal", 40, 100),
     0x21: ("Tackle", "normal", 35, 95),
-    0x2D: ("Ember", "fire", 40, 100),
+    0x2D: ("Growl", "normal", 0, 100),  # 45 = Growl (status); Ember is 0x34
+    0x34: ("Ember", "fire", 40, 100),  # 52 = Ember
     0x37: ("Water Gun", "water", 40, 100),
     0x49: ("Vine Whip", "grass", 35, 100),
     0x55: ("Thunderbolt", "electric", 95, 100),
@@ -198,6 +199,14 @@ class GameController:
         re-pick RUN, freezing the fight). Normalize to FIGHT (top-left) first, then walk the
         real grid.
         """
+        # First back out of any open sub-menu (move list, bag, party). If one is open, the up/left
+        # normalization below would navigate IT instead of the main 2x2 menu — the cursor then
+        # lands on the wrong corner and A opens the (empty) bag instead of FIGHT, so no move is ever
+        # picked and the turn never resolves (observed: a Kakuna fight frozen for 760 turns). B on
+        # the main battle menu is a harmless no-op, so this is safe even when no sub-menu is open.
+        for _ in range(2):
+            self.press("b")
+            self.wait(8)
         # Use the default (longer) press timing — the same as ``navigate_menu``, which works for
         # the move list. The 8-frame overworld timing is too short for the battle-menu cursor to
         # register a move, which left the cursor stuck on FIGHT and the flee never happening.
