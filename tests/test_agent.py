@@ -382,6 +382,29 @@ class TestBattleStrategy:
             assert s.choose_action(battle)["action"] == "fight"
         assert s.choose_action(battle) == {"action": "run"}
 
+    def test_choose_action_fights_out_an_unfleeable_stall(self):
+        # Livelock fix: when a stalled wild battle's flee keeps FAILING, returning "run" forever
+        # never ends the battle, so the end-of-battle counter reset never fires and the agent is
+        # stuck in one battle indefinitely (observed: 2188 consecutive "run" actions on a single
+        # wild). Cap the stall-guard flee like the low-HP run does, then fall through and fight.
+        s = BattleStrategy(self.chart)
+        battle = self._make_battle(
+            battle_type=1,
+            player_hp=60,
+            player_max_hp=100,
+            enemy_hp=6,
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],  # dry Scratch, Growl (status) -> no HP progress -> stalls
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(battle)["action"] == "fight"
+        # Stalled: flee up to 3 times...
+        for _ in range(3):
+            assert s.choose_action(battle) == {"action": "run"}
+        # ...then it must fight it out rather than run forever.
+        assert s.choose_action(battle)["action"] == "fight"
+
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
         # counter, so the agent keeps fighting well past the patience window.

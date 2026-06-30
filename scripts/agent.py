@@ -286,12 +286,17 @@ class BattleStrategy:
         if battle.battle_type == 1:
             if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
                 self._wild_fight_turns = 0
+                self._run_attempts = 0  # real progress also re-arms the flee cap
             self._last_enemy_hp = battle.enemy_hp
             if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
-                # Stalled: keep fleeing until the battle actually ends. Unlike the low-HP run
-                # (capped, because fighting on can still level us), a stall means fighting is
-                # futile, so never fall back to fight here.
-                return {"action": "run"}
+                # Stalled: try to flee. But flee can FAIL repeatedly, and looping "run" forever
+                # never ends the battle — so the end-of-battle counter reset never fires and the
+                # agent livelocks in a single wild fight (observed: 2188 consecutive runs). Cap the
+                # flee like the low-HP run, then fall through and fight it out (the only way to end
+                # an unfleeable battle).
+                if self._run_attempts < 3:
+                    self._run_attempts += 1
+                    return {"action": "run"}
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
