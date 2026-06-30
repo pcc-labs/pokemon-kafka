@@ -167,9 +167,25 @@ class GameController:
         hold_frames=20 held the d-pad long enough to walk *two* tiles per call, so the agent could
         only ever land on same-parity columns — fatal where a one-tile-wide gap sits on the other
         parity (e.g. the Route 1 ledge gap at x=9). 8 frames is enough to commit exactly one step.
+
+        Retry the press until we actually move (or warp), up to 3 attempts. Two failure modes need
+        this: the first press in a new facing only TURNS the character (no step), and even when
+        already facing, a press occasionally fails to register a step (~4% flaky). A single press
+        therefore mistakes a walkable tile for a wall, and the nav learner hard-blocks it — one such
+        false block on a one-tile junction silently seals off whole regions (it sealed the Viridian
+        Forest exit at (1,19), stranding the agent). Retrying absorbs both modes; we stop the instant
+        we move, so an already-facing open tile still advances exactly one tile (never two), while a
+        real wall stays put after all three presses and is correctly read as blocked.
         """
-        self.press(direction, hold_frames=8, release_frames=8)
-        self.wait(30)
+        bx, by = self.pyboy.memory[0xD362], self.pyboy.memory[0xD361]
+        bmap = self.pyboy.memory[0xD35E]
+        for _ in range(3):
+            self.press(direction, hold_frames=8, release_frames=8)
+            self.wait(30)
+            if (self.pyboy.memory[0xD362], self.pyboy.memory[0xD361]) != (bx, by):
+                break
+            if self.pyboy.memory[0xD35E] != bmap:
+                break
 
     def mash_a(self, times: int = 5, delay: int = 20):
         """Mash A to advance text boxes."""

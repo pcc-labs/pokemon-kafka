@@ -166,11 +166,48 @@ class TestGameController:
         assert self.pyboy.tick.call_count == 30
 
     def test_move(self):
+        # On an open tile the very first press steps, so move() presses exactly once (hold_frames=8
+        # commits one tile; 20 walked two, breaking odd-parity gaps).
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        self.pyboy.button.side_effect = lambda btn, delay=0: mem.__setitem__(0xD361, mem[0xD361] - 1)
         self.ctrl.move("up")
-        # hold_frames=8 commits exactly one tile (20 walked two, breaking odd-parity gaps)
         self.pyboy.button.assert_called_once_with("up", delay=8)
         # release_frames=8 + wait(30) = 38 ticks
         assert self.pyboy.tick.call_count == 38
+
+    def test_move_retries_until_step(self):
+        # The first press in a new facing only TURNS (no step); move() must retry so a walkable tile
+        # isn't mistaken for a wall. Here the position changes only on the 2nd press.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        calls = {"n": 0}
+
+        def turn_then_step(btn, delay=0):
+            calls["n"] += 1
+            if calls["n"] == 2:  # second press actually steps
+                mem[0xD361] -= 1
+
+        self.pyboy.button.side_effect = turn_then_step
+        self.ctrl.move("up")
+        assert self.pyboy.button.call_count == 2
+
+    def test_move_gives_up_on_real_wall(self):
+        # A genuine wall never moves us: move() retries the cap (3) times, then returns so the nav
+        # learner can see the failed step.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem  # button is a no-op mock -> position never changes
+        self.ctrl.move("up")
+        assert self.pyboy.button.call_count == 3
+
+    def test_move_stops_on_warp(self):
+        # Stepping onto a warp changes the map id without changing (x, y); move() must stop, not keep
+        # mashing into the new map.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        self.pyboy.button.side_effect = lambda btn, delay=0: mem.__setitem__(0xD35E, 50)
+        self.ctrl.move("up")
+        self.pyboy.button.assert_called_once_with("up", delay=8)
 
     def test_mash_a(self):
         self.ctrl.mash_a(times=2, delay=10)
