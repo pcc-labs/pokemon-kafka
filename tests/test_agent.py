@@ -1323,8 +1323,8 @@ class TestForestNavigation:
         ag.world.known_reachable = MagicMock(return_value=False)
         # Default frontier exploration to "exhausted" so the waypoint-fallback tests below run; the
         # primary-explorer test overrides it.
-        ag.world.frontier_step = MagicMock(return_value=None)
-        ag.world.explore_step = MagicMock(return_value=None)
+        ag.world.nearest_frontier = MagicMock(return_value=None)
+        ag.world.route_known = MagicMock(return_value=None)
         ag.stuck_turns = 0
         return ag
 
@@ -1336,17 +1336,39 @@ class TestForestNavigation:
         assert ag.choose_overworld_action(state) == "up"
         ag._pilot_to.assert_called_once_with(state, 2, 0, goal_is_warp=True)
 
-    def test_frontier_step_is_primary_even_when_stuck(self, tmp_path):
-        # frontier_step must run BEFORE the stuck-rotation. The earlier bug rotated first, so once
-        # oscillation built up the agent rotated forever and never explored (frozen at (29,33)).
+    def test_frontier_exploration_is_primary_even_when_stuck(self, tmp_path):
+        # Frontier exploration must run BEFORE the stuck-rotation. The earlier bug rotated first, so
+        # once oscillation built up the agent rotated forever and never explored (frozen at (29,33)).
         # With a high stuck count, exploration must still win over rotation.
         ag = self._agent(tmp_path)
-        ag.world.frontier_step = MagicMock(return_value="right")
+        ag.world.nearest_frontier = MagicMock(return_value=(12, 24))
+        ag.world.route_known = MagicMock(return_value="right")
         ag._pilot_to = MagicMock(return_value="down")  # fallback only
         ag.stuck_turns = 50
         state = OverworldState(map_id=51, x=10, y=24)
         assert ag.choose_overworld_action(state) == "right"
-        ag.world.frontier_step.assert_called_once()
+
+    def test_commits_to_a_locked_frontier_without_repicking(self, tmp_path):
+        # Anti-oscillation: a previously-locked frontier that is still routable is pursued directly,
+        # WITHOUT re-picking the nearest frontier (which is what caused the (29,33) flip-flop).
+        ag = self._agent(tmp_path)
+        ag._forest_frontier = (5, 40)
+        ag.world.route_known = MagicMock(return_value="left")
+        ag.world.nearest_frontier = MagicMock(return_value=(99, 99))  # must NOT be consulted
+        state = OverworldState(map_id=51, x=10, y=40)
+        assert ag.choose_overworld_action(state) == "left"
+        ag.world.nearest_frontier.assert_not_called()
+        assert ag._forest_frontier == (5, 40)  # target unchanged
+
+    def test_relocks_frontier_when_current_target_unroutable(self, tmp_path):
+        # When the locked target is no longer routable (route_known None), pick a fresh frontier.
+        ag = self._agent(tmp_path)
+        ag._forest_frontier = (5, 40)
+        ag.world.route_known = MagicMock(side_effect=[None, "up"])  # old target dead, new one routes
+        ag.world.nearest_frontier = MagicMock(return_value=(8, 30))
+        state = OverworldState(map_id=51, x=10, y=40)
+        assert ag.choose_overworld_action(state) == "up"
+        assert ag._forest_frontier == (8, 30)
 
     def test_threads_waypoint_chain_not_just_exit(self, tmp_path):
         # Frontier exhausted (None) -> fall back to the FIRST waypoint (entrance 1,43), not exit.

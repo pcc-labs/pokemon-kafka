@@ -279,6 +279,71 @@ def test_frontier_step_does_not_route_through_unknown_walls():
     assert wm.frontier_step(0, 5, 5) == "down"
 
 
+# --- nearest_frontier / route_known (frontier commitment) ---------------------
+
+
+def test_nearest_frontier_returns_start_when_it_borders_unknown():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1}  # standing on a frontier
+    assert wm.nearest_frontier(0, 5, 5) == (5, 5)
+
+
+def test_nearest_frontier_finds_a_reachable_frontier_tile():
+    wm = WorldMap()
+    # corridor (5,5)->(6,5)->(7,5); only (7,5) borders unknown (right). Others walled.
+    wm.cells[0] = {
+        (5, 5): 1,
+        (6, 5): 1,
+        (7, 5): 1,
+        (5, 4): 0,
+        (5, 6): 0,
+        (4, 5): 0,
+        (6, 4): 0,
+        (6, 6): 0,
+        (7, 4): 0,
+        (7, 6): 0,
+    }
+    assert wm.nearest_frontier(0, 5, 5) == (7, 5)
+
+
+def test_nearest_frontier_none_when_fully_enclosed():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0}
+    assert wm.nearest_frontier(0, 5, 5) is None
+
+
+def test_route_known_first_step_toward_target():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (6, 5): 1, (7, 5): 1}
+    assert wm.route_known(0, 5, 5, 7, 5) == "right"
+
+
+def test_route_known_probes_unknown_at_target():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1}  # at the target, which borders unknown
+    assert wm.route_known(0, 5, 5, 5, 5) == "up"  # probe the unknown neighbour (up first)
+
+
+def test_route_known_none_at_target_with_no_unknown():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0}
+    assert wm.route_known(0, 5, 5, 5, 5) is None  # fully revealed -> caller re-picks
+
+
+def test_route_known_none_when_target_unreachable():
+    wm = WorldMap()
+    # (5,5) boxed in by known walls; target (9,9) is not reachable over known-walkable tiles.
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0, (9, 9): 1}
+    assert wm.route_known(0, 5, 5, 9, 9) is None
+
+
+def test_borders_unknown_skips_blocked_and_off_map():
+    wm = WorldMap()
+    wm.cells[0] = {(0, 5): 1, (0, 4): 0, (0, 6): 0}  # left is off-map; up/down known walls
+    wm.block(0, 1, 5)  # right is hard-blocked, not unknown
+    assert wm._borders_unknown(0, 0, 5) is None  # no real unknown neighbour
+
+
 # --- persistence (carry observations across runs) -----------------------------
 
 

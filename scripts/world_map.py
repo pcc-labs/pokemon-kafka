@@ -304,55 +304,91 @@ class WorldMap:
                 q.append(nb)
         return None
 
-    def frontier_step(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> str | None:
-        """First step toward the nearest *frontier* — a known-walkable tile that borders an
-        unobserved tile — routing ONLY over tiles known to be walkable.
+    def _borders_unknown(self, map_id: int, x: int, y: int) -> tuple[int, int] | None:
+        """The first unobserved (in-bounds, not hard-blocked) neighbour of ``(x, y)``, or None.
 
-        This is the robust maze-explorer. :meth:`explore_step` treats unknown tiles as passable, so
-        it heads at frontiers that can only be reached by walking *through* unknown walls and wedges
-        against them (observed: trapped at (12,26) for 7000+ turns). Here the BFS expands strictly
-        over known-walkable tiles, and a frontier is a known-walkable cell with at least one
-        unobserved (and not hard-blocked, in-bounds) neighbour — so the agent always walks a route it
-        knows it can travel, then probes the unknown at its edge. Returns ``None`` when the whole
-        reachable area is mapped (no known-walkable tile borders the unknown), at which point the
-        caller's :meth:`known_reachable` check carries it to the goal."""
+        A known-walkable tile with such a neighbour is a *frontier*: standing there lets the agent
+        reveal new ground by probing the unknown tile."""
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        for _name, dx, dy in _DIRS:
+            nx, ny = x + dx, y + dy
+            if nx < 0 or ny < 0 or nx > _MAX_COORD or ny > _MAX_COORD:
+                continue
+            if (nx, ny) in blocked:
+                continue
+            if (nx, ny) not in m:  # never observed -> the frontier we want to reveal
+                return (nx, ny)
+        return None
+
+    def nearest_frontier(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> tuple[int, int] | None:
+        """The nearest *frontier* tile reachable over KNOWN-walkable tiles, or None when the whole
+        reachable area is mapped. Routing only over known-walkable tiles means the returned frontier
+        is always genuinely reachable (no walking through unknown walls)."""
         m = self.cells.get(map_id, {})
         blocked = self.blocked.get(map_id, ())
         start = (px, py)
-
-        def _unknown_neighbour(cx: int, cy: int) -> tuple[int, int] | None:
+        seen = {start}
+        q = deque([start])
+        nodes = 0
+        while q and nodes < max_nodes:
+            cur = q.popleft()
+            nodes += 1
+            if self._borders_unknown(map_id, cur[0], cur[1]) is not None:
+                return cur
+            cx, cy = cur
             for _name, dx, dy in _DIRS:
-                nx, ny = cx + dx, cy + dy
-                if nx < 0 or ny < 0 or nx > _MAX_COORD or ny > _MAX_COORD:
+                nb = (cx + dx, cy + dy)
+                if nb in seen or nb in blocked:
                     continue
-                if (nx, ny) in blocked:
+                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map)
                     continue
-                if (nx, ny) not in m:  # never observed -> the frontier we want to reveal
-                    return (nx, ny)
-            return None
+                seen.add(nb)
+                q.append(nb)
+        return None
 
+    def route_known(self, map_id: int, px: int, py: int, tx: int, ty: int, max_nodes: int = 20000) -> str | None:
+        """First step of a path from ``(px, py)`` to ``(tx, ty)`` over KNOWN-walkable tiles only.
+
+        Used to *commit* to a chosen frontier: pursuing one fixed target until it's reached or
+        proven unreachable avoids the oscillation that re-picking the nearest frontier every turn
+        causes (two ~equidistant frontiers flip the agent back and forth — observed at (29,33)).
+
+        At the target, returns a step toward one of its unobserved neighbours (probe the frontier),
+        or None if it no longer borders the unknown. None also when the target is unreachable over
+        known-walkable tiles — both signal the caller to pick a fresh frontier."""
+        if (px, py) == (tx, ty):
+            u = self._borders_unknown(map_id, tx, ty)
+            return self._dir(px, py, u) if u is not None else None
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        start = (px, py)
         came: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
         q = deque([start])
         nodes = 0
         while q and nodes < max_nodes:
             cur = q.popleft()
             nodes += 1
-            cx, cy = cur
-            unknown = _unknown_neighbour(cx, cy)
-            if unknown is not None:
-                if cur == start:
-                    return self._dir(px, py, unknown)  # already on the frontier: probe the unknown
+            if cur == (tx, ty):
                 step = self._first_step(came, start, cur)
                 return self._dir(px, py, step) if step else None
+            cx, cy = cur
             for _name, dx, dy in _DIRS:
                 nb = (cx + dx, cy + dy)
                 if nb in came or nb in blocked:
                     continue
-                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map: never in m)
+                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map)
                     continue
                 came[nb] = cur
                 q.append(nb)
         return None
+
+    def frontier_step(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> str | None:
+        """First step toward the nearest frontier (no commitment). The agent uses
+        :meth:`nearest_frontier` + :meth:`route_known` directly to *commit* to a target; this
+        convenience wrapper keeps the simple "explore the nearest unknown" behaviour available."""
+        t = self.nearest_frontier(map_id, px, py, max_nodes)
+        return self.route_known(map_id, px, py, t[0], t[1], max_nodes) if t is not None else None
 
     @staticmethod
     def _first_step(came, start, end):

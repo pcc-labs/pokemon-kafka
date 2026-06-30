@@ -932,16 +932,21 @@ class PokemonAgent:
                 bdy = {"up": -1, "down": 1}.get(self.last_overworld_action, 0)
                 self.world.block(state.map_id, state.x + bdx, state.y + bdy)
                 self._forest_try_n = 0
-            # PRIMARY: systematically map the maze with the robust frontier explorer. It walks only
-            # KNOWN-walkable tiles to the edge of the observed region and probes the unknown there,
-            # so it can never wedge against an unknown wall the way explore_step did (trapped at
-            # (12,26) for 7000+ turns); when a "walkable" first step turns out blocked, the
-            # two-failed-steps wall learning hard-blocks it and frontier_step reroutes next turn —
-            # self-healing without rotation. As the reachable area fills in, the far-left exit pocket
-            # gets mapped and the known_reachable commit branch above fires and carries it out. This
-            # must run BEFORE the stuck-rotation below: rotating first would, once oscillation
-            # builds, preempt exploration forever (observed: frozen at (29,33), stuck 11752).
-            d = self.world.frontier_step(state.map_id, state.x, state.y)
+            # PRIMARY: systematically map the maze by COMMITTING to one frontier at a time. We route
+            # only over KNOWN-walkable tiles to a locked frontier target and probe the unknown at its
+            # edge — never wedging against an unknown wall the way explore_step did (trapped at
+            # (12,26)). Crucially we keep pursuing the SAME target until it's reached or proven
+            # unreachable: re-picking the nearest frontier every turn flips the agent between two
+            # ~equidistant frontiers and oscillates (observed: frozen at (29,33) for 15000 turns).
+            # As the reachable area fills in, the far-left exit pocket gets mapped and the
+            # known_reachable commit branch above fires and carries it out. This runs BEFORE the
+            # stuck-rotation: rotating first would, once oscillation builds, preempt exploration.
+            tgt = getattr(self, "_forest_frontier", None)
+            d = self.world.route_known(state.map_id, state.x, state.y, *tgt) if tgt else None
+            if d is None:  # no target, reached it, or it became unreachable -> lock a fresh frontier
+                tgt = self.world.nearest_frontier(state.map_id, state.x, state.y)
+                self._forest_frontier = tgt
+                d = self.world.route_known(state.map_id, state.x, state.y, *tgt) if tgt else None
             if d is not None:
                 return d
             # Reachable area fully mapped but the exit still isn't committed. Restore is disabled in

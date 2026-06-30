@@ -70,26 +70,27 @@ class TestOverworldQuestBranches:
         assert ag.choose_overworld_action(state) == "up"
         ag.world.plan_step.assert_called_once()
 
-    def test_forest_uses_frontier_step_when_not_known_reachable(self, tmp_path):
-        # When the exit isn't yet known-reachable (and we're not stuck), systematically map the
-        # maze with the robust frontier explorer rather than beelining at unknown walls.
+    def test_forest_commits_to_a_frontier_when_not_known_reachable(self, tmp_path):
+        # When the exit isn't yet known-reachable (and we're not stuck), systematically map the maze
+        # by committing to a frontier (nearest_frontier + route_known) rather than beelining at walls.
         ag = _make_agent(tmp_path)
         ag.door_cooldown = 0
         ag.stuck_turns = 0
         ag.world.known_reachable = MagicMock(return_value=False)
-        ag.world.frontier_step = MagicMock(return_value="left")
+        ag.world.nearest_frontier = MagicMock(return_value=(12, 24))
+        ag.world.route_known = MagicMock(return_value="left")
         state = OverworldState(map_id=51, x=10, y=20, party_count=1)
         assert ag.choose_overworld_action(state) == "left"
-        ag.world.frontier_step.assert_called_once()
 
     def test_forest_falls_back_to_waypoint_pilot_when_frontier_exhausted(self, tmp_path):
-        # Only once the reachable area is fully mapped (frontier_step None) does the agent fall back
-        # to optimistically piloting the waypoint chain toward the exit.
+        # Only once the reachable area is fully mapped (no frontier) does the agent fall back to
+        # optimistically piloting the waypoint chain toward the exit.
         ag = _make_agent(tmp_path)
         ag.door_cooldown = 0
         ag.stuck_turns = 0
         ag.world.known_reachable = MagicMock(return_value=False)
-        ag.world.frontier_step = MagicMock(return_value=None)
+        ag.world.nearest_frontier = MagicMock(return_value=None)
+        ag.world.route_known = MagicMock(return_value=None)
         ag._pilot_to = MagicMock(return_value="left")
         state = OverworldState(map_id=51, x=10, y=20, party_count=1)
         assert ag.choose_overworld_action(state) == "left"
