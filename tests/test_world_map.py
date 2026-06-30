@@ -41,6 +41,22 @@ def test_observe_ignores_out_of_range_coords():
     assert all(x >= 0 and y >= 0 for (x, y) in wm.cells[0])  # no negative keys stored
 
 
+def test_observe_does_not_learn_walls_in_viridian_forest():
+    # In Viridian Forest (map 51), observation must NOT stamp walls: bug-catcher NPC tiles read
+    # impassable and the 2x2 collision downsample masks one-tile corridors, so stamping observed
+    # walls fragments the maze with phantom walls. Walls there come only from confirmed failed moves.
+    wm = WorldMap()
+    grid = _full(1)
+    grid[3][4] = 0  # a "wall" directly north of the player in the collision grid
+    wm.observe(51, 5, 5, grid)
+    assert wm.walkable(51, 5, 5) == 1  # walkable tiles are still stamped
+    assert (5, 4) not in wm.cells.get(51, {})  # the observed wall was NOT recorded
+    assert wm.walkable(51, 5, 4) == 1  # so it stays an optimistic/explorable frontier
+    # Every other map still learns walls from observation as before.
+    wm.observe(0, 5, 5, grid)
+    assert wm.walkable(0, 5, 4) == 0
+
+
 # --- plan_step ----------------------------------------------------------------
 
 

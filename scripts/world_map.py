@@ -55,7 +55,15 @@ class WorldMap:
                 gx = px + (c - _PLAYER_COL)
                 gy = py + (r - _PLAYER_ROW)
                 if 0 <= gx <= _MAX_COORD and 0 <= gy <= _MAX_COORD:
-                    m[(gx, gy)] = 1 if row[c] else 0
+                    if row[c]:
+                        m[(gx, gy)] = 1
+                    elif map_id != 51:
+                        # In Viridian Forest, do NOT learn walls from the collision grid: bug-catcher
+                        # NPC tiles read impassable and the 2x2 downsample masks one-tile corridors,
+                        # so observation stamps phantom walls that fragment the maze and trap the
+                        # frontier planner. In the forest, walls are learned only from confirmed
+                        # failed moves (block()); everything unobserved stays an explorable frontier.
+                        m[(gx, gy)] = 0
 
     def block(self, map_id: int, x: int, y: int) -> None:
         """Record that ``(x, y)`` can't be entered (a move into it just failed)."""
