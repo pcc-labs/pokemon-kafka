@@ -97,17 +97,30 @@ function showFrame(i) {
   document.getElementById("scrub").max = frames.length - 1;
 }
 
+// Playback speed (ms per frame). Higher = slower. Tune live with [ and ] keys.
+let frameDelay = 650;
 function play() {
   stop();
   timer = setInterval(() => {
-    if (idx >= frames.length - 1) return stop();
-    showFrame(idx + 1);
-  }, 300);
+    // Loop back to the start instead of stopping — keeps the screen animating
+    // continuously while presenting.
+    showFrame(idx >= frames.length - 1 ? 0 : idx + 1);
+  }, frameDelay);
 }
 function stop() { if (timer) clearInterval(timer); timer = null; }
+function setSpeed(ms) {
+  frameDelay = Math.max(80, Math.min(2000, ms));
+  if (timer) play();  // restart the loop at the new speed
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("scrub").addEventListener("input", e => { stop(); showFrame(+e.target.value); });
+  // Live playback controls: [ slower, ] faster, space = play/pause.
+  document.addEventListener("keydown", e => {
+    if (e.key === "[") setSpeed(frameDelay + 150);
+    else if (e.key === "]") setSpeed(frameDelay - 150);
+    else if (e.key === " ") { e.preventDefault(); timer ? stop() : play(); }
+  });
   document.querySelectorAll(".chip").forEach(c =>
     c.addEventListener("click", () => {
       c.classList.toggle("off");

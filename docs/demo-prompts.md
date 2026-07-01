@@ -56,7 +56,7 @@ Run demo Beat 1 (the naive flail) live in the background from worktree
   cd .worktrees/demo-1-oak
   ROM="$(ls rom/*.gb | head -1)"
   DEMO_NAIVE=1 uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 800 \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs --max-turns 800 \
     --label "1 · Flail (no help)"
 
 Run it in the background, give me the run_id, and remind me to click the live
@@ -74,7 +74,7 @@ and it reaches Oak's lab:
   cd .worktrees/demo-2-npc
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 1500 \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs --max-turns 1500 \
     --label "2 · Talk to NPCs → lab"
 
 Background it, give me the run_id, remind me to click the live tile. Point out
@@ -91,7 +91,7 @@ starter with B (not A):
   cd .worktrees/demo-3-starter
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs \
     --load-state states/at-oaks-lab.state --max-turns 800 \
     --label "3 · Choose starter (B not A)"
 
@@ -108,7 +108,7 @@ loading the first-battle state:
   cd .worktrees/demo-4-battle
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs \
     --load-state states/first_battle.state --max-turns 600 \
     --label "4 · First battle"
 
@@ -125,7 +125,7 @@ from the Route 1 state, with a high flee threshold so it RUNS from wild battles:
   cd .worktrees/demo-5-flee
   ROM="$(ls rom/*.gb | head -1)"
   EVOLVE_PARAMS='{"hp_run_threshold":0.95}' uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs \
     --load-state states/route1.state --max-turns 2000 \
     --label "5 · Route 1 by fleeing"
 
@@ -142,7 +142,7 @@ the SAME Route 1 state as Beat 5, but force-fight so it never runs and levels up
   cd .worktrees/demo-6-grind
   ROM="$(ls rom/*.gb | head -1)"
   AUTOTUNE_FORCE_FIGHT=1 uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs \
+    --strategy low --live --frame-interval 3 --runs-dir ../../runs \
     --load-state states/route1.state --max-turns 3000 \
     --label "6 · Level up, never flee"
 
