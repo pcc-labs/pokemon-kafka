@@ -66,34 +66,55 @@ cd .worktrees/demo-5-flee
 uv run python -m viewer --runs-dir runs        # http://localhost:8200
 ```
 
-Then drive the agent from Claude Code (prompt) or directly:
+Then drive the agent from Claude Code (prompt) or directly. **Use
+`--strategy low`** (verified: no LLM, deterministic; `medium`/`high` call the
+LLM). The ROM filename has spaces, so capture it in a var:
 
 ```bash
-# Beats 1–2 (fresh NEW GAME):
-uv run python scripts/agent.py rom/*.gb --strategy heuristic --live
+ROM="$(ls rom/*.gb | head -1)"
 
-# Beats 4–6 (pinned state):
-uv run python scripts/agent.py rom/*.gb --strategy heuristic --live \
+# Beats 1–3 (fresh NEW GAME):
+uv run python scripts/agent.py "$ROM" --strategy low --live
+
+# Beat 4 (first battle):
+uv run python scripts/agent.py "$ROM" --strategy low --live \
+  --load-state states/first_battle.state
+
+# Beat 5 (flee to traverse) — high flee threshold:
+EVOLVE_PARAMS='{"hp_run_threshold":0.95}' \
+  uv run python scripts/agent.py "$ROM" --strategy low --live \
+  --load-state states/route1.state
+
+# Beat 6 (never flee, grind/level) — SAME state, force fight:
+AUTOTUNE_FORCE_FIGHT=1 \
+  uv run python scripts/agent.py "$ROM" --strategy low --live \
   --load-state states/route1.state
 ```
 
 In the browser: reload the gallery, click the **live** tile to watch. Frames
 render every `--frame-interval` turns (default 10) — a fast slideshow plus the
-event feed, not 60fps video. For determinism keep `--strategy heuristic` (an
-LLM strategy with temperature will drift run-to-run even from a fixed state).
+event feed, not 60fps video. Keep `--strategy low` for determinism. Beats 5 and
+6 diverge *only* by the env var; let Beat 6 run ~500 turns for the level-ups to
+show (a 60-turn run looks the same as flee).
 
 ## Per-beat worktree map
 
 | # | Worktree | Start state | Strategy / flags | Demonstrates | Note it points at |
 |---|----------|-------------|------------------|--------------|-------------------|
-| 1 | `demo-1-oak` | fresh NEW GAME | no NPC help | failure / no-help | a failing `pokedex/log*.md` |
-| 2 | `demo-2-npc` | fresh NEW GAME | discovery on | talk to NPCs | `observations.md`: "talk to NPCs" |
-| 3 | `demo-3-starter` | at-lab* | — | door cooldown + B-not-A | observer state + `observations.md` |
-| 4 | `demo-4-battle` | `first_battle.state` | — | battle knowledge | battle-mechanics observations |
-| 5 | `demo-5-flee` | `route1.state` | flee wilds | traverse by fleeing | `observations.md`: "flee to progress" |
-| 6 | `demo-6-grind` | `route1.state` | fight everything | level up, never flee | `observations.md`: when to fight |
+| 1 | `demo-1-oak` | fresh NEW GAME | `--strategy low` | failure / no-help (told from history — see ⚠️) | a failing `pokedex/log*.md` |
+| 2 | `demo-2-npc` | fresh NEW GAME | `--strategy low` | talk to NPCs | `observations.md`: "talk to NPCs" |
+| 3 | `demo-3-starter` | at-lab* | `--strategy low` | door cooldown + B-not-A | observer state + `observations.md` |
+| 4 | `demo-4-battle` | `first_battle.state` | `--strategy low` | battle knowledge | battle-mechanics observations |
+| 5 | `demo-5-flee` | `route1.state` | `EVOLVE_PARAMS='{"hp_run_threshold":0.95}'` | traverse by fleeing (`Action: run`) | `observations.md`: "flee to progress" |
+| 6 | `demo-6-grind` | `route1.state` | `AUTOTUNE_FORCE_FIGHT=1` | level up, never flee (`Action: fight`) | `observations.md`: when to fight |
 
 `*` = state we don't have yet; see below.
+
+⚠️ **Beat 1 caveat (verified by smoke test):** the current agent reaches Oak's
+lab and picks a starter even with no help — the fixes are baked in. Beat 1 is
+*told from a recorded/historical failure*, not reproduced live. Everything else
+runs clean: all six worktrees boot, ROM symlinks resolve, states load, and each
+writes its own `pokedex/log*.md` (isolation confirmed).
 
 ## State inventory (what exists vs. what to capture)
 

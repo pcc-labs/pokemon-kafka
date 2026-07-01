@@ -79,18 +79,19 @@ the notes. Anchored to lines already in the talk. "Cue" = existing words; when
 you hit them, prompt Claude Code.
 
 **Beat 1 — Professor Oak's cabin, no help (the failure state)**
+- ⚠️ **Do NOT try to reproduce this failure live.** Verified by smoke test: the
+  current agent reaches Oak's lab and picks a starter even in "no help" mode
+  (final map 40, party 1) — the fixes (scripted routing, talk-to-NPCs) are baked
+  in. If you run it live expecting failure, it will *succeed* and undercut you.
 - **Cue:** *"You start as a kid in your house… you have to go to Professor Oak's
   cabin to get your first Pokémon."*
-- **Prompt:** "Boot Pokémon Red from a new game in the live viewer. No hints —
-  just try to reach Professor Oak's lab."
-- **Under the hood:** `scripts/agent.py … --live`, discovery/NPC help *off*.
-- **Audience sees:** the agent wandering, bumping walls, ignoring NPCs. Let it
-  flail ~20–30s — the failure *is* the content.
-- **The note:** open a failing `pokedex/log*.md` — the wall got *recorded*. "It
-  didn't just fail, it wrote down that it failed."
+- **Show, don't run:** open a real early failing session — a recorded run and/or
+  an old `pokedex/log*.md` where it wandered and stalled. Narrate the story.
+- **The note:** the wall got *recorded* — "it didn't just fail, it wrote down
+  that it failed." That written record is what made Beat 2 possible.
 - **Point:** *"I forgot to tell the agent to talk to people."* Land the laugh:
-  *"it was politely hallucinating progress."* Low-risk beat — it's meant to look
-  bad.
+  *"it was politely hallucinating progress."* This beat is **told from history**,
+  not reproduced — the whole talk is that the failure is now baked-out.
 
 **Beat 2 — Discovery engine: talk to NPCs**
 - **Cue:** *"one of the first context clues… talk to your mom, and your mom will
@@ -135,24 +136,29 @@ you hit them, prompt Claude Code.
 
 **Beat 5 — Complete Route 1 by fleeing**
 - **Cue:** *"get to the point of battling… a lot of nuance about the game."*
-- **Prompt / state:** load `route1.state`, then "cross Route 1 — don't waste turns,
-  flee wild battles."
-- **Under the hood:** `--load-state route1.state`; flee logic + `hp_run_threshold`
-  keep it moving.
-- **Audience sees:** the agent *declining* fights to traverse the route fast.
+- **State + flag (verified):** `--load-state route1.state` with
+  `EVOLVE_PARAMS='{"hp_run_threshold":0.95}'` — the high threshold makes it flee
+  wild battles readily. Without the flag it fights; the flag is what produces the
+  flee behavior.
+- **Audience sees (in the live feed):** `BATTLE … Action: run` — it *declines*
+  fights to traverse the route.
 - **The note:** the observation "flee to preserve HP and make progress." Fleeing
   is a *strategy the agent recorded*, not cowardice.
 - **Point:** sometimes the right move is to *not* fight. Sets up the reversal.
 
 **Beat 6 — Level up and never flee (the reversal)**
 - **Cue:** *"a self-healing loop… I had the agent learn when to fight."*
-- **Prompt / state:** load `route1.state`, then "grind Route 1 — fight everything,
-  level up." (This is the `/route1-speedrun-demo` grind loop.)
-- **Audience sees:** *same starting state as Beat 5*, opposite behavior — it now
-  *seeks* battles and levels up.
+- **State + flag (verified):** *same* `--load-state route1.state`, but
+  `AUTOTUNE_FORCE_FIGHT=1` — it never runs.
+- **Audience sees (in the live feed):** `BATTLE … Action: fight` even at low HP —
+  same starting state as Beat 5, opposite behavior.
 - **The note:** the observation about *when* to fight vs. flee — context decides.
-  Beats 5 and 6 start from the identical `route1.state`; the only difference is
-  which learned rule applies.
+  Beats 5 and 6 start from the identical `route1.state`; the **only** difference
+  is one env flag (`EVOLVE_PARAMS` flee threshold vs. `AUTOTUNE_FORCE_FIGHT`),
+  standing in for which learned rule applies.
+- **Run length:** the per-turn run-vs-fight contrast is visible immediately; for
+  the *aggregate* payoff (fight → level-ups, flee → more map progress) let it run
+  ~500 turns, not 60 — in a short run both look similar.
 - **Point (the closer):** the "right" behavior is context-dependent, and the
   agent only knows the difference *because it wrote both rules down.* Failure (1)
   → discovery (2) → saved rules (3–6) → the notes are the product.
