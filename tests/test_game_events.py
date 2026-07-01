@@ -273,3 +273,30 @@ def test_collector_tick_recorder_error_is_swallowed(capsys):
     c = GameEventCollector(recorder=Rec())
     c.tick(1)  # must not raise
     assert "recorder error" in capsys.readouterr().out
+
+
+def test_collector_battle_frame_forwards_to_recorder():
+    seen = []
+
+    class Rec:
+        def battle_frame(self, turn):
+            seen.append(turn)
+
+    c = GameEventCollector(recorder=Rec())
+    c.battle_frame(7)
+    assert seen == [7]
+
+
+def test_collector_battle_frame_noop_without_recorder():
+    c = GameEventCollector()
+    c.battle_frame(7)  # must not raise
+
+
+def test_collector_battle_frame_error_is_swallowed(capsys):
+    class Rec:
+        def battle_frame(self, turn):
+            raise RuntimeError("boom")
+
+    c = GameEventCollector(recorder=Rec())
+    c.battle_frame(1)  # must not raise
+    assert "recorder error" in capsys.readouterr().out
