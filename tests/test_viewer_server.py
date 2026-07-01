@@ -59,6 +59,13 @@ def test_index_served(tmp_path: Path):
     assert _client(tmp_path).get("/").status_code == 200
 
 
+def test_beat_route_serves_index(tmp_path: Path):
+    c = _client(tmp_path)
+    beat = c.get("/5")
+    assert beat.status_code == 200
+    assert beat.text == c.get("/").text
+
+
 def test_run_summary_has_grid_fields(tmp_path: Path):
     r = _client(tmp_path).get("/api/runs").json()["runs"][0]
     assert r["thumbnail"] == "000040.png"

@@ -1,10 +1,14 @@
 const API = "";
 let frames = [], feed = [], runId = null, idx = 0, timer = null, liveWs = null;
-const active = new Set(["milestone", "telemetry", "observation", "anomaly"]);
+let isolated = null; // null = show every kind; otherwise show only this one
 
 function kindForEvent(et) {
   if (et === "milestone" || et === "map_change") return "milestone";
-  if (et === "battle" || et === "overworld" || et === "stuck") return "telemetry";
+  if (
+    et === "battle" || et === "overworld" || et === "stuck" ||
+    et === "battle_end" || et === "battle_outcome" || et === "move_result"
+  ) return "telemetry";
+  if (et === "discovery") return "observation";
   return null;
 }
 
@@ -19,7 +23,32 @@ function textForEvent(msg) {
     return `map ${data.map_id} (${pos.x},${pos.y}) ${data.action || ""}`.trim();
   }
   if (et === "stuck") return `Stuck \xd7${data.streak} at ${JSON.stringify(data.position || {})}`;
+  if (et === "discovery") return data.text || "discovery";
+  if (et === "battle_end") {
+    const outcome = data.won ? "won" : "lost";
+    return `Battle ${outcome} vs ${data.opponent_species} (Lv${data.opponent_level})`;
+  }
+  if (et === "battle_outcome") {
+    const outcome = data.won ? "won" : "lost";
+    return `Battle outcome: ${outcome} vs ${data.enemy_species} (Lv${data.enemy_level})`;
+  }
+  if (et === "move_result") {
+    const result = data.fainted ? "fainted" : `${data.damage_dealt} dmg`;
+    return `${data.user_species} used ${data.move} — ${result}`;
+  }
   return et || "event";
+}
+
+function beatNumberFromLabel(label) {
+  const m = /^(\d+)\s*·/.exec(label || "");
+  return m ? m[1] : null;
+}
+
+function maybePushBeatRoute(label) {
+  const beat = beatNumberFromLabel(label);
+  if (beat && location.pathname !== `/${beat}`) {
+    history.pushState({}, "", `/${beat}`);
+  }
 }
 
 function closeLive() {
@@ -29,6 +58,7 @@ function closeLive() {
 async function showGrid() {
   stop();
   closeLive();
+  if (location.pathname !== "/") history.pushState({}, "", "/");
   const { runs } = await (await fetch(`${API}/api/runs`)).json();
   const g = document.getElementById("grid");
   g.innerHTML = "";
@@ -41,15 +71,26 @@ async function showGrid() {
     const labelHtml = r.label ? `<b class="run-label">${r.label}</b><br>` : "";
     tile.innerHTML = `${thumbnailHtml}
       <div class="meta">${labelHtml}${r.run_id}<br>⚔️${r.battles_won} 🗺️${r.maps_visited}</div>`;
-    tile.addEventListener("click", () => { document.body.dataset.view = "focus"; selectRun(r.run_id); });
+    tile.addEventListener("click", () => { document.body.dataset.view = "focus"; selectRun(r.run_id, r.label); });
     g.appendChild(tile);
   });
   document.body.dataset.view = "grid";
 }
 
-async function selectRun(id) {
+async function routeInitial() {
+  const m = /^\/(\d+)$/.exec(location.pathname);
+  if (!m) { showGrid(); return; }
+  const { runs } = await (await fetch(`${API}/api/runs`)).json();
+  const match = runs.find(r => beatNumberFromLabel(r.label) === m[1]);
+  if (!match) { showGrid(); return; }
+  document.body.dataset.view = "focus";
+  await selectRun(match.run_id, match.label);
+}
+
+async function selectRun(id, label) {
   runId = id;
   closeLive();
+  maybePushBeatRoute(label);
   const detail = await (await fetch(`${API}/api/runs/${id}`)).json();
   frames = detail.frames;
   feed = (await (await fetch(`${API}/api/runs/${id}/feed`)).json()).feed;
@@ -81,12 +122,48 @@ async function selectRun(id) {
 function renderFeed() {
   const ul = document.getElementById("feed");
   ul.innerHTML = "";
-  feed.filter(e => active.has(e.kind)).forEach(e => {
+  feed.forEach((e, i) => {
+    if (isolated !== null && e.kind !== isolated) return;
     const li = document.createElement("li");
     li.className = `entry ${e.kind}`;
+    li.dataset.feedIdx = i;
     li.textContent = `T${e.turn} [${e.kind}] ${e.text}`;
+    li.addEventListener("click", () => { stop(); showFrame(frameIndexForTurn(e.turn)); });
     ul.appendChild(li);
   });
+  highlightCurrentFeedEntry();
+}
+
+function turnForFrame(i) {
+  return parseInt(frames[i] || "0", 10) || 0;
+}
+
+function frameIndexForTurn(turn) {
+  for (let i = 0; i < frames.length; i++) {
+    if (turnForFrame(i) >= turn) return i;
+  }
+  return frames.length - 1;
+}
+
+function currentFeedEntryIndex(frameTurn) {
+  let best = -1;
+  for (let i = 0; i < feed.length; i++) {
+    if (feed[i].turn <= frameTurn) best = i;
+    else break;
+  }
+  return best;
+}
+
+function highlightCurrentFeedEntry() {
+  const ul = document.getElementById("feed");
+  const currentIdx = currentFeedEntryIndex(turnForFrame(idx));
+  ul.querySelectorAll("li.entry").forEach(li => li.classList.remove("current"));
+  if (currentIdx < 0) return;
+  const li = ul.querySelector(`li[data-feed-idx="${currentIdx}"]`);
+  if (li) {
+    li.classList.add("current");
+    li.scrollIntoView({ block: "nearest" });
+  }
 }
 
 function showFrame(i) {
@@ -95,19 +172,29 @@ function showFrame(i) {
   document.getElementById("screen").src = `${API}/runs/${runId}/frames/${frames[idx]}`;
   document.getElementById("scrub").value = idx;
   document.getElementById("scrub").max = frames.length - 1;
+  const readout = document.getElementById("turn-readout");
+  if (readout) readout.textContent = `Turn ${turnForFrame(idx)}`;
+  highlightCurrentFeedEntry();
 }
 
 // Playback speed (ms per frame). Higher = slower. Tune live with [ and ] keys.
 let frameDelay = 650;
+function currentFrameDelay() {
+  const currentIdx = currentFeedEntryIndex(turnForFrame(idx));
+  const kind = currentIdx >= 0 ? feed[currentIdx].kind : null;
+  return kind === "telemetry" ? frameDelay * 2 : frameDelay;
+}
 function play() {
   stop();
-  timer = setInterval(() => {
-    // Loop back to the start instead of stopping — keeps the screen animating
-    // continuously while presenting.
-    showFrame(idx >= frames.length - 1 ? 0 : idx + 1);
-  }, frameDelay);
+  scheduleNext();
 }
-function stop() { if (timer) clearInterval(timer); timer = null; }
+function scheduleNext() {
+  timer = setTimeout(() => {
+    showFrame(idx >= frames.length - 1 ? 0 : idx + 1);
+    scheduleNext();
+  }, currentFrameDelay());
+}
+function stop() { if (timer) clearTimeout(timer); timer = null; }
 function setSpeed(ms) {
   frameDelay = Math.max(80, Math.min(2000, ms));
   if (timer) play();  // restart the loop at the new speed
@@ -123,9 +210,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.querySelectorAll(".chip").forEach(c =>
     c.addEventListener("click", () => {
-      c.classList.toggle("off");
-      active.has(c.dataset.kind) ? active.delete(c.dataset.kind) : active.add(c.dataset.kind);
+      isolated = isolated === c.dataset.kind ? null : c.dataset.kind;
+      document.querySelectorAll(".chip").forEach(other =>
+        other.classList.toggle("off", isolated !== null && other.dataset.kind !== isolated));
       renderFeed();
     }));
-  showGrid();
+  window.addEventListener("popstate", routeInitial);
+  routeInitial();
 });

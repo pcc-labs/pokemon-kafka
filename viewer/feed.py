@@ -7,7 +7,8 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 _MILESTONE_TYPES = {"milestone", "map_change"}
-_TELEMETRY_TYPES = {"battle", "overworld", "stuck"}
+_TELEMETRY_TYPES = {"battle", "overworld", "stuck", "battle_end", "battle_outcome", "move_result"}
+_OBSERVATION_TYPES = {"discovery"}
 
 
 @dataclass
@@ -36,6 +37,17 @@ def _event_text(event: dict) -> str:
         return f"map {data.get('map_id')} ({pos.get('x')},{pos.get('y')}) {data.get('action', '')}".strip()
     if et == "stuck":
         return f"Stuck ×{data.get('streak')} at {data.get('position', {})}"
+    if et == "discovery":
+        return data.get("text", "discovery")
+    if et == "battle_end":
+        outcome = "won" if data.get("won") else "lost"
+        return f"Battle {outcome} vs {data.get('opponent_species')} (Lv{data.get('opponent_level')})"
+    if et == "battle_outcome":
+        outcome = "won" if data.get("won") else "lost"
+        return f"Battle outcome: {outcome} vs {data.get('enemy_species')} (Lv{data.get('enemy_level')})"
+    if et == "move_result":
+        result = "fainted" if data.get("fainted") else f"{data.get('damage_dealt')} dmg"
+        return f"{data.get('user_species')} used {data.get('move')} — {result}"
     return et or "event"
 
 
@@ -47,6 +59,8 @@ def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
             kind = "milestone"
         elif et in _TELEMETRY_TYPES:
             kind = "telemetry"
+        elif et in _OBSERVATION_TYPES:
+            kind = "observation"
         else:
             continue
         entries.append(

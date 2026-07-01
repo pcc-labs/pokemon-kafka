@@ -51,6 +51,10 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
     def index():
         return FileResponse(_STATIC / "index.html")
 
+    @app.get("/{beat:int}")
+    def beat_route(beat: int):
+        return FileResponse(_STATIC / "index.html")
+
     if _STATIC.is_dir():
         app.mount("/static", StaticFiles(directory=_STATIC), name="static")
 

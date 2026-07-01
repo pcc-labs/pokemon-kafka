@@ -16,6 +16,8 @@ except Exception:  # pragma: no cover - import guard
 
 
 class RunRecorder:
+    _FORCE_CAPTURE_TYPES = {"discovery", "milestone", "battle"}
+
     def __init__(
         self,
         run_id: str,
@@ -54,7 +56,8 @@ class RunRecorder:
         if self.live is not None:
             self.live({"type": "event", **event})
         turn = int(event.get("turn", 0))
-        if self.frame_grabber is not None and turn % self.frame_interval == 0:
+        force = event.get("event_type") in self._FORCE_CAPTURE_TYPES
+        if self.frame_grabber is not None and (turn % self.frame_interval == 0 or force):
             self.capture_frame(turn)
 
     def tick(self, turn: int) -> None:
