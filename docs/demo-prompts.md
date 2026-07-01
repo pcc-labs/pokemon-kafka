@@ -56,7 +56,8 @@ Run demo Beat 1 (the naive flail) live in the background from worktree
   cd .worktrees/demo-1-oak
   ROM="$(ls rom/*.gb | head -1)"
   DEMO_NAIVE=1 uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 800
+    --strategy low --live --runs-dir ../../runs --max-turns 800 \
+    --label "1 · Flail (no help)"
 
 Run it in the background, give me the run_id, and remind me to click the live
 tile. This one is SUPPOSED to fail — it stays stuck near the bedroom (map 38),
@@ -73,7 +74,8 @@ and it reaches Oak's lab:
   cd .worktrees/demo-2-npc
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 1500
+    --strategy low --live --runs-dir ../../runs --max-turns 1500 \
+    --label "2 · Talk to NPCs → lab"
 
 Background it, give me the run_id, remind me to click the live tile. Point out
 it now reaches Oak's lab (map 40) and picks a starter (party 1).
@@ -90,7 +92,8 @@ starter with B (not A):
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/at-oaks-lab.state --max-turns 800
+    --load-state states/at-oaks-lab.state --max-turns 800 \
+    --label "3 · Choose starter (B not A)"
 
 Background it, run_id, remind me to click the live tile. Starts in Oak's lab
 (party 0, verified) so it walks to the table and confirms the starter with B.
@@ -106,7 +109,8 @@ loading the first-battle state:
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/first_battle.state --max-turns 600
+    --load-state states/first_battle.state --max-turns 600 \
+    --label "4 · First battle"
 
 Background it, run_id, remind me to click the live tile. Point out it reads the
 matchup and picks an effective move.
@@ -122,7 +126,8 @@ from the Route 1 state, with a high flee threshold so it RUNS from wild battles:
   ROM="$(ls rom/*.gb | head -1)"
   EVOLVE_PARAMS='{"hp_run_threshold":0.95}' uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/route1.state --max-turns 2000
+    --load-state states/route1.state --max-turns 2000 \
+    --label "5 · Route 1 by fleeing"
 
 Background it, run_id, remind me to click the live tile. Point out the feed:
 `BATTLE ... Action: run` — it declines fights to traverse the route.
@@ -138,7 +143,8 @@ the SAME Route 1 state as Beat 5, but force-fight so it never runs and levels up
   ROM="$(ls rom/*.gb | head -1)"
   AUTOTUNE_FORCE_FIGHT=1 uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/route1.state --max-turns 3000
+    --load-state states/route1.state --max-turns 3000 \
+    --label "6 · Level up, never flee"
 
 Background it, run_id, remind me to click the live tile. Point out `BATTLE ...
 Action: fight` even at low HP — same start as Beat 5, opposite behavior. Let it
