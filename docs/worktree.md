@@ -106,12 +106,10 @@ show (a 60-turn run looks the same as flee).
 |---|----------|-------------|------------------|--------------|-------------------|
 | 1 | `demo-1-oak` | fresh NEW GAME | `DEMO_NAIVE=1` | failure / no-help (live flail) | a failing `pokedex/log*.md` |
 | 2 | `demo-2-npc` | fresh NEW GAME | `--strategy low` | talk to NPCs | `observations.md`: "talk to NPCs" |
-| 3 | `demo-3-starter` | at-lab* | `--strategy low` | door cooldown + B-not-A | observer state + `observations.md` |
+| 3 | `demo-3-starter` | `at-oaks-lab.state` | `--strategy low` | door cooldown + B-not-A | observer state + `observations.md` |
 | 4 | `demo-4-battle` | `first_battle.state` | `--strategy low` | battle knowledge | battle-mechanics observations |
 | 5 | `demo-5-flee` | `route1.state` | `EVOLVE_PARAMS='{"hp_run_threshold":0.95}'` | traverse by fleeing (`Action: run`) | `observations.md`: "flee to progress" |
 | 6 | `demo-6-grind` | `route1.state` | `AUTOTUNE_FORCE_FIGHT=1` | level up, never flee (`Action: fight`) | `observations.md`: when to fight |
-
-`*` = state we don't have yet; see below.
 
 **Beat 1 (verified by smoke test):** with the learned scaffolding on, the agent
 reaches Oak's lab and picks a starter even with "no help" — so the flail needs
@@ -122,20 +120,21 @@ writes its own `pokedex/log*.md` (isolation confirmed).
 
 ## State inventory (what exists vs. what to capture)
 
-Available today (in the sibling `../autotune/states/`, gitignored):
+Available today:
 
-- `first_battle.state` — paused at the first wild battle → **Beat 4**
-- `route1.state` — entering Route 1 → **Beats 5 & 6**
+- `first_battle.state` (from `../autotune/states/`) — first wild battle → **Beat 4**
+- `route1.state` (from `../autotune/states/`) — entering Route 1 → **Beats 5 & 6**
+- `at-oaks-lab.state` — **captured**, in `.worktrees/demo-3-starter/states/`.
+  Verified map 40, party 0 (pre-starter) → **Beat 3**.
 
-Missing — capture before the talk if you want those beats deterministic:
+To re-capture `at-oaks-lab.state` (e.g. after recreating the worktree):
+```bash
+uv run python scripts/agent.py "$(ls rom/*.gb|head -1)" --strategy low --max-turns 260 \
+  --save-state-on-map "40:states/at-oaks-lab.state"   # map 40 = Oak's Lab
+```
 
-- **`at-oaks-lab.state`** for Beat 3 (choose starter). Capture it:
-  ```bash
-  uv run python scripts/agent.py rom/*.gb --strategy heuristic \
-    --save-state-on-map "40:states/at-oaks-lab.state"   # map 40 = Oak's Lab
-  ```
-  Beats 1–2 intentionally use **no** state (the point is watching it fail, then
-  discover).
+Beats 1–2 intentionally use **no** state (Beat 1 flails via `DEMO_NAIVE=1`;
+Beat 2 discovers from a fresh game).
 
 ## Cleanup
 

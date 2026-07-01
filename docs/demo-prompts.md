@@ -17,18 +17,30 @@ you talk through the logs. Pairs with [`talk-demo-outline.md`](talk-demo-outline
   lines on the other). Ask Claude to "tail the log" any time you want the raw
   terminal lines too.
 - **Deterministic.** `--strategy low` = no LLM, same behavior every rehearsal.
-  Beats 4–6 load a pinned savestate; Beats 1–3 start from NEW GAME.
+  Beats 4–6 and Beat 3 load a pinned savestate; Beats 1–2 start from NEW GAME.
+- **Pacing (important).** Headless runs ~100× real-time, so a few hundred turns
+  finish in *seconds*. That's why `--max-turns` below is set high — you want it
+  still playing while you talk. The gallery keeps every finished run, so even
+  after it ends you can click its tile to scrub frames and read the feed. Bump
+  `--max-turns` further for a longer beat.
 - **Prereq:** worktrees built per `worktree.md` (ROM symlinked, states seeded).
 
 ---
 
-## Step 0 — Start the gallery (paste once, before the talk)
+## Step 0 — Start the gallery + open Chrome (paste once, before the talk)
 
 ```
-Start the Pokédex viewer from the repo root pointed at ./runs on port 8200 and
-open http://localhost:8200 in my browser. Run it in the background and leave it
-running for the whole session.
+Start the Pokédex viewer from the repo root in the background pointed at ./runs
+on port 8200 with --no-open, then open it in Google Chrome:
+
+  uv run python -m viewer --runs-dir runs --no-open   # (run in background)
+  open -a "Google Chrome" http://127.0.0.1:8200
+
+Leave both running for the whole session.
 ```
+
+Verified working: the viewer serves the game frames (`image/png`) and the event
+feed (the on-screen `BATTLE`/`OVERWORLD` logs) over HTTP.
 
 ---
 
@@ -41,7 +53,7 @@ Run demo Beat 1 (the naive flail) live in the background from worktree
   cd .worktrees/demo-1-oak
   ROM="$(ls rom/*.gb | head -1)"
   DEMO_NAIVE=1 uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 150
+    --strategy low --live --runs-dir ../../runs --max-turns 800
 
 Run it in the background, give me the run_id, and remind me to click the live
 tile. This one is SUPPOSED to fail — it stays stuck near the bedroom (map 38),
@@ -58,7 +70,7 @@ and it reaches Oak's lab:
   cd .worktrees/demo-2-npc
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 500
+    --strategy low --live --runs-dir ../../runs --max-turns 1500
 
 Background it, give me the run_id, remind me to click the live tile. Point out
 it now reaches Oak's lab (map 40) and picks a starter (party 1).
@@ -74,10 +86,11 @@ starter with B (not A):
   cd .worktrees/demo-3-starter
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
-    --strategy low --live --runs-dir ../../runs --max-turns 500
+    --strategy low --live --runs-dir ../../runs \
+    --load-state states/at-oaks-lab.state --max-turns 800
 
-Background it, run_id, remind me to click the live tile. (If states/at-oaks-lab.state
-exists, add --load-state states/at-oaks-lab.state to skip straight to the lab.)
+Background it, run_id, remind me to click the live tile. Starts in Oak's lab
+(party 0, verified) so it walks to the table and confirms the starter with B.
 ```
 
 ## Beat 4 — First battle (battle knowledge)
@@ -90,7 +103,7 @@ loading the first-battle state:
   ROM="$(ls rom/*.gb | head -1)"
   uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/first_battle.state --max-turns 150
+    --load-state states/first_battle.state --max-turns 600
 
 Background it, run_id, remind me to click the live tile. Point out it reads the
 matchup and picks an effective move.
@@ -106,7 +119,7 @@ from the Route 1 state, with a high flee threshold so it RUNS from wild battles:
   ROM="$(ls rom/*.gb | head -1)"
   EVOLVE_PARAMS='{"hp_run_threshold":0.95}' uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/route1.state --max-turns 400
+    --load-state states/route1.state --max-turns 2000
 
 Background it, run_id, remind me to click the live tile. Point out the feed:
 `BATTLE ... Action: run` — it declines fights to traverse the route.
@@ -122,7 +135,7 @@ the SAME Route 1 state as Beat 5, but force-fight so it never runs and levels up
   ROM="$(ls rom/*.gb | head -1)"
   AUTOTUNE_FORCE_FIGHT=1 uv run python scripts/agent.py "$ROM" \
     --strategy low --live --runs-dir ../../runs \
-    --load-state states/route1.state --max-turns 800
+    --load-state states/route1.state --max-turns 3000
 
 Background it, run_id, remind me to click the live tile. Point out `BATTLE ...
 Action: fight` even at low HP — same start as Beat 5, opposite behavior. Let it
