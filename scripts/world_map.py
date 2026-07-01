@@ -285,33 +285,6 @@ class WorldMap:
                 q.append(nb)
         return False
 
-    def explore_step(self, map_id: int, px: int, py: int, max_nodes: int = 8000) -> str | None:
-        """First step toward the nearest *unexplored* tile, so the agent maps new ground instead of
-        oscillating against an unreachable goal. BFS over passable tiles (unknown counts as
-        passable); the first unknown tile reached is the frontier. ``None`` when nothing reachable
-        is still unknown (the area is fully mapped)."""
-        m = self.cells.get(map_id, {})
-        blocked = self.blocked.get(map_id, ())
-        start = (px, py)
-        came: dict[tuple[int, int], tuple[int, int] | None] = {start: None}
-        q = deque([start])
-        nodes = 0
-        while q and nodes < max_nodes:
-            cur = q.popleft()
-            nodes += 1
-            # A frontier: a passable tile we have never observed (not in the occupancy map).
-            if cur != start and cur not in m and cur not in blocked:
-                step = self._first_step(came, start, cur)
-                return self._dir(px, py, step) if step else None
-            cx, cy = cur
-            for _name, dx, dy in _DIRS:
-                nb = (cx + dx, cy + dy)
-                if nb in came or not self._passable(map_id, m, nb[0], nb[1]):
-                    continue
-                came[nb] = cur
-                q.append(nb)
-        return None
-
     def _borders_unknown(self, map_id: int, x: int, y: int) -> tuple[int, int] | None:
         """The first unobserved (in-bounds, not hard-blocked) neighbour of ``(x, y)``, or None.
 
@@ -390,13 +363,6 @@ class WorldMap:
                 came[nb] = cur
                 q.append(nb)
         return None
-
-    def frontier_step(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> str | None:
-        """First step toward the nearest frontier (no commitment). The agent uses
-        :meth:`nearest_frontier` + :meth:`route_known` directly to *commit* to a target; this
-        convenience wrapper keeps the simple "explore the nearest unknown" behaviour available."""
-        t = self.nearest_frontier(map_id, px, py, max_nodes)
-        return self.route_known(map_id, px, py, t[0], t[1], max_nodes) if t is not None else None
 
     @staticmethod
     def _first_step(came, start, end):

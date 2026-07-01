@@ -217,85 +217,13 @@ def test_prefers_fewer_grass_tiles_among_equal_length_paths():
     assert d == "right"  # step to (6,5), avoiding the grass at (5,4)
 
 
-# --- frontier_step (robust maze exploration over KNOWN-walkable tiles) --------
-
-
-def test_frontier_step_steps_toward_adjacent_unknown():
-    wm = WorldMap()
-    wm.cells[0] = {(5, 5): 1}  # one known tile; all neighbours unknown
-    # (5,5) borders unknown -> probe it; _DIRS order makes "up" (toward (5,4)) first.
-    assert wm.frontier_step(0, 5, 5) == "up"
-
-
-def test_frontier_step_routes_over_known_walkable_to_a_frontier():
-    # A known-walkable corridor (5,5)->(6,5)->(7,5); (7,5) borders unknown (8,5). The only way out
-    # of (5,5) is right along the corridor (all other neighbours are known walls), so it must route
-    # right toward the frontier — NOT press into a wall.
-    wm = WorldMap()
-    wm.cells[0] = {
-        (5, 5): 1,
-        (6, 5): 1,
-        (7, 5): 1,
-        (5, 4): 0,
-        (5, 6): 0,
-        (4, 5): 0,
-        (6, 4): 0,
-        (6, 6): 0,
-        (7, 4): 0,
-        (7, 6): 0,
-    }
-    assert wm.frontier_step(0, 5, 5) == "right"
-
-
-def test_frontier_step_none_when_fully_enclosed_by_known_walls():
-    # Single walkable tile boxed in by KNOWN walls: no known-walkable tile borders the unknown,
-    # so there is nothing left to explore -> None (caller then commits to the goal / gives up).
-    wm = WorldMap()
-    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0}
-    assert wm.frontier_step(0, 5, 5) is None
-
-
-def test_frontier_step_ignores_off_map_neighbours():
-    # At a map corner, the off-map neighbours (negative coords) must NOT be treated as unknown
-    # frontiers. Here up/down are known walls and left is off-map, so the only real frontier is
-    # right (1,5) -> step "right".
-    wm = WorldMap()
-    wm.cells[0] = {(0, 5): 1, (0, 4): 0, (0, 6): 0}  # left of (0,5) is off-map (x=-1)
-    assert wm.frontier_step(0, 0, 5) == "right"
-
-
-def test_frontier_step_ignores_blocked_neighbours_as_frontier():
-    # A hard-blocked neighbour (a tile a real move failed on) is not an explorable frontier even
-    # though it was never stamped into the occupancy map. up is blocked, down is a known wall, so
-    # the frontier is left (4,5).
-    wm = WorldMap()
-    wm.cells[0] = {(5, 5): 1, (5, 6): 0}
-    wm.block(0, 5, 4)  # up is hard-blocked, not unknown
-    assert wm.frontier_step(0, 5, 5) == "left"
+# --- frontier commitment (nearest_frontier / route_known) + warp approach -----
 
 
 def test_warp_approach_ok_rejects_off_map_cell():
     # An off-map cell orthogonally adjacent to the goal is not a valid warp approach.
     wm = WorldMap()
     assert wm._warp_approach_ok(0, (-1, 0), (0, 0)) is False
-
-
-def test_frontier_step_does_not_route_through_unknown_walls():
-    # Unlike explore_step (which treats unknown as passable and would head straight at the unknown
-    # wall between it and a far frontier), frontier_step only traverses KNOWN-walkable tiles. Here
-    # (5,5) is boxed by known walls except down to (5,6); the only frontier is reached going down.
-    wm = WorldMap()
-    wm.cells[0] = {
-        (5, 5): 1,
-        (5, 4): 0,
-        (4, 5): 0,
-        (6, 5): 0,  # up/left/right known walls
-        (5, 6): 1,  # down is open and borders unknown (5,7)
-    }
-    assert wm.frontier_step(0, 5, 5) == "down"
-
-
-# --- nearest_frontier / route_known (frontier commitment) ---------------------
 
 
 def test_nearest_frontier_returns_start_when_it_borders_unknown():
@@ -400,7 +328,7 @@ def test_worldmap_load_missing_file_is_empty():
     assert wm.cells == {} and wm.blocked == {} and wm.encounters == {}
 
 
-# --- known_reachable / explore_step (forest exit-wedge fix) -------------------
+# --- known_reachable (forest exit-wedge fix) ----------------------------------
 
 
 def test_known_reachable_true_when_already_at_target():
@@ -426,29 +354,6 @@ def test_known_reachable_blocked_by_wall():
     m[(1, 0)] = 0  # wall
     m[(2, 0)] = 1
     assert wm.known_reachable(1, 0, 0, 2, 0) is False
-
-
-def test_explore_step_heads_to_nearest_unknown():
-    wm = WorldMap()
-    m = wm.cells.setdefault(1, {})
-    # An enclosed known corridor (0,0)->(3,0): walls above and below, so the only unknown frontier
-    # is off the right end at (4,0) -> the agent must walk "right" to reach unexplored ground.
-    for x in range(0, 4):
-        m[(x, 0)] = 1
-        m[(x, -1)] = 0
-        m[(x, 1)] = 0
-    m[(-1, 0)] = 0
-    assert wm.explore_step(1, 0, 0) == "right"
-
-
-def test_explore_step_none_when_fully_mapped():
-    wm = WorldMap()
-    m = wm.cells.setdefault(1, {})
-    # A fully-enclosed 1x1 known cell: walls on all sides, nothing unknown reachable.
-    m[(5, 5)] = 1
-    for nb in [(4, 5), (6, 5), (5, 4), (5, 6)]:
-        m[nb] = 0
-    assert wm.explore_step(1, 5, 5) is None
 
 
 # --- warp/exit goal tiles read as walls by the collision grid ------------------

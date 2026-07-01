@@ -83,6 +83,14 @@ WILD_BATTLE_PATIENCE = 10
 # steps are learned as walls, so the planner reroutes once unstuck.
 FOREST_UNSTUCK_AFTER = 8
 FOREST_ROTATE = ["up", "left", "right", "down"]
+# Map 51's warp out to Route 2. Only this tile gets warp-approach routing (goal_is_warp): the exit
+# and its approach both read as walls but are steppable. Guarding on it means a mis-authored route
+# waypoint can't trick the planner into crossing genuine walls next to some other goal.
+FOREST_EXIT = (2, 0)
+
+# Unit-step offsets for the four cardinal directions, shared by every place that turns a pressed
+# direction into a (dx, dy) delta.
+_DIR_DELTA = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
@@ -272,7 +280,10 @@ class BattleStrategy:
         self.force_fight = force_fight
         self.unknown_move_score = unknown_move_score
         self.status_move_score = status_move_score
+        # Two independent flee budgets: the low-HP escape and the stall guard each get their own
+        # capped run attempts, so exhausting one never silently disables the other within a battle.
         self._run_attempts = 0
+        self._stall_run_attempts = 0
         # Stall guard: count fight turns in the current wild battle without enemy-HP progress.
         self._wild_fight_turns = 0
         self._last_enemy_hp: int | None = None
@@ -318,16 +329,17 @@ class BattleStrategy:
         if battle.battle_type == 1:
             if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
                 self._wild_fight_turns = 0
-                self._run_attempts = 0  # real progress also re-arms the flee cap
+                self._run_attempts = 0  # real progress also re-arms both flee caps
+                self._stall_run_attempts = 0
             self._last_enemy_hp = battle.enemy_hp
             if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
                 # Stalled: try to flee. But flee can FAIL repeatedly, and looping "run" forever
                 # never ends the battle — so the end-of-battle counter reset never fires and the
                 # agent livelocks in a single wild fight (observed: 2188 consecutive runs). Cap the
-                # flee like the low-HP run, then fall through and fight it out (the only way to end
-                # an unfleeable battle).
-                if self._run_attempts < 3:
-                    self._run_attempts += 1
+                # flee (own budget, so a stall never spends the low-HP escape's attempts below), then
+                # fall through and fight it out (the only way to end an unfleeable battle).
+                if self._stall_run_attempts < 3:
+                    self._stall_run_attempts += 1
                     return {"action": "run"}
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
@@ -918,18 +930,21 @@ class PokemonAgent:
             # hard-blocked walkable tiles and trapped the agent in the entrance pocket.)
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
-            chain = [(w["x"], w["y"]) for w in wps] if wps else [(2, 0)]
+            chain = [(w["x"], w["y"]) for w in wps] if wps else [FOREST_EXIT]
             ex, ey = chain[-1]
+            # Warp-approach routing only applies when the goal really is the forest warp; a route
+            # whose last waypoint was mis-authored must not license crossing walls next to it.
+            exit_is_warp = (ex, ey) == FOREST_EXIT
             # Once the exit is reachable over KNOWN-walkable tiles, commit to it. The exit is a warp:
             # its tile AND its approach read as walls but are steppable, so pass goal_is_warp so the
             # planner can actually route onto it instead of treating it as fully walled off.
-            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=True):
-                d = self._pilot_to(state, ex, ey, goal_is_warp=True)
+            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=exit_is_warp):
+                d = self._pilot_to(state, ex, ey, goal_is_warp=exit_is_warp)
                 return d if d is not None else self._collision_pilot(state, "north")
             # Facing-independent persistent-wall detection. run_overworld's two-failed-steps rule is
             # gated on the player's facing register, which doesn't reliably update in the forest, so
             # a tile that reads walkable but can't be entered (a bug-catcher NPC, a ledge) is never
-            # hard-blocked and frontier_step routes into it forever (observed: 11000+ turns pressing
+            # hard-blocked and frontier routing steers into it forever (observed: 11000+ turns pressing
             # "left" into (28,33)). Count consecutive turns we chose the SAME step from the SAME tile
             # without moving; after a few, block the tile directly ahead so the planner abandons it.
             # Gating on a repeated *same* direction is what keeps this safe — the rotation fallback
@@ -943,16 +958,16 @@ class PokemonAgent:
             else:
                 self._forest_try_n = 0
             self._forest_try_pos, self._forest_try_dir = here, self.last_overworld_action
-            if self._forest_try_n >= 2 and self.last_overworld_action in ("up", "down", "left", "right"):
-                bdx = {"left": -1, "right": 1}.get(self.last_overworld_action, 0)
-                bdy = {"up": -1, "down": 1}.get(self.last_overworld_action, 0)
+            if self._forest_try_n >= 2 and self.last_overworld_action in _DIR_DELTA:
+                bdx, bdy = _DIR_DELTA[self.last_overworld_action]
                 self.world.block(state.map_id, state.x + bdx, state.y + bdy)
                 self._forest_try_n = 0
             # PRIMARY: systematically map the maze by COMMITTING to one frontier at a time. We route
             # only over KNOWN-walkable tiles to a locked frontier target and probe the unknown at its
-            # edge — never wedging against an unknown wall the way explore_step did (trapped at
-            # (12,26)). Crucially we keep pursuing the SAME target until it's reached or proven
-            # unreachable: re-picking the nearest frontier every turn flips the agent between two
+            # edge — never wedging against an unknown wall the way optimistic unknown-is-passable
+            # exploration did (trapped at (12,26)). Crucially we keep pursuing the SAME target until
+            # it's reached or proven unreachable: re-picking the nearest frontier every turn flips
+            # the agent between two
             # ~equidistant frontiers and oscillates (observed: frozen at (29,33) for 15000 turns).
             # As the reachable area fills in, the far-left exit pocket gets mapped and the
             # known_reachable commit branch above fires and carries it out. This runs BEFORE the
@@ -983,8 +998,9 @@ class PokemonAgent:
                     self._forest_wp_idx += 1
                 else:
                     break
-            is_last = self._forest_wp_idx == len(chain) - 1
             wx, wy = chain[self._forest_wp_idx]
+            # Only the true warp exit gets warp-approach routing (see exit_is_warp above).
+            is_last = self._forest_wp_idx == len(chain) - 1 and (wx, wy) == FOREST_EXIT
             d = self._pilot_to(state, wx, wy, goal_is_warp=is_last)
             return d if d is not None else self._collision_pilot(state, "north")
 
@@ -1278,15 +1294,14 @@ class PokemonAgent:
         backward out of the forest by accident (51 -> 0 -> a house). Block the warp tile so routing
         treats it as the dead end it is — except the exit (2,0), which we deliberately step onto to
         cross into Route 2."""
-        if prev is None or prev.map_id != 51 or last_act not in ("up", "down", "left", "right"):
+        if prev is None or prev.map_id != 51 or last_act not in _DIR_DELTA:
             return
-        edx = {"left": -1, "right": 1}.get(last_act, 0)
-        edy = {"up": -1, "down": 1}.get(last_act, 0)
+        edx, edy = _DIR_DELTA[last_act]
         expected = (prev.x + edx, prev.y + edy)
         moved_unexpectedly = state.map_id != prev.map_id or (
             (state.x, state.y) != expected and (state.x, state.y) != (prev.x, prev.y)
         )
-        if moved_unexpectedly and expected != (2, 0):
+        if moved_unexpectedly and expected != FOREST_EXIT:
             self.world.block(prev.map_id, *expected)
 
     def run_overworld(self):
@@ -1307,14 +1322,13 @@ class PokemonAgent:
         # swallows our inputs (e.g. the Mart clerk's parcel script) never poisons the map.
         if (
             prev is not None
-            and last_act in ("up", "down", "left", "right")
+            and last_act in _DIR_DELTA
             and state.map_id == prev.map_id
             and state.x == prev.x
             and state.y == prev.y
             and self.memory.read_player_facing_name() == last_act
         ):
-            bdx = {"left": -1, "right": 1}.get(last_act, 0)
-            bdy = {"up": -1, "down": 1}.get(last_act, 0)
+            bdx, bdy = _DIR_DELTA[last_act]
             attempted = (state.map_id, state.x + bdx, state.y + bdy)
             if attempted == getattr(self, "_last_fail_tile", None):
                 self.world.block(*attempted)  # turned into it twice → a real wall
@@ -1708,6 +1722,7 @@ class PokemonAgent:
                     self.battles_won += 1
                     self._last_progress_turn = self.turn_count
                     self.battle_strategy._run_attempts = 0
+                    self.battle_strategy._stall_run_attempts = 0
                     self.battle_strategy._wild_fight_turns = 0
                     self.battle_strategy._last_enemy_hp = None
                     self.encounter_log.append(

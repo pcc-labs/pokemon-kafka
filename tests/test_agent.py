@@ -449,6 +449,38 @@ class TestBattleStrategy:
         # ...then it must fight it out rather than run forever.
         assert s.choose_action(battle)["action"] == "fight"
 
+    def test_stall_flee_and_low_hp_flee_have_independent_budgets(self):
+        # The stall guard and the low-HP escape must NOT share one flee budget: a stall that spends
+        # its three attempts should never leave a later critically-low-HP turn unable to flee.
+        s = BattleStrategy(self.chart)
+        healthy = self._make_battle(
+            battle_type=1,
+            player_hp=60,
+            player_max_hp=100,
+            enemy_hp=6,  # constant enemy HP -> no progress -> the fight stalls
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(healthy)["action"] == "fight"
+        # Stall guard spends its own 3 flee attempts, then fights it out.
+        for _ in range(3):
+            assert s.choose_action(healthy) == {"action": "run"}
+        assert s.choose_action(healthy)["action"] == "fight"
+        # Now HP goes critical while the enemy HP is unchanged (still stalled). The low-HP escape
+        # has its own untouched budget, so it must still flee despite the exhausted stall budget.
+        low = self._make_battle(
+            battle_type=1,
+            player_hp=5,
+            player_max_hp=100,
+            enemy_hp=6,
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        assert s.choose_action(low) == {"action": "run"}
+
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
         # counter, so the agent keeps fighting well past the patience window.
