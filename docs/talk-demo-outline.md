@@ -78,20 +78,22 @@ Each beat introduces **one** piece of learned knowledge, and each one lives in
 the notes. Anchored to lines already in the talk. "Cue" = existing words; when
 you hit them, prompt Claude Code.
 
-**Beat 1 — Professor Oak's cabin, no help (the failure state)**
-- ⚠️ **Do NOT try to reproduce this failure live.** Verified by smoke test: the
-  current agent reaches Oak's lab and picks a starter even in "no help" mode
-  (final map 40, party 1) — the fixes (scripted routing, talk-to-NPCs) are baked
-  in. If you run it live expecting failure, it will *succeed* and undercut you.
+**Beat 1 — Professor Oak's cabin, no help (the flail)**
 - **Cue:** *"You start as a kid in your house… you have to go to Professor Oak's
   cabin to get your first Pokémon."*
-- **Show, don't run:** open a real early failing session — a recorded run and/or
-  an old `pokedex/log*.md` where it wandered and stalled. Narrate the story.
-- **The note:** the wall got *recorded* — "it didn't just fail, it wrote down
-  that it failed." That written record is what made Beat 2 possible.
+- **State + flag (verified):** `DEMO_NAIVE=1` strips the learned early-game
+  scaffolding (scripted targets + route waypoints) so the agent wanders like the
+  pre-observation baseline. Smoke-tested: it **stays stuck near the bedroom (map
+  38), party 0** — never reaches the lab. Without the flag it reaches map 40 and
+  picks a starter, so the flag is what reproduces the failure honestly.
+- **Audience sees:** the agent bumping around, going nowhere. Let it flail
+  ~20–30s — the failure *is* the content.
+- **The note:** the wall got *recorded* — open the fresh `pokedex/log*.md` it just
+  wrote. "It didn't just fail, it wrote down that it failed." That record is what
+  made Beat 2 possible.
 - **Point:** *"I forgot to tell the agent to talk to people."* Land the laugh:
-  *"it was politely hallucinating progress."* This beat is **told from history**,
-  not reproduced — the whole talk is that the failure is now baked-out.
+  *"it was politely hallucinating progress."* Same agent as every other beat —
+  we just switched the learned scaffolding off. Honest, live, deterministic.
 
 **Beat 2 — Discovery engine: talk to NPCs**
 - **Cue:** *"one of the first context clues… talk to your mom, and your mom will

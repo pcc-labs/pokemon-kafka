@@ -73,7 +73,10 @@ LLM). The ROM filename has spaces, so capture it in a var:
 ```bash
 ROM="$(ls rom/*.gb | head -1)"
 
-# Beats 1–3 (fresh NEW GAME):
+# Beat 1 (the flail) — naive mode: strip learned scaffolding, wander:
+DEMO_NAIVE=1 uv run python scripts/agent.py "$ROM" --strategy low --live
+
+# Beats 2–3 (fresh NEW GAME, learned routing on):
 uv run python scripts/agent.py "$ROM" --strategy low --live
 
 # Beat 4 (first battle):
@@ -101,7 +104,7 @@ show (a 60-turn run looks the same as flee).
 
 | # | Worktree | Start state | Strategy / flags | Demonstrates | Note it points at |
 |---|----------|-------------|------------------|--------------|-------------------|
-| 1 | `demo-1-oak` | fresh NEW GAME | `--strategy low` | failure / no-help (told from history — see ⚠️) | a failing `pokedex/log*.md` |
+| 1 | `demo-1-oak` | fresh NEW GAME | `DEMO_NAIVE=1` | failure / no-help (live flail) | a failing `pokedex/log*.md` |
 | 2 | `demo-2-npc` | fresh NEW GAME | `--strategy low` | talk to NPCs | `observations.md`: "talk to NPCs" |
 | 3 | `demo-3-starter` | at-lab* | `--strategy low` | door cooldown + B-not-A | observer state + `observations.md` |
 | 4 | `demo-4-battle` | `first_battle.state` | `--strategy low` | battle knowledge | battle-mechanics observations |
@@ -110,10 +113,11 @@ show (a 60-turn run looks the same as flee).
 
 `*` = state we don't have yet; see below.
 
-⚠️ **Beat 1 caveat (verified by smoke test):** the current agent reaches Oak's
-lab and picks a starter even with no help — the fixes are baked in. Beat 1 is
-*told from a recorded/historical failure*, not reproduced live. Everything else
-runs clean: all six worktrees boot, ROM symlinks resolve, states load, and each
+**Beat 1 (verified by smoke test):** with the learned scaffolding on, the agent
+reaches Oak's lab and picks a starter even with "no help" — so the flail needs
+`DEMO_NAIVE=1`, which strips the scripted targets + route waypoints. With it, the
+agent stays stuck near the bedroom (map 38, party 0) — a real, deterministic
+live flail. All six worktrees boot, ROM symlinks resolve, states load, and each
 writes its own `pokedex/log*.md` (isolation confirmed).
 
 ## State inventory (what exists vs. what to capture)
