@@ -246,3 +246,30 @@ def test_collector_recorder_error_is_swallowed(capsys):
     c = GameEventCollector(recorder=Rec())
     c.milestone(1, "x")  # must not raise
     assert "recorder error" in capsys.readouterr().out
+
+
+def test_collector_tick_forwards_to_recorder():
+    seen = []
+
+    class Rec:
+        def tick(self, turn):
+            seen.append(turn)
+
+    c = GameEventCollector(recorder=Rec())
+    c.tick(30)
+    assert seen == [30]
+
+
+def test_collector_tick_noop_without_recorder():
+    c = GameEventCollector()
+    c.tick(30)  # must not raise
+
+
+def test_collector_tick_recorder_error_is_swallowed(capsys):
+    class Rec:
+        def tick(self, turn):
+            raise RuntimeError("boom")
+
+    c = GameEventCollector(recorder=Rec())
+    c.tick(1)  # must not raise
+    assert "recorder error" in capsys.readouterr().out

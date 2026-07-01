@@ -57,6 +57,16 @@ class RunRecorder:
         if self.frame_grabber is not None and turn % self.frame_interval == 0:
             self.capture_frame(turn)
 
+    def tick(self, turn: int) -> None:
+        """Capture a frame on the interval regardless of whether an event fired.
+
+        on_event() only captures when a game event happens to land on an interval
+        turn — during quiet overworld travel, events can be dozens of turns apart,
+        causing large jumps between consecutive frames on playback.
+        """
+        if turn % self.frame_interval == 0:
+            self.capture_frame(turn)
+
     def capture_frame(self, turn: int) -> None:
         if self.frame_grabber is None:
             return

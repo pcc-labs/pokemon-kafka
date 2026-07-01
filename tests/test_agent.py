@@ -1832,6 +1832,33 @@ class TestRun:
         assert any("Battle ended" in e for e in ag.events)
         assert any("Session complete" in e for e in ag.events)
 
+    def test_run_ticks_collector_every_turn(self, tmp_path):
+        """collector.tick() fires once per turn, independent of whether an event fired."""
+        ag = _make_agent(tmp_path)
+        self._mock_battle_helpers(ag)
+        ag.collector = MagicMock()
+
+        battle_active = BattleState(
+            battle_type=1,
+            player_hp=50,
+            player_max_hp=100,
+            enemy_hp=30,
+            enemy_max_hp=40,
+            moves=[0x01, 0x00, 0x00, 0x00],
+            move_pp=[10, 0, 0, 0],
+            player_level=5,
+        )
+        battle_none = BattleState(battle_type=0)
+        overworld = OverworldState(map_id=0, x=5, y=5)
+
+        ag.memory.read_battle_state = MagicMock(side_effect=[battle_active, battle_active, battle_none, battle_none])
+        ag.memory.read_overworld_state = MagicMock(return_value=overworld)
+
+        with patch.object(agent, "Image", None):
+            ag.run(max_turns=2)
+
+        ag.collector.tick.assert_has_calls([call(1), call(2)])
+
     def test_run_resets_run_attempts_on_battle_end(self, tmp_path):
         ag = _make_agent(tmp_path)
         self._mock_battle_helpers(ag)

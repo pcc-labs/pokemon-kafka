@@ -56,6 +56,24 @@ def test_frame_captured_on_interval_only(tmp_path: Path):
     assert [f.name for f in frames] == ["000010.png"]
 
 
+def test_tick_captures_on_interval_without_event(tmp_path: Path):
+    rec = RunRecorder("run2b", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.tick(5)  # no frame, not on interval
+    rec.tick(10)  # frame, no event involved
+    rec.finish({})
+    frames = sorted((tmp_path / "run2b" / "frames").glob("*.png"))
+    assert [f.name for f in frames] == ["000010.png"]
+
+
+def test_tick_with_no_grabber_is_noop(tmp_path: Path):
+    rec = RunRecorder("run2c", tmp_path, frame_grabber=None, frame_interval=1)
+    rec.start({})
+    rec.tick(1)
+    rec.finish({})
+    assert list((tmp_path / "run2c" / "frames").glob("*.png")) == []
+
+
 def test_no_grabber_means_no_frames(tmp_path: Path):
     rec = RunRecorder("run3", tmp_path, frame_grabber=None, frame_interval=1)
     rec.start({})

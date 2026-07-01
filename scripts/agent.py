@@ -1691,6 +1691,8 @@ class PokemonAgent:
                 self.run_overworld()
                 self.turn_count += 1
 
+            self.collector.tick(self.turn_count)
+
             if self.turn_count % 10 == 0:
                 self.take_screenshot()
 
