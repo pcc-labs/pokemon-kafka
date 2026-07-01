@@ -31,11 +31,11 @@ distributes it.
 
 ## The setup prompt (copy-paste into Claude Code)
 
-Run this from the repo root. It creates the six demo worktrees, symlinks the
+Run this from the repo root. It creates the nine demo worktrees, symlinks the
 ROM, and seeds the states we have.
 
 ```
-Set up the six demo worktrees for the talk.
+Set up the nine demo worktrees for the talk.
 
 For each demo in this list, create a detached git worktree under .worktrees/
 based on the current HEAD, then seed it:
@@ -46,11 +46,16 @@ based on the current HEAD, then seed it:
   4. demo-4-battle   — state: first_battle.state
   5. demo-5-flee     — state: route1.state
   6. demo-6-grind    — state: route1.state
+  7. demo-7-forest   — state: viridian-forest.state (map 51)
+  8. demo-8-bughunt  — state: route2.state (map 13)
+  9. demo-9-signs    — no state (fresh NEW GAME; discovery/reading-signs beat)
 
 Seeding steps for every worktree:
   - mkdir -p <wt>/rom and symlink the .gb from the main checkout's rom/ into it
-  - mkdir -p <wt>/states and copy the needed .state from ../autotune/states/
-    (first_battle.state, route1.state) — skip if the beat uses no state
+  - mkdir -p <wt>/states and copy the needed .state from demo-runs/states/
+    (first_battle.state, route1.state from ../autotune/states/;
+    viridian-forest.state, route2.state captured per "State inventory" below)
+    — skip if the beat uses no state
   - do NOT copy the ROM (symlink only), and never commit ROMs or states
 
 Then print a table: worktree path, seeded state (or "fresh"), and the exact
@@ -110,6 +115,15 @@ show (a 60-turn run looks the same as flee).
 | 4 | `demo-4-battle` | `first_battle.state` | `--strategy low` | battle knowledge | battle-mechanics observations |
 | 5 | `demo-5-flee` | `route1.state` | `EVOLVE_PARAMS='{"hp_run_threshold":0.95}'` | traverse by fleeing (`Action: run`) | `observations.md`: "flee to progress" |
 | 6 | `demo-6-grind` | `route1.state` | `AUTOTUNE_FORCE_FIGHT=1` | level up, never flee (`Action: fight`) | `observations.md`: when to fight |
+| 7 | `demo-7-forest` | `viridian-forest.state` | `--worldmap-file states/forest.worldmap` | map the maze under 9x10 visibility (`STUCK` + recover) | the WorldMap accumulating |
+| 8 | `demo-8-bughunt` | `route2.state` | `AUTOTUNE_FORCE_FIGHT=1` | type-effective bug battles (`MOVE ... vs Weedle`) | `type_chart.json` in action |
+| 9 | `demo-9-signs` | fresh NEW GAME | `--strategy low` | decode signs/dialogue into `discovery` events | the discovery feed |
+
+Beats 7–9 are the "harder frontier" set: navigation as a real maze, battle
+intelligence against bugs, and the read-the-world discovery engine. See the
+`/forest-navigation-demo`, `/bug-catcher-demo`, and `/discovery-signs-demo`
+skills for the full per-beat walkthroughs. Note beat 7 maps the forest but does
+**not** cleanly exit to Pewter in one run — that is the honest point.
 
 **Beat 1 (verified by smoke test):** with the learned scaffolding on, the agent
 reaches Oak's lab and picks a starter even with "no help" — so the flail needs
@@ -134,7 +148,24 @@ uv run python scripts/agent.py "$(ls rom/*.gb|head -1)" --strategy low --max-tur
 ```
 
 Beats 1–2 intentionally use **no** state (Beat 1 flails via `DEMO_NAIVE=1`;
-Beat 2 discovers from a fresh game).
+Beat 2 discovers from a fresh game). Beat 9 also uses **no** state (fresh NEW
+GAME feeds the discovery stream from the dialogue-dense intro).
+
+Captured for beats 7–8 (stored under gitignored `demo-runs/states/`, recapture
+by running forward from `route1.state`):
+
+- `viridian-forest.state` (map 51, entering the Forest) → **Beat 7**
+  ```bash
+  uv run python scripts/agent.py "$(ls rom/*.gb|head -1)" --strategy low --max-turns 1400 \
+    --load-state demo-runs/states/route1.state \
+    --save-state-on-map "51:demo-runs/states/viridian-forest.state"
+  ```
+- `route2.state` (map 13, entering Route 2) → **Beat 8**
+  ```bash
+  uv run python scripts/agent.py "$(ls rom/*.gb|head -1)" --strategy low --max-turns 600 \
+    --load-state demo-runs/states/route1.state \
+    --save-state-on-map "13:demo-runs/states/route2.state"
+  ```
 
 ## Cleanup
 
