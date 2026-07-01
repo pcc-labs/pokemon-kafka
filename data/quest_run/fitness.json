@@ -1,0 +1,19 @@
+{
+  "turns": 1500,
+  "battles_won": 22,
+  "maps_visited": 3,
+  "final_map_id": 12,
+  "final_x": 17,
+  "final_y": 28,
+  "badges": 0,
+  "party_size": 1,
+  "stuck_count": 192,
+  "backtrack_restores": 0,
+  "encounters": 22,
+  "level_ups": 4,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null
+}

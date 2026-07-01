@@ -17,6 +17,7 @@ class RunSummary:
     badges: int
     frame_count: int
     thumbnail: str | None
+    label: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -65,10 +66,20 @@ class RunStore:
                 continue
         return out
 
+    def get_meta(self, run_id: str) -> dict:
+        path = self.runs_dir / run_id / "meta.json"
+        if not path.exists():
+            return {}
+        try:
+            return json.loads(path.read_text())
+        except json.JSONDecodeError:
+            return {}
+
     def _summary_for(self, run_id: str) -> RunSummary:
         summary = self.get_summary(run_id)
         frames = self.frame_names(run_id)
         status = "done" if (self.runs_dir / run_id / "summary.json").exists() else "live"
+        label = self.get_meta(run_id).get("label") or summary.get("params", {}).get("label", "")
         return RunSummary(
             run_id=run_id,
             status=status,
@@ -78,6 +89,7 @@ class RunStore:
             badges=int(summary.get("badges", 0)),
             frame_count=len(frames),
             thumbnail=frames[-1] if frames else None,
+            label=str(label or ""),
         )
 
     def list_runs(self) -> list[RunSummary]:

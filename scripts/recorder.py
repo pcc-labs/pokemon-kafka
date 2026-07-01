@@ -40,6 +40,11 @@ class RunRecorder:
     def start(self, params: dict) -> None:
         self._params = dict(params)
         self.frames_dir.mkdir(parents=True, exist_ok=True)
+        # Write the label up front so the viewer can show it while the run is still live
+        # (summary.json only exists once the run finishes).
+        label = str(params.get("label", "")).strip()
+        if label:
+            (self.run_dir / "meta.json").write_text(json.dumps({"label": label}))
         self._events_fh = open(self.run_dir / "events.jsonl", "a", encoding="utf-8")
 
     def on_event(self, event: dict) -> None:

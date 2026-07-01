@@ -3436,7 +3436,7 @@ class TestRecordFlag:
         ):
             main()
 
-        mock_recorder.start.assert_called_once_with({"strategy": "low", "rom": str(rom)})
+        mock_recorder.start.assert_called_once_with({"strategy": "low", "rom": str(rom), "label": ""})
         mock_recorder.finish.assert_called_once_with({"turns": 5, "battles_won": 0})
 
     def test_record_frame_interval_passed_to_build_recorder(self, tmp_path):

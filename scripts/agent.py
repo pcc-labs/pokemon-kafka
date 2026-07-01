@@ -1783,6 +1783,7 @@ def main():
     parser.add_argument("--frame-interval", type=int, default=10, help="Capture a frame every N turns")
     parser.add_argument("--live", action="store_true", help="Stream live to viewer over WebSocket (implies --record)")
     parser.add_argument("--viewer-url", default="ws://127.0.0.1:8200", help="Viewer WebSocket base URL")
+    parser.add_argument("--label", default="", help="Human-readable label shown on the viewer's run tile")
     parser.add_argument("--load-state", default=None, help="Load a PyBoy save state and skip the intro")
     parser.add_argument("--save-state-on-battle", default=None, help="Dump a save state at the first detected battle")
     parser.add_argument("--save-state-on-map", default=None, help='Dump a state at a map, as "MAPID:PATH"')
@@ -1846,7 +1847,7 @@ def main():
     if game_pub is not None or recorder is not None:
         agent.collector = GameEventCollector(publisher=game_pub, recorder=recorder)
     if recorder is not None:
-        recorder.start({"strategy": args.strategy, "rom": args.rom})
+        recorder.start({"strategy": args.strategy, "rom": args.rom, "label": args.label})
 
     fitness = None
     try:

@@ -1,0 +1,2507 @@
+UserWarning: Using SDL2 binaries from pysdl2-dll 2.32.0
+[agent] Loaded ROM: /Users/bdougie/code/pcc-labs/autotune/rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb
+[agent] Strategy: medium
+[agent] Evolve params: {"stuck_threshold": 4, "door_cooldown": 10, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", "bt_max_snapshots": 8, "bt_restore_threshold": 19, "bt_max_attempts": 3, "bt_snapshot_interval": 34, "hp_run_threshold": 0.2, "hp_heal_threshold": 0.15, "unknown_move_score": 10.0, "status_move_score": 0.0}
+[agent] Running headless — no display
+[18:08:02] Agent starting.
+[18:08:02] Loaded save state from /Users/bdougie/code/pcc-labs/autotune/states/route1.state. Skipping intro.
+[18:08:02] QUEST | map=12 pos=(10,34) facing=up parcel_quest phase=TO_MART map=12 parcel=False pokedex=False target=pilot-north
+[18:08:02] OVERWORLD | Map: 12 | Pos: (10, 34) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(10,28)
+[18:08:02] BATTLE | Lv3 Rattata (normal) | Player HP: 6/22 | Action: fight
+[18:08:02] BATTLE | Lv3 Rattata (normal) | Player HP: 22/22 | Action: fight
+[18:08:02] BATTLE | Lv3 Rattata (normal) | Player HP: 19/22 | Action: fight
+[18:08:02] BATTLE | Lv3 Rattata (normal) | Player HP: 16/22 | Action: fight
+[18:08:02] BATTLE | Lv3 Rattata (normal) | Player HP: 16/22 | Action: fight
+[18:08:02] Battle ended. Won: True. Total wins: 1
+[18:08:02] OVERWORLD | Map: 12 | Pos: (14, 3) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(10,28)
+[18:08:02] MILESTONE | Reached Viridian City!
+[18:08:02] MAP CHANGE | 12 -> 1 | Pos: (21, 35)
+[18:08:02] QUEST | map=1 pos=(21,35) facing=up parcel_quest phase=TO_MART map=1 parcel=False pokedex=False target=Viridian Mart door
+[18:08:02] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:02] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:02] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:03] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 2 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 13 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:03] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:03] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:03] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:04] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 22 | WP: 0→(17,17)
+[18:08:04] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:04] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:04] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:05] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:05] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:05] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:05] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:06] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: left | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:06] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 15 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:06] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:06] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:06] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:06] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:06] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: down | Stuck: 20 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:07] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:07] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:07] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:08] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:08] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:08] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:08] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 19 | WP: 0→(17,17)
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 14 | WP: 0→(17,17)
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:09] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:09] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:09] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 20 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:10] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:10] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:10] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:11] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:11] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:11] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:11] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:11] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 21 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:12] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:12] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:13] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:13] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:13] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:13] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:13] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:14] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:14] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:14] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:14] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:15] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 15 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:15] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:15] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:15] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:15] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:15] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 23 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:16] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:16] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:17] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 2 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:17] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:17] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 20 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:18] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: down | Stuck: 20 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:18] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:18] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:18] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:18] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:19] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:19] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:19] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:19] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:19] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 19 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:20] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:20] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:20] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:20] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:20] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:21] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:21] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:21] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:21] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:21] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:22] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:22] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:22] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:22] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:23] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:23] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 20 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:24] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:24] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 17 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 14 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:25] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:25] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:25] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:26] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:26] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:26] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:26] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:26] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 15 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 24 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:27] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:27] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:27] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:27] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 20 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:28] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: left | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:28] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:28] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:28] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:28] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: down | Stuck: 20 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:29] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:29] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 14 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:30] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:30] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:30] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] OVERWORLD | Map: 1 | Pos: (31, 30) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:31] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:31] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:31] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 20 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:32] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:32] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:32] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 22 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:33] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 13 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:33] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:33] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 14 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 15 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:34] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 2 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:34] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:34] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:34] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 14 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: left | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] OVERWORLD | Map: 1 | Pos: (30, 30) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: right | Stuck: 22 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:35] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:35] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:35] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:35] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] OVERWORLD | Map: 1 | Pos: (30, 30) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:36] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:36] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:36] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 16 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 12 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:37] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 2 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] OVERWORLD | Map: 1 | Pos: (29, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 1 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:37] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:37] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:37] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] OVERWORLD | Map: 1 | Pos: (30, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 21 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:38] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: left | Stuck: 4 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:38] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:38] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:38] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 5 | WP: 0→(17,17)
+[18:08:38] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:38] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 19 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 10 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:39] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:39] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 20 | WP: 0→(17,17)
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:39] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:39] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:40] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 8 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 4 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:40] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:40] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:40] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: left | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 9 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 19 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 6 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 2 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:41] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 3 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:41] STUCK | Map: 1 | Pos: (31, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:41] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:41] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: left | Stuck: 0 | WP: 0→(17,17)
+[18:08:41] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 11 | WP: 0→(17,17)
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] OVERWORLD | Map: 1 | Pos: (31, 28) | Badges: 0 | Party: 1 | Action: down | Stuck: 19 | WP: 0→(17,17)
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] OVERWORLD | Map: 1 | Pos: (30, 28) | Badges: 0 | Party: 1 | Action: right | Stuck: 18 | WP: 0→(17,17)
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:42] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:42] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:42] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] OVERWORLD | Map: 1 | Pos: (29, 28) | Badges: 0 | Party: 1 | Action: up | Stuck: 7 | WP: 0→(17,17)
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:43] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:43] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:43] OVERWORLD | Map: 1 | Pos: (31, 29) | Badges: 0 | Party: 1 | Action: up | Stuck: 20 | WP: 0→(17,17)
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: up | Streak: 2
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] STUCK | Map: 1 | Pos: (30, 28) | Last move: right | Streak: 10
+[18:08:43] STUCK | Map: 1 | Pos: (31, 29) | Last move: down | Streak: 20
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 2
+[18:08:43] STUCK | Map: 1 | Pos: (29, 28) | Last move: up | Streak: 5
+[18:08:43] Session complete. Turns: 12000 | Wins: 1
+[18:08:43] POKEDEX | Wrote /Users/bdougie/code/pcc-labs/pokemon-kafka/pokedex/log218.md

@@ -1,0 +1,214 @@
+UserWarning: Using SDL2 binaries from pysdl2-dll 2.32.0
+[agent] Loaded ROM: /Users/bdougie/code/pcc-labs/autotune/rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb
+[agent] Strategy: medium
+[agent] Evolve params: {"stuck_threshold": 4, "door_cooldown": 10, "waypoint_skip_distance": 3, "axis_preference_map_0": "y", "bt_max_snapshots": 8, "bt_restore_threshold": 19, "bt_max_attempts": 3, "bt_snapshot_interval": 34, "hp_run_threshold": 0.2, "hp_heal_threshold": 0.15, "unknown_move_score": 10.0, "status_move_score": 0.0}
+[agent] Running headless — no display
+[19:24:23] Agent starting.
+[19:24:23] Loaded save state from /Users/bdougie/code/pcc-labs/autotune/states/route1.state. Skipping intro.
+[19:24:23] QUEST | map=12 pos=(10,34) facing=up parcel_quest phase=TO_MART map=12 parcel=False pokedex=False target=pilot-north
+[19:24:23] OVERWORLD | Map: 12 | Pos: (10, 34) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(10,28)
+[19:24:23] BATTLE | Lv3 Rattata (normal) | Player HP: 6/22 | Action: fight
+[19:24:24] BATTLE | Lv3 Rattata (normal) | Player HP: 22/22 | Action: fight
+[19:24:24] BATTLE | Lv3 Rattata (normal) | Player HP: 19/22 | Action: fight
+[19:24:24] BATTLE | Lv3 Rattata (normal) | Player HP: 16/22 | Action: fight
+[19:24:24] BATTLE | Lv3 Rattata (normal) | Player HP: 16/22 | Action: fight
+[19:24:24] Battle ended. Won: True. Total wins: 1
+[19:24:24] STUCK | Map: 12 | Pos: (9, 14) | Last move: right | Streak: 2
+[19:24:24] STUCK | Map: 12 | Pos: (14, 14) | Last move: up | Streak: 2
+[19:24:24] OVERWORLD | Map: 12 | Pos: (15, 10) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(10,28)
+[19:24:24] MILESTONE | Reached Viridian City!
+[19:24:24] MAP CHANGE | 12 -> 1 | Pos: (21, 35)
+[19:24:24] QUEST | map=1 pos=(21,35) facing=up parcel_quest phase=TO_MART map=1 parcel=False pokedex=False target=Viridian Mart door
+[19:24:24] STUCK | Map: 1 | Pos: (29, 28) | Last move: left | Streak: 2
+[19:24:24] STUCK | Map: 1 | Pos: (26, 28) | Last move: left | Streak: 5
+[19:24:24] OVERWORLD | Map: 1 | Pos: (19, 22) | Badges: 0 | Party: 1 | Action: up | Stuck: 0 | WP: 0→(17,17)
+[19:24:24] MAP CHANGE | 1 -> 42 | Pos: (29, 19)
+[19:24:24] MART2 t=1 pos=(29,19) text=False wd730=0x00 bag=[]
+[19:24:24] STUCK | Map: 42 | Pos: (3, 7) | Last move: a | Streak: 2
+[19:24:24] STUCK | Map: 42 | Pos: (2, 5) | Last move: a | Streak: 2
+[19:24:24] STUCK | Map: 42 | Pos: (2, 5) | Last move: a | Streak: 5
+[19:24:24] STUCK | Map: 42 | Pos: (2, 5) | Last move: a | Streak: 10
+[19:24:24] QUEST | map=42 pos=(2,5) facing=left parcel_quest phase=TO_OAK map=42 parcel=True pokedex=False target=pilot-south
+[19:24:24] STUCK | Map: 42 | Pos: (2, 7) | Last move: down | Streak: 2
+[19:24:24] STUCK | Map: 42 | Pos: (2, 7) | Last move: down | Streak: 5
+[19:24:24] STUCK | Map: 42 | Pos: (2, 7) | Last move: down | Streak: 10
+[19:24:24] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 16
+[19:24:24] STUCK | Map: 42 | Pos: (2, 7) | Last move: down | Streak: 20
+[19:24:24] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 66
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 116
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 166
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 216
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 266
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 316
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 366
+[19:24:25] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 416
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 466
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 516
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 566
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 616
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 666
+[19:24:26] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 716
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 766
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 816
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 866
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 916
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 966
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1016
+[19:24:27] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1066
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1116
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1166
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1216
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1266
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1316
+[19:24:28] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1366
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1416
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1466
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1516
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1566
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1616
+[19:24:29] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1666
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1716
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1766
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1816
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1866
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1916
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 1966
+[19:24:30] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2016
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2066
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2116
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2166
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2216
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2266
+[19:24:31] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2316
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2366
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2416
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2466
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2516
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2566
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2616
+[19:24:32] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2666
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2716
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2766
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2816
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2866
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2916
+[19:24:33] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 2966
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3016
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3066
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3116
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3166
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3216
+[19:24:34] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3266
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3316
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3366
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3416
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3466
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3516
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3566
+[19:24:35] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3616
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3666
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3716
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3766
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3816
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3866
+[19:24:36] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3916
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 3966
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4016
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4066
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4116
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4166
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4216
+[19:24:37] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4266
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4316
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4366
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4416
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4466
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4516
+[19:24:38] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4566
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4616
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4666
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4716
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4766
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4816
+[19:24:39] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4866
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4916
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 4966
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5016
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5066
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5116
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5166
+[19:24:40] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5216
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5266
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5316
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5366
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5416
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5466
+[19:24:41] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5516
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5566
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5616
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5666
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5716
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5766
+[19:24:42] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5816
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5866
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5916
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 5966
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6016
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6066
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6116
+[19:24:43] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6166
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6216
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6266
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6316
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6366
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6416
+[19:24:44] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6466
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6516
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6566
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6616
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6666
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6716
+[19:24:45] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6766
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6816
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6866
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6916
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 6966
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7016
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7066
+[19:24:46] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7116
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7166
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7216
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7266
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7316
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7366
+[19:24:47] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7416
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7466
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7516
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7566
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7616
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7666
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7716
+[19:24:48] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7766
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7816
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7866
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7916
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 7966
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8016
+[19:24:49] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8066
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8116
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8166
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8216
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8266
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8316
+[19:24:50] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8366
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8416
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8466
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8516
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8566
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8616
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8666
+[19:24:51] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8716
+[19:24:52] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8766
+[19:24:52] OVERWORLD | Map: 42 | Pos: (2, 7) | Badges: 0 | Party: 1 | Action: down | Stuck: 8816
+[19:24:52] Session complete. Turns: 9000 | Wins: 1
+[19:24:52] POKEDEX | Wrote /Users/bdougie/code/pcc-labs/pokemon-kafka/pokedex/log238.md

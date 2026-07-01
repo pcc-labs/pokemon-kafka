@@ -66,6 +66,13 @@ body[data-view="grid"] #grid { display: grid; }
   color: #ccc;
   word-break: break-all;
 }
+.tile .meta .run-label {
+  display: inline-block;
+  margin-bottom: 3px;
+  font-size: 0.9rem;
+  color: #7fd17f;
+  word-break: normal;
+}
 .tile.done { border-color: #226622; }
 .tile.live { border-color: #884400; }
 
