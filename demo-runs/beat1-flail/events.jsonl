@@ -1,0 +1,8 @@
+{"schema": "pokemon.game.v1", "event_type": "session", "turn": 0, "occurred_at": "2026-07-01T16:08:59.457302Z", "data": {"phase": "start"}}
+{"schema": "pokemon.game.v1", "event_type": "overworld", "turn": 0, "occurred_at": "2026-07-01T16:09:01.753318Z", "data": {"map_id": 38, "position": {"x": 3, "y": 6}, "badges": 0, "party_count": 0, "action": "down", "stuck_turns": 0}}
+{"schema": "pokemon.game.v1", "event_type": "stuck", "turn": 4, "occurred_at": "2026-07-01T16:09:01.763549Z", "data": {"map_id": 38, "position": {"x": 3, "y": 7}, "last_action": "left", "streak": 2}}
+{"schema": "pokemon.game.v1", "event_type": "stuck", "turn": 7, "occurred_at": "2026-07-01T16:09:01.773106Z", "data": {"map_id": 38, "position": {"x": 3, "y": 7}, "last_action": "down", "streak": 5}}
+{"schema": "pokemon.game.v1", "event_type": "stuck", "turn": 12, "occurred_at": "2026-07-01T16:09:01.789654Z", "data": {"map_id": 38, "position": {"x": 3, "y": 7}, "last_action": "down", "streak": 10}}
+{"schema": "pokemon.game.v1", "event_type": "stuck", "turn": 22, "occurred_at": "2026-07-01T16:09:01.822879Z", "data": {"map_id": 38, "position": {"x": 3, "y": 7}, "last_action": "left", "streak": 20}}
+{"schema": "pokemon.game.v1", "event_type": "overworld", "turn": 50, "occurred_at": "2026-07-01T16:09:01.915712Z", "data": {"map_id": 38, "position": {"x": 4, "y": 7}, "badges": 0, "party_count": 0, "action": "down", "stuck_turns": 48}}
+{"schema": "pokemon.game.v1", "event_type": "session", "turn": 60, "occurred_at": "2026-07-01T16:09:01.945452Z", "data": {"phase": "end", "battles_won": 0, "maps_visited": 1}}

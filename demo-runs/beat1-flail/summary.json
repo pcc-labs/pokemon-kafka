@@ -1,0 +1,25 @@
+{
+  "turns": 60,
+  "battles_won": 0,
+  "maps_visited": 1,
+  "final_map_id": 38,
+  "final_x": 3,
+  "final_y": 7,
+  "badges": 0,
+  "party_size": 0,
+  "stuck_count": 4,
+  "backtrack_restores": 0,
+  "encounters": 0,
+  "level_ups": 0,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null,
+  "params": {
+    "strategy": "high",
+    "rom": "rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+    "label": "1 \u00b7 Oak's cabin \u2014 the flail"
+  },
+  "run_id": "20260701-160859-210b"
+}

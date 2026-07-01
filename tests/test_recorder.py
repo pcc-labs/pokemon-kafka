@@ -56,6 +56,70 @@ def test_frame_captured_on_interval_only(tmp_path: Path):
     assert [f.name for f in frames] == ["000010.png"]
 
 
+def test_force_capture_types_bypass_interval(tmp_path: Path):
+    rec = RunRecorder("run2d", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.on_event({"event_type": "discovery", "turn": 8, "data": {}})
+    rec.on_event({"event_type": "milestone", "turn": 9, "data": {}})
+    rec.finish({})
+    frames = sorted((tmp_path / "run2d" / "frames").glob("*.png"))
+    assert [f.name for f in frames] == ["000008.png", "000009.png"]
+
+
+def test_battle_event_off_interval_no_longer_force_captures(tmp_path: Path):
+    rec = RunRecorder("run2f", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.on_event({"event_type": "battle", "turn": 11, "data": {}})
+    rec.finish({})
+    assert list((tmp_path / "run2f" / "frames").glob("*.png")) == []
+
+
+def test_tagged_capture_does_not_clobber_untagged(tmp_path: Path):
+    rec = RunRecorder("runtag", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.capture_frame(10)  # 000010.png
+    rec.capture_frame(10, tag="battle")  # 000010_battle.png (protected)
+    rec.capture_frame(10)  # overwrites 000010.png only
+    rec.finish({})
+    frames = sorted(p.name for p in (tmp_path / "runtag" / "frames").glob("*.png"))
+    assert frames == ["000010.png", "000010_battle.png"]
+
+
+def test_battle_frame_writes_protected_battle_frame(tmp_path: Path):
+    rec = RunRecorder("runbf", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.battle_frame(7)  # off-interval, still captured under its tag
+    rec.finish({})
+    frames = sorted(p.name for p in (tmp_path / "runbf" / "frames").glob("*.png"))
+    assert frames == ["000007_battle.png"]
+
+
+def test_non_force_capture_type_off_interval_produces_no_frame(tmp_path: Path):
+    rec = RunRecorder("run2e", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.on_event({"event_type": "overworld", "turn": 7, "data": {}})
+    rec.finish({})
+    assert list((tmp_path / "run2e" / "frames").glob("*.png")) == []
+
+
+def test_tick_captures_on_interval_without_event(tmp_path: Path):
+    rec = RunRecorder("run2b", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.tick(5)  # no frame, not on interval
+    rec.tick(10)  # frame, no event involved
+    rec.finish({})
+    frames = sorted((tmp_path / "run2b" / "frames").glob("*.png"))
+    assert [f.name for f in frames] == ["000010.png"]
+
+
+def test_tick_with_no_grabber_is_noop(tmp_path: Path):
+    rec = RunRecorder("run2c", tmp_path, frame_grabber=None, frame_interval=1)
+    rec.start({})
+    rec.tick(1)
+    rec.finish({})
+    assert list((tmp_path / "run2c" / "frames").glob("*.png")) == []
+
+
 def test_no_grabber_means_no_frames(tmp_path: Path):
     rec = RunRecorder("run3", tmp_path, frame_grabber=None, frame_interval=1)
     rec.start({})

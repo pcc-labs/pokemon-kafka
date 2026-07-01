@@ -306,8 +306,10 @@ h1 {
   line-height: 1.5;
   border-left: 6px solid #444;
   word-break: break-word;
+  cursor: pointer;
 }
 #feed li.entry.milestone   { border-left-color: #4488ff; background: #08132a; color: #a9c8ff; }
 #feed li.entry.telemetry   { border-left-color: #33bb55; background: #08160c; color: #97e6a8; }
 #feed li.entry.observation { border-left-color: #ffaa22; background: #1a1200; color: #ffcc77; }
 #feed li.entry.anomaly     { border-left-color: #ff4444; background: #1a0606; color: #ff9999; }
+#feed li.entry.current     { outline: 2px solid #ffffff; outline-offset: -2px; }

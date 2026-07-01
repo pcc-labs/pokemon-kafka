@@ -1,0 +1,25 @@
+{
+  "turns": 200,
+  "battles_won": 1,
+  "maps_visited": 4,
+  "final_map_id": 1,
+  "final_x": 30,
+  "final_y": 28,
+  "badges": 0,
+  "party_size": 1,
+  "stuck_count": 11,
+  "backtrack_restores": 0,
+  "encounters": 1,
+  "level_ups": 0,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null,
+  "params": {
+    "strategy": "high",
+    "rom": "rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+    "label": "3 \u00b7 Pick a starter"
+  },
+  "run_id": "20260701-160907-c5b6"
+}

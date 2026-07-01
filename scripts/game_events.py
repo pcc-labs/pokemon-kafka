@@ -287,6 +287,22 @@ class GameEventCollector:
             except Exception as exc:
                 print(f"[game_events] recorder error: {exc}")
 
+    def tick(self, turn: int) -> None:
+        """Give the recorder a chance to capture a frame this turn, independent of events."""
+        if self._recorder is not None:
+            try:
+                self._recorder.tick(turn)
+            except Exception as exc:
+                print(f"[game_events] recorder error: {exc}")
+
+    def battle_frame(self, turn: int) -> None:
+        """Ask the recorder to capture a protected battle-screen frame this turn."""
+        if self._recorder is not None:
+            try:
+                self._recorder.battle_frame(turn)
+            except Exception as exc:
+                print(f"[game_events] recorder error: {exc}")
+
     def battle(
         self,
         turn: int,

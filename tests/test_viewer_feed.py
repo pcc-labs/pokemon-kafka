@@ -61,6 +61,48 @@ def test_build_feed_all_event_types():
     assert "Stuck ×5" in feed[2].text
 
 
+def test_build_feed_discovery_is_observation():
+    events = [
+        {"event_type": "discovery", "turn": 8, "data": {"text": "You found a TM!", "kind": "sign"}},
+    ]
+    feed = build_feed(events)
+    assert len(feed) == 1
+    assert feed[0].kind == "observation"
+    assert feed[0].text == "You found a TM!"
+
+
+def test_build_feed_battle_narrative_types_are_telemetry():
+    events = [
+        {
+            "event_type": "battle_end",
+            "turn": 40,
+            "data": {"won": True, "opponent_species": "RATTATA", "opponent_level": 3},
+        },
+        {
+            "event_type": "battle_outcome",
+            "turn": 41,
+            "data": {"won": False, "enemy_species": "PIDGEY", "enemy_level": 4},
+        },
+        {
+            "event_type": "move_result",
+            "turn": 42,
+            "data": {"user_species": "CHARMANDER", "move": "Scratch", "damage_dealt": 5, "fainted": False},
+        },
+    ]
+    feed = build_feed(events)
+    assert [e.kind for e in feed] == ["telemetry", "telemetry", "telemetry"]
+    assert "won vs RATTATA (Lv3)" in feed[0].text
+    assert "lost vs PIDGEY (Lv4)" in feed[1].text
+    assert "CHARMANDER used Scratch — 5 dmg" in feed[2].text
+
+
+def test_event_text_move_result_fainted():
+    text = _event_text(
+        {"event_type": "move_result", "data": {"user_species": "CHARMANDER", "move": "Scratch", "fainted": True}}
+    )
+    assert "enemy fainted" in text
+
+
 def test_load_anomalies_parses_jsonl(tmp_path: Path):
     p = tmp_path / "anomalies.jsonl"
     p.write_text(

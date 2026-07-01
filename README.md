@@ -63,11 +63,13 @@ Add `--save-screenshots` to capture frames every 10 turns into `frames/`.
 
 **Overworld navigation.** Outside battle, the agent follows waypoints defined in `references/routes.json`. It handles early-game scripted sequences (Red's room to Oak's lab) and general map-to-map routing. A stuck counter triggers random movement to break out of loops.
 
-## Paper Telemetry
+## Paper Traces
 
-[Paper](https://papercompute.com) records every LLM session the agent runs. The local `paperd` daemon proxies all API calls transparently (via `ANTHROPIC_BASE_URL`) — no instrumentation in the agent code. Each agent session appears in the Paper dashboard with its own session ID, turn count, and cost.
+**What is Paper?** [Paper](https://papercompute.com) is an LLM session recorder: `paperd`, a local daemon, sits in front of the Anthropic API and transparently captures every request/response pair the agent makes. Point the agent at it via `ANTHROPIC_BASE_URL` and no code changes are needed — the recording happens at the proxy layer, not in `scripts/agent.py`.
 
-When the multi-agent runner spawns variants via `paper start claude`, each one is a full, independently recorded Claude Code session. Authenticate the `paper` CLI once with `paper status` before launching.
+This is distinct from the [Kafka Telemetry Pipeline](#kafka-telemetry-pipeline) below. Paper records *LLM* activity — what Claude was asked, what it decided, how many tokens it burned, at what cost — one entry per agent session. Kafka streams *game* activity — battles, movement, map changes — as structured events, independent of whether an LLM is involved at all (the heuristic strategy makes zero API calls and has nothing for Paper to record). The two pipelines don't depend on each other: run with `--strategy heuristic` and Paper stays empty; run without Docker Compose up and Kafka stays empty. Together they answer two different questions — "what did the agent think?" (Paper) and "what did the agent do?" (Kafka).
+
+Each agent session appears in the Paper dashboard with its own session ID, turn count, and cost. When the multi-agent runner spawns variants via `paper start claude`, each one is a full, independently recorded Claude Code session. Authenticate the `paper` CLI once with `paper status` before launching.
 
 ## Observational Memory
 

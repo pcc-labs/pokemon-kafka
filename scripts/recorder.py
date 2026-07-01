@@ -16,6 +16,8 @@ except Exception:  # pragma: no cover - import guard
 
 
 class RunRecorder:
+    _FORCE_CAPTURE_TYPES = {"discovery", "milestone"}
+
     def __init__(
         self,
         run_id: str,
@@ -54,14 +56,35 @@ class RunRecorder:
         if self.live is not None:
             self.live({"type": "event", **event})
         turn = int(event.get("turn", 0))
-        if self.frame_grabber is not None and turn % self.frame_interval == 0:
+        force = event.get("event_type") in self._FORCE_CAPTURE_TYPES
+        if self.frame_grabber is not None and (turn % self.frame_interval == 0 or force):
             self.capture_frame(turn)
 
-    def capture_frame(self, turn: int) -> None:
+    def tick(self, turn: int) -> None:
+        """Capture a frame on the interval regardless of whether an event fired.
+
+        on_event() only captures when a game event happens to land on an interval
+        turn — during quiet overworld travel, events can be dozens of turns apart,
+        causing large jumps between consecutive frames on playback.
+        """
+        if turn % self.frame_interval == 0:
+            self.capture_frame(turn)
+
+    def battle_frame(self, turn: int) -> None:
+        """Capture the battle screen under a protected tag.
+
+        Called at the start of a battle turn, while the battle screen is up.
+        The tag keys the frame separately from the same-turn overworld/interval
+        frame, so a later post-faint overworld capture cannot clobber it.
+        """
+        self.capture_frame(turn, tag="battle")
+
+    def capture_frame(self, turn: int, tag: str = "") -> None:
         if self.frame_grabber is None:
             return
         img = self.frame_grabber()
-        img.save(self.frames_dir / f"{turn:06d}.png")
+        name = f"{turn:06d}.png" if not tag else f"{turn:06d}_{tag}.png"
+        img.save(self.frames_dir / name)
         if self.live is not None:
             buf = io.BytesIO()
             img.save(buf, format="PNG")
