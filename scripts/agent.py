@@ -331,12 +331,17 @@ class BattleStrategy:
 class Navigator:
     """Simple overworld movement."""
 
-    def __init__(self, routes: dict, stuck_threshold: int = 8, skip_distance: int = 3):
+    def __init__(self, routes: dict, stuck_threshold: int = 8, skip_distance: int = 3, naive: bool | None = None):
         self.routes = routes
         self.current_waypoint = 0
         self.current_map = None
         self.stuck_threshold = stuck_threshold
         self.skip_distance = skip_distance
+        # DEMO_NAIVE=1 strips the learned early-game scaffolding (scripted targets + route
+        # waypoints) so the agent wanders like the pre-observation baseline. Off by default.
+        if naive is None:
+            naive = os.environ.get("DEMO_NAIVE", "") not in ("", "0", "false", "False")
+        self.naive = naive
         # An optional per-turn override target (same shape as EARLY_GAME_TARGETS entries) set by
         # the Oak's Parcel quest; takes precedence over the baked early-game targets when present.
         self.quest_target: dict | None = None
@@ -420,6 +425,12 @@ class Navigator:
         if map_key != self.current_map:
             self.current_map = map_key
             self.current_waypoint = 0
+
+        # DEMO_NAIVE: skip scripted targets + route waypoints entirely and just cycle directions,
+        # reproducing the aimless early-game wandering from before the agent learned to route.
+        if self.naive:
+            directions = ["down", "right", "down", "left", "up", "down"]
+            return directions[turn % len(directions)]
 
         # An active quest override wins over the baked early-game targets (e.g. the map-0 rule).
         special_target = self.quest_target
@@ -1772,6 +1783,7 @@ def main():
     parser.add_argument("--frame-interval", type=int, default=10, help="Capture a frame every N turns")
     parser.add_argument("--live", action="store_true", help="Stream live to viewer over WebSocket (implies --record)")
     parser.add_argument("--viewer-url", default="ws://127.0.0.1:8200", help="Viewer WebSocket base URL")
+    parser.add_argument("--label", default="", help="Human-readable label shown on the viewer's run tile")
     parser.add_argument("--load-state", default=None, help="Load a PyBoy save state and skip the intro")
     parser.add_argument("--save-state-on-battle", default=None, help="Dump a save state at the first detected battle")
     parser.add_argument("--save-state-on-map", default=None, help='Dump a state at a map, as "MAPID:PATH"')
@@ -1835,7 +1847,7 @@ def main():
     if game_pub is not None or recorder is not None:
         agent.collector = GameEventCollector(publisher=game_pub, recorder=recorder)
     if recorder is not None:
-        recorder.start({"strategy": args.strategy, "rom": args.rom})
+        recorder.start({"strategy": args.strategy, "rom": args.rom, "label": args.label})
 
     fitness = None
     try:

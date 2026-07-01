@@ -5,7 +5,7 @@
 }
 
 body.pokedex {
-  background: #1a1a1a;
+  background: #141414;
   font-family: 'Courier New', monospace;
   color: #e8e8e8;
   min-height: 100vh;
@@ -19,233 +19,295 @@ body.pokedex {
 body:not([data-view="focus"]) .pokedex-shell { display: none; }
 body[data-view="grid"] #grid { display: grid; }
 
-/* ── Grid layout ─────────────────────────────────────────────── */
+/* ── Grid layout (presentation scale) ────────────────────────── */
 #grid {
-  width: min(900px, 98vw);
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 12px;
-  padding: 16px;
+  width: min(1600px, 98vw);
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 22px;
+  padding: 24px;
   align-content: start;
 }
 
 /* ── Grid tiles ──────────────────────────────────────────────── */
 .tile {
   background: #222;
-  border: 2px solid #444;
-  border-radius: 8px;
+  border: 3px solid #444;
+  border-radius: 12px;
   cursor: pointer;
   overflow: hidden;
   transition: border-color 0.15s, transform 0.1s;
 }
-.tile:hover {
-  border-color: #00dd55;
-  transform: scale(1.03);
-}
-.tile img {
-  width: 100%;
-  height: auto;
-  image-rendering: pixelated;
-  display: block;
-}
+.tile:hover { border-color: #00dd55; transform: scale(1.03); }
+.tile img { width: 100%; height: auto; image-rendering: pixelated; display: block; }
 .tile .tile-noframe {
   width: 100%;
-  height: 160px;
+  height: 300px;
   background: #1a1a1a;
   display: flex;
   align-items: center;
   justify-content: center;
   color: #666;
-  font-size: 0.75rem;
+  font-size: 1.1rem;
   text-align: center;
-  padding: 8px;
+  padding: 12px;
 }
 .tile .meta {
-  padding: 6px 8px;
-  font-size: 0.65rem;
+  padding: 12px 14px;
+  font-size: 1.05rem;
   line-height: 1.5;
   color: #ccc;
   word-break: break-all;
 }
-.tile.done { border-color: #226622; }
-.tile.live { border-color: #884400; }
+.tile .meta .run-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 1.9rem;
+  font-weight: bold;
+  color: #7fe07f;
+  word-break: normal;
+}
+.tile.done { border-color: #2e8b2e; }
+.tile.live { border-color: #ff7a00; box-shadow: 0 0 18px rgba(255, 140, 0, 0.5); }
 
 /* ── Back button ─────────────────────────────────────────────── */
 #back-btn {
-  padding: 3px 10px;
-  background: #881111;
+  padding: 8px 20px;
+  background: #7a0d0d;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #ffeecc;
   font-family: 'Courier New', monospace;
-  font-size: 0.7rem;
+  font-size: 1.15rem;
+  font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
 }
-#back-btn:hover { background: #aa2222; }
+#back-btn:hover { background: #a52020; }
 
-/* ── Pokédex shell ───────────────────────────────────────────── */
+/* ══ POKÉDEX CLAMSHELL ═══════════════════════════════════════════ */
 .pokedex-shell {
-  background: #cc0000;
-  border-radius: 12px;
-  padding: 16px;
-  width: 780px;
-  max-width: 98vw;
-  box-shadow: 4px 4px 0 #880000, 8px 8px 0 #550000, inset 0 2px 0 #ff5555;
-}
-
-.pokedex-header {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #aa0000;
-  border-radius: 8px 8px 0 0;
-  margin-bottom: 12px;
-  border-bottom: 2px solid #880000;
+  align-items: stretch;
+  gap: 0;
+  width: min(1600px, 98vw);
+  background: linear-gradient(160deg, #e11919 0%, #c40d0d 55%, #a70808 100%);
+  border: 4px solid #7a0505;
+  border-radius: 20px 26px 26px 20px;
+  padding: 26px;
+  box-shadow: 8px 10px 0 #6e0404, inset 0 3px 0 #ff6a6a, inset 0 -6px 14px rgba(0,0,0,0.35);
 }
 
-.led {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  border: 2px solid rgba(0, 0, 0, 0.3);
-}
-.led.red    { background: #ff2222; box-shadow: 0 0 6px #ff4444; }
-.led.yellow { background: #ffcc00; box-shadow: 0 0 6px #ffdd44; }
-.led.green  { background: #00cc44; box-shadow: 0 0 6px #44ff88; }
-
-h1 {
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 3px;
-  color: #ffeecc;
-  margin-left: auto;
-  text-shadow: 1px 1px 0 #550000;
-}
-
-/* ── Body layout ─────────────────────────────────────────────── */
-.pokedex-body {
-  display: flex;
-  gap: 14px;
-}
-
-/* ── Left panel ──────────────────────────────────────────────── */
-.left-panel {
-  flex: 0 0 200px;
+/* ── LEFT HALF: the face ─────────────────────────────────────── */
+.dex-left {
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 18px;
 }
 
+.dex-topbar {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  height: 96px;
+}
+
+/* The iconic big blue lens */
+.big-lens {
+  position: relative;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 34% 30%, #bff6ff 0%, #4bc6ee 38%, #1f7fc4 72%, #0d4a8c 100%);
+  border: 4px solid #f2f2f2;
+  box-shadow: 0 0 0 4px #9a0707, 0 4px 10px rgba(0,0,0,0.5);
+}
+.lens-glint {
+  position: absolute;
+  top: 15px;
+  left: 18px;
+  width: 26px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.85);
+  transform: rotate(-20deg);
+  filter: blur(1px);
+}
+
+.led-cluster { display: flex; gap: 12px; }
+.led {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid rgba(0, 0, 0, 0.35);
+}
+.led.red    { background: #ff2a2a; box-shadow: 0 0 10px #ff5a5a; }
+.led.yellow { background: #ffd21e; box-shadow: 0 0 10px #ffe25a; }
+.led.green  { background: #24d34e; box-shadow: 0 0 10px #6bff92; }
+
+/* ── Screen: light housing + green display ───────────────────── */
+.screen-frame {
+  background: linear-gradient(150deg, #f4f4f4 0%, #d3d3d3 100%);
+  border: 4px solid #b7b7b7;
+  border-radius: 14px;
+  padding: 18px 18px 14px;
+  box-shadow: inset 0 2px 0 #ffffff, 0 4px 8px rgba(0,0,0,0.3);
+}
+.screen-dots {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+  padding-left: 6px;
+}
+.screen-dots span {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: #cc2b2b; box-shadow: inset 0 0 3px #7a0000;
+}
 .screen-bezel {
-  background: #1a4a1a;
-  border: 4px solid #0f2f0f;
-  border-radius: 8px;
-  padding: 8px;
-  box-shadow:
-    inset 0 0 10px rgba(0, 0, 0, 0.7),
-    0 0 14px rgba(0, 220, 80, 0.12);
+  background: #123512;
+  border: 8px solid #0d260d;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: inset 0 0 22px rgba(0,0,0,0.75), 0 0 26px rgba(0, 220, 80, 0.14);
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 168px;
 }
-
 #screen {
-  width: 160px;
-  height: 144px;
+  /* Native 160×144, scaled way up and kept pixel-crisp for a big room.
+     Height tracks the viewport so the whole device fits on a projector. */
+  height: min(640px, 56vh);
+  width: auto;
+  max-width: 54vw;
   image-rendering: pixelated;
   background: #0a200a;
   display: block;
-  border: 1px solid #0f2f0f;
+  border: 2px solid #0d260d;
+}
+.screen-vents { display: flex; flex-direction: column; gap: 5px; margin-top: 12px; align-items: flex-end; }
+.screen-vents span { width: 120px; height: 5px; border-radius: 3px; background: #b0b0b0; }
+
+/* ── Controls: buttons + D-pad ───────────────────────────────── */
+.dex-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+.ctrl-left { display: flex; align-items: center; gap: 16px; }
+.round-btn { border-radius: 50%; box-shadow: 0 3px 5px rgba(0,0,0,0.45), inset 0 2px 3px rgba(255,255,255,0.25); }
+.round-btn.black { width: 42px; height: 42px; background: radial-gradient(circle at 35% 30%, #444, #111); }
+.round-btn.red   { width: 24px; height: 24px; background: radial-gradient(circle at 35% 30%, #ff6b6b, #b00); }
+.green-bar {
+  width: 120px; height: 44px; border-radius: 8px;
+  background: linear-gradient(160deg, #6ee39a, #34b866);
+  border: 3px solid #1f7d45;
+  box-shadow: inset 0 2px 3px rgba(255,255,255,0.4);
 }
 
-.controls {
-  background: #aa0000;
-  border-radius: 6px;
-  padding: 8px 10px;
-}
+/* D-pad (black cross) */
+.dpad { position: relative; width: 92px; height: 92px; }
+.dpad-h, .dpad-v { position: absolute; background: #1a1a1a; border-radius: 8px; box-shadow: inset 0 0 4px rgba(255,255,255,0.15); }
+.dpad-h { top: 33px; left: 0; width: 92px; height: 26px; }
+.dpad-v { left: 33px; top: 0; width: 26px; height: 92px; }
 
+/* ── Scrubber ────────────────────────────────────────────────── */
+.scrub-container {
+  background: #9a0808;
+  border-radius: 10px;
+  padding: 12px 16px;
+}
 .scrub-container label {
   display: block;
-  font-size: 0.62rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #ffcccc;
-  margin-bottom: 5px;
+  color: #ffd9d9;
+  margin-bottom: 8px;
+}
+#scrub { width: 100%; accent-color: #24d34e; cursor: pointer; height: 12px; }
+
+/* ── HINGE ───────────────────────────────────────────────────── */
+.dex-hinge {
+  flex: 0 0 26px;
+  margin: 0 18px;
+  border-radius: 6px;
+  background: repeating-linear-gradient(#7a0505, #7a0505 8px, #5a0303 8px, #5a0303 16px);
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.6);
 }
 
-#scrub {
-  width: 100%;
-  accent-color: #00dd55;
-  cursor: pointer;
-  height: 4px;
-}
-
-/* ── Right panel ─────────────────────────────────────────────── */
-.right-panel {
+/* ── RIGHT HALF: the data page ───────────────────────────────── */
+.dex-right {
   flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-/* ── Filter chips ────────────────────────────────────────────── */
-.filter-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-}
-
-.chip {
-  padding: 3px 10px;
-  border: none;
+  gap: 14px;
+  background: #0d3a1e;
+  border: 4px solid #072813;
   border-radius: 12px;
-  font-size: 0.66rem;
+  padding: 18px;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.5);
+}
+.dex-right-head { display: flex; align-items: center; gap: 14px; }
+h1 {
+  font-size: 2rem;
+  text-transform: uppercase;
+  letter-spacing: 5px;
+  color: #eafff0;
+  text-shadow: 2px 2px 0 #04170b;
+}
+#back-btn { margin-left: auto; }
+
+/* ── Filter chips (the button row) ───────────────────────────── */
+.filter-chips { display: flex; flex-wrap: wrap; gap: 10px; }
+.chip {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 16px;
+  font-size: 1rem;
   font-family: 'Courier New', monospace;
+  font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
   cursor: pointer;
   color: #fff;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.4);
   transition: opacity 0.15s, filter 0.15s;
 }
-.chip[data-kind="milestone"]   { background: #1155cc; }
-.chip[data-kind="telemetry"]   { background: #166622; }
-.chip[data-kind="observation"] { background: #885500; }
-.chip[data-kind="anomaly"]     { background: #992222; }
-.chip.off {
-  opacity: 0.3;
-  filter: grayscale(0.6);
-}
+.chip[data-kind="milestone"]   { background: #1f6fe0; }
+.chip[data-kind="telemetry"]   { background: #1f9c3b; }
+.chip[data-kind="observation"] { background: #c07d0e; }
+.chip[data-kind="anomaly"]     { background: #cc2e2e; }
+.chip.off { opacity: 0.3; filter: grayscale(0.6); }
 
-/* ── Feed list ───────────────────────────────────────────────── */
+/* ── Feed list (the on-screen logs) ──────────────────────────── */
 #feed {
   list-style: none;
   flex: 1;
   overflow-y: auto;
-  max-height: 370px;
-  background: #0d0d0d;
-  border: 2px solid #2a2a2a;
-  border-radius: 6px;
-  padding: 6px;
+  max-height: min(720px, 62vh);
+  background: #061a0d;
+  border: 3px solid #0a2a15;
+  border-radius: 10px;
+  padding: 12px;
 }
-
-#feed::-webkit-scrollbar       { width: 6px; }
-#feed::-webkit-scrollbar-track { background: #111; }
-#feed::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+#feed::-webkit-scrollbar       { width: 10px; }
+#feed::-webkit-scrollbar-track { background: #061a0d; }
+#feed::-webkit-scrollbar-thumb { background: #1f7d45; border-radius: 5px; }
 
 #feed li.entry {
-  padding: 4px 7px;
-  margin-bottom: 3px;
-  border-radius: 4px;
-  font-size: 0.7rem;
-  line-height: 1.45;
-  border-left: 3px solid #444;
+  padding: 10px 15px;
+  margin-bottom: 7px;
+  border-radius: 6px;
+  font-size: 1.25rem;
+  line-height: 1.5;
+  border-left: 6px solid #444;
   word-break: break-word;
 }
-#feed li.entry.milestone   { border-left-color: #4488ff; background: #08132a; color: #99bbff; }
-#feed li.entry.telemetry   { border-left-color: #33bb55; background: #081408; color: #88dd99; }
+#feed li.entry.milestone   { border-left-color: #4488ff; background: #08132a; color: #a9c8ff; }
+#feed li.entry.telemetry   { border-left-color: #33bb55; background: #08160c; color: #97e6a8; }
 #feed li.entry.observation { border-left-color: #ffaa22; background: #1a1200; color: #ffcc77; }
 #feed li.entry.anomaly     { border-left-color: #ff4444; background: #1a0606; color: #ff9999; }

@@ -68,6 +68,10 @@ pokedex/evolve_results.json
 data/telemetry/*.jsonl
 data/telemetry/game/
 
+# Local agent run output (per-run logs, telemetry, states)
+data/quest_run*/
+data/dbg/
+
 # DuckDB warehouse files
 data/*.duckdb
 data/*.duckdb.wal

@@ -33,6 +33,19 @@ def test_start_creates_layout_and_on_event_appends(tmp_path: Path):
     assert summary["params"] == {"strategy": "low"}
 
 
+def test_start_writes_label_meta(tmp_path: Path):
+    rec = RunRecorder("runlabel", tmp_path, frame_grabber=None, frame_interval=10)
+    rec.start({"strategy": "low", "label": "Beat 1 — flail"})
+    meta = json.loads((tmp_path / "runlabel" / "meta.json").read_text())
+    assert meta == {"label": "Beat 1 — flail"}
+
+
+def test_start_without_label_writes_no_meta(tmp_path: Path):
+    rec = RunRecorder("runnolabel", tmp_path, frame_grabber=None, frame_interval=10)
+    rec.start({"strategy": "low"})
+    assert not (tmp_path / "runnolabel" / "meta.json").exists()
+
+
 def test_frame_captured_on_interval_only(tmp_path: Path):
     rec = RunRecorder("run2", tmp_path, frame_grabber=_grabber, frame_interval=10)
     rec.start({})

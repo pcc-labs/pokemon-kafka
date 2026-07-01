@@ -47,6 +47,30 @@ def test_run_summary_to_dict(tmp_path: Path):
     assert d["battles_won"] == 1
 
 
+def test_label_from_meta_json(tmp_path: Path):
+    run_dir = make_fixture_run(tmp_path, "r")
+    (run_dir / "meta.json").write_text('{"label": "Beat 1 — flail"}')
+    assert RunStore(tmp_path).list_runs()[0].label == "Beat 1 — flail"
+
+
+def test_label_defaults_empty_without_meta(tmp_path: Path):
+    make_fixture_run(tmp_path, "r")
+    assert RunStore(tmp_path).list_runs()[0].label == ""
+
+
+def test_label_falls_back_to_summary_params(tmp_path: Path):
+    run_dir = make_fixture_run(tmp_path, "r")
+    (run_dir / "summary.json").write_text('{"params": {"label": "from-summary"}}')
+    assert RunStore(tmp_path).list_runs()[0].label == "from-summary"
+
+
+def test_get_meta_invalid_json_returns_empty(tmp_path: Path):
+    run_dir = make_fixture_run(tmp_path, "r")
+    (run_dir / "meta.json").write_text("NOT JSON")
+    assert RunStore(tmp_path).get_meta("r") == {}
+    assert RunStore(tmp_path).list_runs()[0].label == ""
+
+
 def test_get_summary_with_invalid_json(tmp_path: Path):
     run_dir = tmp_path / "r"
     run_dir.mkdir(parents=True)

@@ -10,40 +10,62 @@
   <!-- Grid overview: shown when data-view="grid" -->
   <div id="grid"></div>
 
-  <!-- Focus view: shown when data-view="focus" -->
+  <!-- Focus view: a clamshell Pokédex — shown when data-view="focus" -->
   <div class="pokedex-shell">
-    <div class="pokedex-header">
-      <div class="led red"></div>
-      <div class="led yellow"></div>
-      <div class="led green"></div>
-      <h1>Pokédex Viewer</h1>
-      <button id="back-btn" onclick="showGrid()">&#8592; Runs</button>
-    </div>
 
-    <div class="pokedex-body">
-      <!-- Left panel: Screen + scrubber -->
-      <div class="left-panel">
+    <!-- LEFT HALF: the Pokédex "face" -->
+    <div class="dex-left">
+      <div class="dex-topbar">
+        <div class="big-lens"><span class="lens-glint"></span></div>
+        <div class="led-cluster">
+          <span class="led red"></span>
+          <span class="led yellow"></span>
+          <span class="led green"></span>
+        </div>
+      </div>
+
+      <div class="screen-frame">
+        <div class="screen-dots"><span></span><span></span></div>
         <div class="screen-bezel">
           <img id="screen" src="" alt="Gameplay Frame" />
         </div>
-        <div class="controls">
-          <div class="scrub-container">
-            <label for="scrub">Playback</label>
-            <input id="scrub" type="range" min="0" max="0" value="0" />
-          </div>
+        <div class="screen-vents"><span></span><span></span><span></span></div>
+      </div>
+
+      <div class="dex-controls">
+        <div class="ctrl-left">
+          <div class="round-btn black"></div>
+          <div class="round-btn red"></div>
+          <div class="green-bar"></div>
+        </div>
+        <div class="dpad">
+          <span class="dpad-h"></span>
+          <span class="dpad-v"></span>
         </div>
       </div>
 
-      <!-- Right panel: Chips + Feed -->
-      <div class="right-panel">
-        <div class="filter-chips">
-          <button class="chip" data-kind="milestone">Milestone</button>
-          <button class="chip" data-kind="telemetry">Telemetry</button>
-          <button class="chip" data-kind="observation">Observation</button>
-          <button class="chip" data-kind="anomaly">Anomaly</button>
-        </div>
-        <ul id="feed"></ul>
+      <div class="scrub-container">
+        <label for="scrub">Playback &middot; [ slower ] faster &middot; space = pause</label>
+        <input id="scrub" type="range" min="0" max="0" value="0" />
       </div>
+    </div>
+
+    <!-- HINGE -->
+    <div class="dex-hinge"></div>
+
+    <!-- RIGHT HALF: the data / keypad page -->
+    <div class="dex-right">
+      <div class="dex-right-head">
+        <h1>Pokédex</h1>
+        <button id="back-btn" onclick="showGrid()">&#8592; Runs</button>
+      </div>
+      <div class="filter-chips">
+        <button class="chip" data-kind="milestone">Milestone</button>
+        <button class="chip" data-kind="telemetry">Telemetry</button>
+        <button class="chip" data-kind="observation">Observation</button>
+        <button class="chip" data-kind="anomaly">Anomaly</button>
+      </div>
+      <ul id="feed"></ul>
     </div>
   </div>
 
