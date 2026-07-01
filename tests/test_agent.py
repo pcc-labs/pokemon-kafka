@@ -14,6 +14,7 @@ import agent
 import pytest
 from agent import (
     EARLY_GAME_TARGETS,
+    FOREST_ROTATE,
     MOVE_DATA,
     ROUTES_PATH,
     SCRIPT_DIR,
@@ -165,11 +166,48 @@ class TestGameController:
         assert self.pyboy.tick.call_count == 30
 
     def test_move(self):
+        # On an open tile the very first press steps, so move() presses exactly once (hold_frames=8
+        # commits one tile; 20 walked two, breaking odd-parity gaps).
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        self.pyboy.button.side_effect = lambda btn, delay=0: mem.__setitem__(0xD361, mem[0xD361] - 1)
         self.ctrl.move("up")
-        # hold_frames=8 commits exactly one tile (20 walked two, breaking odd-parity gaps)
         self.pyboy.button.assert_called_once_with("up", delay=8)
         # release_frames=8 + wait(30) = 38 ticks
         assert self.pyboy.tick.call_count == 38
+
+    def test_move_retries_until_step(self):
+        # The first press in a new facing only TURNS (no step); move() must retry so a walkable tile
+        # isn't mistaken for a wall. Here the position changes only on the 2nd press.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        calls = {"n": 0}
+
+        def turn_then_step(btn, delay=0):
+            calls["n"] += 1
+            if calls["n"] == 2:  # second press actually steps
+                mem[0xD361] -= 1
+
+        self.pyboy.button.side_effect = turn_then_step
+        self.ctrl.move("up")
+        assert self.pyboy.button.call_count == 2
+
+    def test_move_gives_up_on_real_wall(self):
+        # A genuine wall never moves us: move() retries the cap (3) times, then returns so the nav
+        # learner can see the failed step.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem  # button is a no-op mock -> position never changes
+        self.ctrl.move("up")
+        assert self.pyboy.button.call_count == 3
+
+    def test_move_stops_on_warp(self):
+        # Stepping onto a warp changes the map id without changing (x, y); move() must stop, not keep
+        # mashing into the new map.
+        mem = {0xD362: 5, 0xD361: 10, 0xD35E: 51}
+        self.pyboy.memory = mem
+        self.pyboy.button.side_effect = lambda btn, delay=0: mem.__setitem__(0xD35E, 50)
+        self.ctrl.move("up")
+        self.pyboy.button.assert_called_once_with("up", delay=8)
 
     def test_mash_a(self):
         self.ctrl.mash_a(times=2, delay=10)
@@ -269,14 +307,20 @@ class TestBattleStrategy:
         assert score == 40 * 1.0 * 1.0  # 40.0
 
     def test_score_move_super_effective(self):
-        # Ember (fire) vs grass: 40 * 1.0 * 2.0 = 80
-        score = self.strategy.score_move(0x2D, 10, "grass")
+        # Ember (fire, 0x34) vs grass: 40 * 1.0 * 2.0 = 80
+        score = self.strategy.score_move(0x34, 10, "grass")
         assert score == 80.0
 
     def test_score_move_not_very_effective(self):
-        # Ember (fire) vs water: 40 * 1.0 * 0.5 = 20
-        score = self.strategy.score_move(0x2D, 10, "water")
+        # Ember (fire, 0x34) vs water: 40 * 1.0 * 0.5 = 20
+        score = self.strategy.score_move(0x34, 10, "water")
         assert score == 20.0
+
+    def test_score_move_growl_is_status_not_ember(self):
+        # 0x2D (45) is GROWL, a 0-power status move — NOT Ember (0x34). Mislabelling it as a
+        # 40-power fire move made the agent pick Growl over Scratch (scored it 80 vs a Kakuna),
+        # deal 0 damage, and stall every wild fight in Viridian Forest. Growl must score as status.
+        assert self.strategy.score_move(0x2D, 10, "grass") == self.strategy.status_move_score
 
     def test_score_move_type_not_in_chart(self):
         # Psychic type not in our chart -> effectiveness = 1.0
@@ -284,8 +328,8 @@ class TestBattleStrategy:
         assert score == 90 * 1.0 * 1.0
 
     def test_score_move_enemy_not_in_chart_entry(self):
-        # Ember (fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
-        score = self.strategy.score_move(0x2D, 10, "dragon")
+        # Ember (fire, 0x34) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
+        score = self.strategy.score_move(0x34, 10, "dragon")
         assert score == 40 * 1.0 * 1.0
 
     def test_score_move_accuracy_factor(self):
@@ -382,6 +426,61 @@ class TestBattleStrategy:
             assert s.choose_action(battle)["action"] == "fight"
         assert s.choose_action(battle) == {"action": "run"}
 
+    def test_choose_action_fights_out_an_unfleeable_stall(self):
+        # Livelock fix: when a stalled wild battle's flee keeps FAILING, returning "run" forever
+        # never ends the battle, so the end-of-battle counter reset never fires and the agent is
+        # stuck in one battle indefinitely (observed: 2188 consecutive "run" actions on a single
+        # wild). Cap the stall-guard flee like the low-HP run does, then fall through and fight.
+        s = BattleStrategy(self.chart)
+        battle = self._make_battle(
+            battle_type=1,
+            player_hp=60,
+            player_max_hp=100,
+            enemy_hp=6,
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],  # dry Scratch, Growl (status) -> no HP progress -> stalls
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(battle)["action"] == "fight"
+        # Stalled: flee up to 3 times...
+        for _ in range(3):
+            assert s.choose_action(battle) == {"action": "run"}
+        # ...then it must fight it out rather than run forever.
+        assert s.choose_action(battle)["action"] == "fight"
+
+    def test_stall_flee_and_low_hp_flee_have_independent_budgets(self):
+        # The stall guard and the low-HP escape must NOT share one flee budget: a stall that spends
+        # its three attempts should never leave a later critically-low-HP turn unable to flee.
+        s = BattleStrategy(self.chart)
+        healthy = self._make_battle(
+            battle_type=1,
+            player_hp=60,
+            player_max_hp=100,
+            enemy_hp=6,  # constant enemy HP -> no progress -> the fight stalls
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(healthy)["action"] == "fight"
+        # Stall guard spends its own 3 flee attempts, then fights it out.
+        for _ in range(3):
+            assert s.choose_action(healthy) == {"action": "run"}
+        assert s.choose_action(healthy)["action"] == "fight"
+        # Now HP goes critical while the enemy HP is unchanged (still stalled). The low-HP escape
+        # has its own untouched budget, so it must still flee despite the exhausted stall budget.
+        low = self._make_battle(
+            battle_type=1,
+            player_hp=5,
+            player_max_hp=100,
+            enemy_hp=6,
+            enemy_max_hp=16,
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        assert s.choose_action(low) == {"action": "run"}
+
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
         # counter, so the agent keeps fighting well past the patience window.
@@ -451,9 +550,9 @@ class TestBattleStrategy:
 
     def test_choose_action_uses_enemy_type(self):
         """choose_action passes enemy_type_name to score_move for effectiveness."""
-        # Ember (fire) vs grass enemy -> super effective
+        # Ember (fire, 0x34) vs grass enemy -> super effective
         battle = self._make_battle(
-            moves=[0x2D, 0x01, 0x00, 0x00],  # Ember, Pound
+            moves=[0x34, 0x01, 0x00, 0x00],  # Ember, Pound
             move_pp=[10, 10, 0, 0],
             enemy_type1=0x17,  # grass
         )
@@ -1298,6 +1397,177 @@ class TestChooseOverworldAction:
         assert ag.choose_overworld_action(state) == "left"
 
 
+class TestForestNavigation:
+    """Map 51 (Viridian Forest) crossing: commit to a reachable exit, otherwise thread the
+    waypoint chain, with rotation-based unstuck (restore is disabled in the forest)."""
+
+    FOREST_ROUTE = {"51": {"waypoints": [{"x": 1, "y": 43}, {"x": 17, "y": 24}, {"x": 2, "y": 0}]}}
+
+    def _agent(self, tmp_path):
+        ag = _make_agent(tmp_path, routes=self.FOREST_ROUTE)
+        ag.world.known_reachable = MagicMock(return_value=False)
+        # Default frontier exploration to "exhausted" so the waypoint-fallback tests below run; the
+        # primary-explorer test overrides it.
+        ag.world.nearest_frontier = MagicMock(return_value=None)
+        ag.world.route_known = MagicMock(return_value=None)
+        ag.stuck_turns = 0
+        return ag
+
+    def test_commits_to_exit_when_reachable(self, tmp_path):
+        ag = self._agent(tmp_path)
+        ag.world.known_reachable = MagicMock(return_value=True)
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=2, y=5)
+        assert ag.choose_overworld_action(state) == "up"
+        ag._pilot_to.assert_called_once_with(state, 2, 0, goal_is_warp=True)
+
+    def test_frontier_exploration_is_primary_even_when_stuck(self, tmp_path):
+        # Frontier exploration must run BEFORE the stuck-rotation. The earlier bug rotated first, so
+        # once oscillation built up the agent rotated forever and never explored (frozen at (29,33)).
+        # With a high stuck count, exploration must still win over rotation.
+        ag = self._agent(tmp_path)
+        ag.world.nearest_frontier = MagicMock(return_value=(12, 24))
+        ag.world.route_known = MagicMock(return_value="right")
+        ag._pilot_to = MagicMock(return_value="down")  # fallback only
+        ag.stuck_turns = 50
+        state = OverworldState(map_id=51, x=10, y=24)
+        assert ag.choose_overworld_action(state) == "right"
+
+    def test_commits_to_a_locked_frontier_without_repicking(self, tmp_path):
+        # Anti-oscillation: a previously-locked frontier that is still routable is pursued directly,
+        # WITHOUT re-picking the nearest frontier (which is what caused the (29,33) flip-flop).
+        ag = self._agent(tmp_path)
+        ag._forest_frontier = (5, 40)
+        ag.world.route_known = MagicMock(return_value="left")
+        ag.world.nearest_frontier = MagicMock(return_value=(99, 99))  # must NOT be consulted
+        state = OverworldState(map_id=51, x=10, y=40)
+        assert ag.choose_overworld_action(state) == "left"
+        ag.world.nearest_frontier.assert_not_called()
+        assert ag._forest_frontier == (5, 40)  # target unchanged
+
+    def test_relocks_frontier_when_current_target_unroutable(self, tmp_path):
+        # When the locked target is no longer routable (route_known None), pick a fresh frontier.
+        ag = self._agent(tmp_path)
+        ag._forest_frontier = (5, 40)
+        ag.world.route_known = MagicMock(side_effect=[None, "up"])  # old target dead, new one routes
+        ag.world.nearest_frontier = MagicMock(return_value=(8, 30))
+        state = OverworldState(map_id=51, x=10, y=40)
+        assert ag.choose_overworld_action(state) == "up"
+        assert ag._forest_frontier == (8, 30)
+
+    def test_threads_waypoint_chain_not_just_exit(self, tmp_path):
+        # Frontier exhausted (None) -> fall back to the FIRST waypoint (entrance 1,43), not exit.
+        ag = self._agent(tmp_path)
+        seen = []
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: seen.append((x, y)) or "down")
+        state = OverworldState(map_id=51, x=5, y=40)
+        assert ag.choose_overworld_action(state) == "down"
+        assert seen[-1] == (1, 43)
+
+    def test_advances_waypoint_when_reached(self, tmp_path):
+        ag = self._agent(tmp_path)
+        seen = []
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: seen.append((x, y)) or "up")
+        # Standing on the entrance waypoint -> advance to the mid waypoint (17,24).
+        state = OverworldState(map_id=51, x=1, y=43)
+        ag.choose_overworld_action(state)
+        assert ag._forest_wp_idx == 1
+        assert seen[-1] == (17, 24)
+
+    def test_last_waypoint_uses_warp_goal(self, tmp_path):
+        ag = self._agent(tmp_path)
+        ag._forest_wp_idx = 2  # already at the exit waypoint
+        kwargs = {}
+        ag._pilot_to = MagicMock(side_effect=lambda s, x, y, **kw: kwargs.update(kw) or "left")
+        state = OverworldState(map_id=51, x=3, y=2)
+        ag.choose_overworld_action(state)
+        assert kwargs.get("goal_is_warp") is True
+
+    def test_wedge_breaker_blocks_repeatedly_failed_tile(self, tmp_path):
+        # Choosing the SAME step from the SAME tile without moving, several turns running, means the
+        # tile ahead reads walkable but can't be entered (catcher/ledge the facing-gated learning
+        # misses): block it so frontier_step abandons it. Requires repetition — a single press does
+        # not block (that would falsely wall off tiles during rotation).
+        ag = self._agent(tmp_path)
+        ag.stuck_turns = 8
+        ag.last_overworld_action = "left"
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=29, y=33)
+        assert (28, 33) not in ag.world.blocked.get(51, set())  # not after one press
+        for _ in range(3):
+            ag.choose_overworld_action(state)
+        assert (28, 33) in ag.world.blocked.get(51, set())
+
+    def test_wedge_breaker_does_not_block_on_changing_directions(self, tmp_path):
+        # Rotation presses a different direction each turn; that must never hard-block a neighbour
+        # (which previously sealed the agent in by walling off the tile it arrived through).
+        ag = self._agent(tmp_path)
+        ag.stuck_turns = 8
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=29, y=33)
+        for act in ("left", "down", "right", "up", "left"):
+            ag.last_overworld_action = act
+            ag.choose_overworld_action(state)
+        assert not ag.world.blocked.get(51, set())
+
+    def test_rotates_to_unstick_when_wedged(self, tmp_path):
+        # Restore is disabled in the forest, so a wall-pressing pilot must be broken by rotation
+        # (one direction per turn) once the reachable area is fully mapped (frontier_step None).
+        ag = self._agent(tmp_path)
+        ag._pilot_to = MagicMock(return_value="down")  # pilot keeps choosing a wall
+        ag.stuck_turns = 8
+        state = OverworldState(map_id=51, x=1, y=18)
+        result = ag.choose_overworld_action(state)
+        assert result == FOREST_ROTATE[8 % len(FOREST_ROTATE)]
+
+
+class TestForestWarpLearning:
+    """Detect and block Viridian Forest warp tiles so routing stops treating them as normal cells."""
+
+    def test_blocks_intra_map_warp_tile(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=0)
+        state = OverworldState(map_id=51, x=17, y=47)  # "down" jumped across the map -> warp
+        ag._learn_forest_warp(prev, state, "down")
+        assert (5, 1) in ag.world.blocked.get(51, set())  # the tile stepped onto
+
+    def test_blocks_warp_on_map_change(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=2)
+        state = OverworldState(map_id=0, x=2, y=7)  # stepped out of the forest -> warp
+        ag._learn_forest_warp(prev, state, "down")
+        assert (5, 3) in ag.world.blocked.get(51, set())
+
+    def test_does_not_block_the_exit_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=2, y=1)
+        state = OverworldState(map_id=13, x=10, y=5)  # crossed via the exit (2,0)
+        ag._learn_forest_warp(prev, state, "up")
+        assert (2, 0) not in ag.world.blocked.get(51, set())
+
+    def test_normal_step_is_not_a_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=5)
+        state = OverworldState(map_id=51, x=5, y=6)  # ordinary one-tile step
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(51, set())
+
+    def test_failed_step_is_not_a_warp(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=51, x=5, y=5)
+        state = OverworldState(map_id=51, x=5, y=5)  # pressed into a wall, didn't move
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(51, set())
+
+    def test_ignored_outside_forest(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        prev = OverworldState(map_id=12, x=5, y=5)
+        state = OverworldState(map_id=2, x=1, y=1)  # a warp, but not in the forest -> left alone
+        ag._learn_forest_warp(prev, state, "down")
+        assert not ag.world.blocked.get(12, set())
+        ag._learn_forest_warp(None, state, "down")  # no prev -> no-op
+
+
 class TestLog:
     def test_log_appends_event(self, tmp_path):
         ag = _make_agent(tmp_path)
@@ -1628,17 +1898,26 @@ class TestBattleMenuSelect:
         return [c.args[0] for c in pyboy.button.call_args_list]
 
     def test_run_walks_to_bottom_right_after_normalizing(self):
-        # up+left normalizes the cursor to FIGHT, then down+right reaches RUN, then A confirms.
-        assert self._buttons("run") == ["up", "left", "down", "right", "a"]
+        # b,b backs out of any open sub-menu; up+left normalizes to FIGHT; down+right reaches RUN.
+        assert self._buttons("run") == ["b", "b", "up", "left", "down", "right", "a"]
 
     def test_fight_is_top_left_after_normalizing(self):
-        assert self._buttons("fight") == ["up", "left", "a"]
+        assert self._buttons("fight") == ["b", "b", "up", "left", "a"]
 
     def test_pkmn_is_top_right(self):
-        assert self._buttons("pkmn") == ["up", "left", "right", "a"]
+        assert self._buttons("pkmn") == ["b", "b", "up", "left", "right", "a"]
 
     def test_item_is_bottom_left(self):
-        assert self._buttons("item") == ["up", "left", "down", "a"]
+        assert self._buttons("item") == ["b", "b", "up", "left", "down", "a"]
+
+    def test_backs_out_of_open_submenu_before_normalizing(self):
+        # If a sub-menu (move list, bag) is already open, up/left would navigate IT, not the main
+        # 2x2 menu — so the cursor lands on the wrong corner and (observed) opens the empty bag
+        # instead of FIGHT, freezing the turn. Pressing B first returns to the main menu (a no-op
+        # there), so normalization is reliable. The B presses must come before any d-pad input.
+        seq = self._buttons("fight")
+        assert seq[:2] == ["b", "b"]
+        assert "up" in seq and seq.index("b") < seq.index("up")
 
 
 class TestRunBattleTurn:
