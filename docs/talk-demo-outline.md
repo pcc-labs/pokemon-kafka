@@ -279,6 +279,27 @@ the piece that would incorporate all these learnings into a single goal-directed
 driver, aimed at tasks where there's actually a *gap* to close (Brock, forest
 nav) so the loop has signal.
 
+**Show the wall, don't just describe it (beats 7–9).** Three extension beats live
+here — the harder frontier past the solved Route 1 intro. Run them live or replay
+the committed frames (`viewer --runs-dir demo-runs`, `/7` `/8` `/9`):
+
+- **Beat 7 — Forest navigation** (`/forest-navigation-demo`). Viridian Forest is
+  a maze the agent only sees 9×10 tiles of. Watch the WorldMap fill in as it
+  explores — and watch it *wedge* short of the exit. This is the wall made
+  literal: it maps the maze but doesn't walk out in one run. Persisting the map
+  across runs is the mechanism that would eventually crack it — the same
+  "learnings compound" thesis, at the edge where it's still hard.
+- **Beat 8 — Bug hunt** (`/bug-catcher-demo`). Force-fight bug battles on Route 2
+  into the forest — the type-chart battle intelligence pointed at Weedle, one env
+  var away from the flee behavior of Beat 5.
+- **Beat 9 — Discovery engine** (`/discovery-signs-demo`). The read-the-world
+  callback to Beat 2, standalone: signs, dialogue, and Pokédex flavor decoded off
+  the tilemap into `discovery` events streamed to Kafka — the agent reads pixels,
+  not an API.
+
+The honest note: Beat 7 is where "the loop compounds" meets "not yet" — exactly
+the gap `/goal` is meant to close.
+
 ---
 
 ## Thesis validation (fact-check for the slides)
