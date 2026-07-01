@@ -39,8 +39,11 @@ on port 8200 with --no-open, then open it in Google Chrome:
 Leave both running for the whole session.
 ```
 
-Verified working: the viewer serves the game frames (`image/png`) and the event
-feed (the on-screen `BATTLE`/`OVERWORLD` logs) over HTTP.
+Verified working (visually confirmed in Chrome): the viewer serves the game
+frames (`image/png`) and the event feed (the on-screen `BATTLE`/`OVERWORLD`
+logs) over HTTP. The viewer is the merged **Pokédex Viewer** (PR #29) — a FastAPI
+server + `recorder.py`/`live_producer.py` capture pipeline. Design:
+[`docs/specs/2026-06-26-pokedex-viewer-design.md`](specs/2026-06-26-pokedex-viewer-design.md).
 
 ---
 
