@@ -81,3 +81,9 @@ data/*.duckdb.wal
 
 # Docker
 docker-compose.override.yml
+
+# Committed replayable demo runs (frames + events), but NOT the generated states.
+# The bare `frames/` rule above matches at any depth, so re-include demo-runs first.
+!demo-runs/
+!demo-runs/**
+demo-runs/states/
