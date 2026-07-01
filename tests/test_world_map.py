@@ -41,6 +41,22 @@ def test_observe_ignores_out_of_range_coords():
     assert all(x >= 0 and y >= 0 for (x, y) in wm.cells[0])  # no negative keys stored
 
 
+def test_observe_does_not_learn_walls_in_viridian_forest():
+    # In Viridian Forest (map 51), observation must NOT stamp walls: bug-catcher NPC tiles read
+    # impassable and the 2x2 collision downsample masks one-tile corridors, so stamping observed
+    # walls fragments the maze with phantom walls. Walls there come only from confirmed failed moves.
+    wm = WorldMap()
+    grid = _full(1)
+    grid[3][4] = 0  # a "wall" directly north of the player in the collision grid
+    wm.observe(51, 5, 5, grid)
+    assert wm.walkable(51, 5, 5) == 1  # walkable tiles are still stamped
+    assert (5, 4) not in wm.cells.get(51, {})  # the observed wall was NOT recorded
+    assert wm.walkable(51, 5, 4) == 1  # so it stays an optimistic/explorable frontier
+    # Every other map still learns walls from observation as before.
+    wm.observe(0, 5, 5, grid)
+    assert wm.walkable(0, 5, 4) == 0
+
+
 # --- plan_step ----------------------------------------------------------------
 
 
@@ -201,6 +217,77 @@ def test_prefers_fewer_grass_tiles_among_equal_length_paths():
     assert d == "right"  # step to (6,5), avoiding the grass at (5,4)
 
 
+# --- frontier commitment (nearest_frontier / route_known) + warp approach -----
+
+
+def test_warp_approach_ok_rejects_off_map_cell():
+    # An off-map cell orthogonally adjacent to the goal is not a valid warp approach.
+    wm = WorldMap()
+    assert wm._warp_approach_ok(0, (-1, 0), (0, 0)) is False
+
+
+def test_nearest_frontier_returns_start_when_it_borders_unknown():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1}  # standing on a frontier
+    assert wm.nearest_frontier(0, 5, 5) == (5, 5)
+
+
+def test_nearest_frontier_finds_a_reachable_frontier_tile():
+    wm = WorldMap()
+    # corridor (5,5)->(6,5)->(7,5); only (7,5) borders unknown (right). Others walled.
+    wm.cells[0] = {
+        (5, 5): 1,
+        (6, 5): 1,
+        (7, 5): 1,
+        (5, 4): 0,
+        (5, 6): 0,
+        (4, 5): 0,
+        (6, 4): 0,
+        (6, 6): 0,
+        (7, 4): 0,
+        (7, 6): 0,
+    }
+    assert wm.nearest_frontier(0, 5, 5) == (7, 5)
+
+
+def test_nearest_frontier_none_when_fully_enclosed():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0}
+    assert wm.nearest_frontier(0, 5, 5) is None
+
+
+def test_route_known_first_step_toward_target():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (6, 5): 1, (7, 5): 1}
+    assert wm.route_known(0, 5, 5, 7, 5) == "right"
+
+
+def test_route_known_probes_unknown_at_target():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1}  # at the target, which borders unknown
+    assert wm.route_known(0, 5, 5, 5, 5) == "up"  # probe the unknown neighbour (up first)
+
+
+def test_route_known_none_at_target_with_no_unknown():
+    wm = WorldMap()
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0}
+    assert wm.route_known(0, 5, 5, 5, 5) is None  # fully revealed -> caller re-picks
+
+
+def test_route_known_none_when_target_unreachable():
+    wm = WorldMap()
+    # (5,5) boxed in by known walls; target (9,9) is not reachable over known-walkable tiles.
+    wm.cells[0] = {(5, 5): 1, (5, 4): 0, (5, 6): 0, (4, 5): 0, (6, 5): 0, (9, 9): 1}
+    assert wm.route_known(0, 5, 5, 9, 9) is None
+
+
+def test_borders_unknown_skips_blocked_and_off_map():
+    wm = WorldMap()
+    wm.cells[0] = {(0, 5): 1, (0, 4): 0, (0, 6): 0}  # left is off-map; up/down known walls
+    wm.block(0, 1, 5)  # right is hard-blocked, not unknown
+    assert wm._borders_unknown(0, 0, 5) is None  # no real unknown neighbour
+
+
 # --- persistence (carry observations across runs) -----------------------------
 
 
@@ -241,7 +328,7 @@ def test_worldmap_load_missing_file_is_empty():
     assert wm.cells == {} and wm.blocked == {} and wm.encounters == {}
 
 
-# --- known_reachable / explore_step (forest exit-wedge fix) -------------------
+# --- known_reachable (forest exit-wedge fix) ----------------------------------
 
 
 def test_known_reachable_true_when_already_at_target():
@@ -267,29 +354,6 @@ def test_known_reachable_blocked_by_wall():
     m[(1, 0)] = 0  # wall
     m[(2, 0)] = 1
     assert wm.known_reachable(1, 0, 0, 2, 0) is False
-
-
-def test_explore_step_heads_to_nearest_unknown():
-    wm = WorldMap()
-    m = wm.cells.setdefault(1, {})
-    # An enclosed known corridor (0,0)->(3,0): walls above and below, so the only unknown frontier
-    # is off the right end at (4,0) -> the agent must walk "right" to reach unexplored ground.
-    for x in range(0, 4):
-        m[(x, 0)] = 1
-        m[(x, -1)] = 0
-        m[(x, 1)] = 0
-    m[(-1, 0)] = 0
-    assert wm.explore_step(1, 0, 0) == "right"
-
-
-def test_explore_step_none_when_fully_mapped():
-    wm = WorldMap()
-    m = wm.cells.setdefault(1, {})
-    # A fully-enclosed 1x1 known cell: walls on all sides, nothing unknown reachable.
-    m[(5, 5)] = 1
-    for nb in [(4, 5), (6, 5), (5, 4), (5, 6)]:
-        m[nb] = 0
-    assert wm.explore_step(1, 5, 5) is None
 
 
 # --- warp/exit goal tiles read as walls by the collision grid ------------------
@@ -334,3 +398,46 @@ def test_plan_step_does_not_step_onto_a_hard_blocked_goal():
     m[(2, 0)] = 0
     wm.block(51, 2, 0)  # a real wall — must not be entered even as a goal
     assert wm.plan_step(51, 2, 1, 2, 0) != "up"
+
+
+# --- warp APPROACH also reads as a wall (the real Viridian Forest exit case) --------------------
+# The forest exit (2,0) is a warp; the tile you step from to use it, (2,1), is ITSELF reported
+# impassable by the collision grid (warp-adjacent tiles read as walls too). With only the goal
+# special-cased, the warp's every neighbour is a wall, so the planner can't reach it at all:
+# `_pilot_to` returns None, the agent falls to frontier-exploration and wedges. ``goal_is_warp``
+# lets the path traverse the warp's immediate approach (still barring hard-blocks).
+
+
+def test_known_reachable_warp_through_walled_approach():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(2, 8):
+        m[(2, y)] = 1  # known-walkable column up to the approach
+    m[(2, 1)] = 0  # warp APPROACH — collision grid also calls it a wall
+    m[(2, 0)] = 0  # the exit warp itself
+    # Default: unreachable (every neighbour of the warp is a wall).
+    assert wm.known_reachable(51, 2, 5, 2, 0) is False
+    # As a warp goal, the steppable approach lets the path reach it.
+    assert wm.known_reachable(51, 2, 5, 2, 0, goal_is_warp=True) is True
+
+
+def test_plan_step_routes_through_walled_warp_approach():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(1, 8):
+        m[(2, y)] = 1
+    m[(2, 1)] = 0  # walled approach
+    m[(2, 0)] = 0  # warp
+    # Heading up the column toward the exit.
+    assert wm.plan_step(51, 2, 5, 2, 0, goal_is_warp=True) == "up"
+
+
+def test_warp_approach_still_respects_hard_block():
+    wm = WorldMap()
+    m = wm.cells.setdefault(51, {})
+    for y in range(2, 8):
+        m[(2, y)] = 1
+    m[(2, 1)] = 0
+    m[(2, 0)] = 0
+    wm.block(51, 2, 1)  # a real failed step on the approach — never traverse it
+    assert wm.known_reachable(51, 2, 5, 2, 0, goal_is_warp=True) is False

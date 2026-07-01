@@ -77,6 +77,21 @@ GRASS_ENCOUNTER_COST = 8
 # Reset whenever real damage lands, so winnable battles are never abandoned.
 WILD_BATTLE_PATIENCE = 10
 
+# Viridian Forest is a forward-only maze with restore disabled (see run_overworld), so a pilot
+# that keeps pressing a wall would wedge forever (observed: 3800+ turns frozen at (1,18)). Once
+# this many oscillation/stuck turns accumulate, rotate through directions to break free — failed
+# steps are learned as walls, so the planner reroutes once unstuck.
+FOREST_UNSTUCK_AFTER = 8
+FOREST_ROTATE = ["up", "left", "right", "down"]
+# Map 51's warp out to Route 2. Only this tile gets warp-approach routing (goal_is_warp): the exit
+# and its approach both read as walls but are steppable. Guarding on it means a mis-authored route
+# waypoint can't trick the planner into crossing genuine walls next to some other goal.
+FOREST_EXIT = (2, 0)
+
+# Unit-step offsets for the four cardinal directions, shared by every place that turns a pressed
+# direction into a (dx, dy) delta.
+_DIR_DELTA = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
+
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
 EARLY_GAME_TARGETS = {
@@ -92,7 +107,8 @@ MOVE_DATA = {
     0x01: ("Pound", "normal", 40, 100),
     0x0A: ("Scratch", "normal", 40, 100),
     0x21: ("Tackle", "normal", 35, 95),
-    0x2D: ("Ember", "fire", 40, 100),
+    0x2D: ("Growl", "normal", 0, 100),  # 45 = Growl (status); Ember is 0x34
+    0x34: ("Ember", "fire", 40, 100),  # 52 = Ember
     0x37: ("Water Gun", "water", 40, 100),
     0x49: ("Vine Whip", "grass", 35, 100),
     0x55: ("Thunderbolt", "electric", 95, 100),
@@ -159,9 +175,25 @@ class GameController:
         hold_frames=20 held the d-pad long enough to walk *two* tiles per call, so the agent could
         only ever land on same-parity columns — fatal where a one-tile-wide gap sits on the other
         parity (e.g. the Route 1 ledge gap at x=9). 8 frames is enough to commit exactly one step.
+
+        Retry the press until we actually move (or warp), up to 3 attempts. Two failure modes need
+        this: the first press in a new facing only TURNS the character (no step), and even when
+        already facing, a press occasionally fails to register a step (~4% flaky). A single press
+        therefore mistakes a walkable tile for a wall, and the nav learner hard-blocks it — one such
+        false block on a one-tile junction silently seals off whole regions (it sealed the Viridian
+        Forest exit at (1,19), stranding the agent). Retrying absorbs both modes; we stop the instant
+        we move, so an already-facing open tile still advances exactly one tile (never two), while a
+        real wall stays put after all three presses and is correctly read as blocked.
         """
-        self.press(direction, hold_frames=8, release_frames=8)
-        self.wait(30)
+        bx, by = self.pyboy.memory[0xD362], self.pyboy.memory[0xD361]
+        bmap = self.pyboy.memory[0xD35E]
+        for _ in range(3):
+            self.press(direction, hold_frames=8, release_frames=8)
+            self.wait(30)
+            if (self.pyboy.memory[0xD362], self.pyboy.memory[0xD361]) != (bx, by):
+                break
+            if self.pyboy.memory[0xD35E] != bmap:
+                break
 
     def mash_a(self, times: int = 5, delay: int = 20):
         """Mash A to advance text boxes."""
@@ -198,6 +230,14 @@ class GameController:
         re-pick RUN, freezing the fight). Normalize to FIGHT (top-left) first, then walk the
         real grid.
         """
+        # First back out of any open sub-menu (move list, bag, party). If one is open, the up/left
+        # normalization below would navigate IT instead of the main 2x2 menu — the cursor then
+        # lands on the wrong corner and A opens the (empty) bag instead of FIGHT, so no move is ever
+        # picked and the turn never resolves (observed: a Kakuna fight frozen for 760 turns). B on
+        # the main battle menu is a harmless no-op, so this is safe even when no sub-menu is open.
+        for _ in range(2):
+            self.press("b")
+            self.wait(8)
         # Use the default (longer) press timing — the same as ``navigate_menu``, which works for
         # the move list. The 8-frame overworld timing is too short for the battle-menu cursor to
         # register a move, which left the cursor stuck on FIGHT and the flee never happening.
@@ -240,7 +280,10 @@ class BattleStrategy:
         self.force_fight = force_fight
         self.unknown_move_score = unknown_move_score
         self.status_move_score = status_move_score
+        # Two independent flee budgets: the low-HP escape and the stall guard each get their own
+        # capped run attempts, so exhausting one never silently disables the other within a battle.
         self._run_attempts = 0
+        self._stall_run_attempts = 0
         # Stall guard: count fight turns in the current wild battle without enemy-HP progress.
         self._wild_fight_turns = 0
         self._last_enemy_hp: int | None = None
@@ -286,12 +329,18 @@ class BattleStrategy:
         if battle.battle_type == 1:
             if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
                 self._wild_fight_turns = 0
+                self._run_attempts = 0  # real progress also re-arms both flee caps
+                self._stall_run_attempts = 0
             self._last_enemy_hp = battle.enemy_hp
             if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
-                # Stalled: keep fleeing until the battle actually ends. Unlike the low-HP run
-                # (capped, because fighting on can still level us), a stall means fighting is
-                # futile, so never fall back to fight here.
-                return {"action": "run"}
+                # Stalled: try to flee. But flee can FAIL repeatedly, and looping "run" forever
+                # never ends the battle — so the end-of-battle counter reset never fires and the
+                # agent livelocks in a single wild fight (observed: 2188 consecutive runs). Cap the
+                # flee (own budget, so a stall never spends the low-HP escape's attempts below), then
+                # fall through and fight it out (the only way to end an unfleeable battle).
+                if self._stall_run_attempts < 3:
+                    self._stall_run_attempts += 1
+                    return {"action": "run"}
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
@@ -892,24 +941,79 @@ class PokemonAgent:
             # hard-blocked walkable tiles and trapped the agent in the entrance pocket.)
             route = self.navigator.routes.get("51", {})
             wps = route.get("waypoints") if isinstance(route, dict) else None
-            ex, ey = (wps[-1]["x"], wps[-1]["y"]) if wps else (2, 0)
-            # Once the exit is reachable over KNOWN-walkable tiles, commit to it.
-            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey):
-                d = self._pilot_to(state, ex, ey)
+            chain = [(w["x"], w["y"]) for w in wps] if wps else [FOREST_EXIT]
+            ex, ey = chain[-1]
+            # Warp-approach routing only applies when the goal really is the forest warp; a route
+            # whose last waypoint was mis-authored must not license crossing walls next to it.
+            exit_is_warp = (ex, ey) == FOREST_EXIT
+            # Once the exit is reachable over KNOWN-walkable tiles, commit to it. The exit is a warp:
+            # its tile AND its approach read as walls but are steppable, so pass goal_is_warp so the
+            # planner can actually route onto it instead of treating it as fully walled off.
+            if self.world.known_reachable(state.map_id, state.x, state.y, ex, ey, goal_is_warp=exit_is_warp):
+                d = self._pilot_to(state, ex, ey, goal_is_warp=exit_is_warp)
                 return d if d is not None else self._collision_pilot(state, "north")
-            # Otherwise head toward the exit optimistically (A* treats unknown tiles as passable).
-            # With the now-correct two-failed-steps wall learning, real walls get recorded and A*
-            # reroutes around them — so the agent snakes toward the far-left exit column instead of
-            # plateauing on nearby frontiers the way pure nearest-frontier exploration does (it kept
-            # mapping the forest body but never trekked to the NW exit pocket). Frontier exploration
-            # is the fallback when the optimistic plan has nowhere to go. Persisting the WorldMap
-            # across runs (load -> run -> save) lets successive epochs accumulate the whole maze, so
-            # known_reachable eventually fires and the commit branch above carries it out the exit.
-            d = self._pilot_to(state, ex, ey)
+            # Facing-independent persistent-wall detection. run_overworld's two-failed-steps rule is
+            # gated on the player's facing register, which doesn't reliably update in the forest, so
+            # a tile that reads walkable but can't be entered (a bug-catcher NPC, a ledge) is never
+            # hard-blocked and frontier routing steers into it forever (observed: 11000+ turns pressing
+            # "left" into (28,33)). Count consecutive turns we chose the SAME step from the SAME tile
+            # without moving; after a few, block the tile directly ahead so the planner abandons it.
+            # Gating on a repeated *same* direction is what keeps this safe — the rotation fallback
+            # below changes direction every turn, so it never trips this and never seals us in by
+            # blocking the (enterable) tile we arrived through.
+            if not hasattr(self, "_forest_try_n"):
+                self._forest_try_n, self._forest_try_pos, self._forest_try_dir = 0, None, None
+            here = (state.x, state.y)
+            if self.last_overworld_action == self._forest_try_dir and here == self._forest_try_pos:
+                self._forest_try_n += 1
+            else:
+                self._forest_try_n = 0
+            self._forest_try_pos, self._forest_try_dir = here, self.last_overworld_action
+            if self._forest_try_n >= 2 and self.last_overworld_action in _DIR_DELTA:
+                bdx, bdy = _DIR_DELTA[self.last_overworld_action]
+                self.world.block(state.map_id, state.x + bdx, state.y + bdy)
+                self._forest_try_n = 0
+            # PRIMARY: systematically map the maze by COMMITTING to one frontier at a time. We route
+            # only over KNOWN-walkable tiles to a locked frontier target and probe the unknown at its
+            # edge — never wedging against an unknown wall the way optimistic unknown-is-passable
+            # exploration did (trapped at (12,26)). Crucially we keep pursuing the SAME target until
+            # it's reached or proven unreachable: re-picking the nearest frontier every turn flips
+            # the agent between two
+            # ~equidistant frontiers and oscillates (observed: frozen at (29,33) for 15000 turns).
+            # As the reachable area fills in, the far-left exit pocket gets mapped and the
+            # known_reachable commit branch above fires and carries it out. This runs BEFORE the
+            # stuck-rotation: rotating first would, once oscillation builds, preempt exploration.
+            tgt = getattr(self, "_forest_frontier", None)
+            d = self.world.route_known(state.map_id, state.x, state.y, *tgt) if tgt else None
+            if d is None:  # no target, reached it, or it became unreachable -> lock a fresh frontier
+                tgt = self.world.nearest_frontier(state.map_id, state.x, state.y)
+                self._forest_frontier = tgt
+                d = self.world.route_known(state.map_id, state.x, state.y, *tgt) if tgt else None
             if d is not None:
                 return d
-            explore = self.world.explore_step(state.map_id, state.x, state.y)
-            return explore if explore is not None else self._collision_pilot(state, "north")
+            # Reachable area fully mapped but the exit still isn't committed. Restore is disabled in
+            # the forest, so if we're also wedged here, rotate through directions to dislodge before
+            # falling to the optimistic waypoint pilot (which could otherwise press a wall forever).
+            # One direction per turn (not held for two) so rotation never trips the same-direction
+            # wall-block above — otherwise it would block every neighbour and seal the agent in.
+            if self.stuck_turns >= FOREST_UNSTUCK_AFTER:
+                return FOREST_ROTATE[self.stuck_turns % len(FOREST_ROTATE)]
+            # Optimistically thread the hand-authored waypoint chain (entrance -> mid -> exit via the
+            # far-left columns; A* treats unknown tiles as passable), then nudge north as a last
+            # resort.
+            if not hasattr(self, "_forest_wp_idx"):
+                self._forest_wp_idx = 0
+            while self._forest_wp_idx < len(chain) - 1:
+                wx, wy = chain[self._forest_wp_idx]
+                if abs(state.x - wx) + abs(state.y - wy) <= 1:
+                    self._forest_wp_idx += 1
+                else:
+                    break
+            wx, wy = chain[self._forest_wp_idx]
+            # Only the true warp exit gets warp-approach routing (see exit_is_warp above).
+            is_last = self._forest_wp_idx == len(chain) - 1 and (wx, wy) == FOREST_EXIT
+            d = self._pilot_to(state, wx, wy, goal_is_warp=is_last)
+            return d if d is not None else self._collision_pilot(state, "north")
 
         # Oak's Parcel quest: run the errand that unblocks Viridian's north exit (Mart pickup →
         # Oak delivery → Old-Man gate). Outdoor legs return a "pilot" directive (the agent
@@ -947,14 +1051,25 @@ class PokemonAgent:
         map-edge non-exits as it goes (via the failed-move hard-blocks)."""
         return self.world.cross_step(state.map_id, state.x, state.y, goal)
 
-    def _pilot_to(self, state: OverworldState, tx: int, ty: int) -> str | None:
+    def _pilot_to(self, state: OverworldState, tx: int, ty: int, goal_is_warp: bool = False) -> str | None:
         """Navigate toward tile ``(tx, ty)`` by pathfinding over the accumulated WorldMap. Returns
         ``None`` once standing on the tile (the caller then presses the target's ``at_target``
         action). Whole-map A* routes around remembered walls — e.g. it follows the fence north of
-        the Mart all the way to the gap on the centre corridor instead of stalling beneath it."""
+        the Mart all the way to the gap on the centre corridor instead of stalling beneath it.
+
+        ``goal_is_warp`` routes through the goal's stamped-wall approach tile (e.g. the forest exit
+        warp, whose approach the collision grid also reports impassable)."""
         if state.x == tx and state.y == ty:
             return None
-        return self.world.plan_step(state.map_id, state.x, state.y, tx, ty, encounter_cost=GRASS_ENCOUNTER_COST)
+        return self.world.plan_step(
+            state.map_id,
+            state.x,
+            state.y,
+            tx,
+            ty,
+            encounter_cost=GRASS_ENCOUNTER_COST,
+            goal_is_warp=goal_is_warp,
+        )
 
     def _quest_target(self, state: OverworldState) -> dict | None:
         """Build the parcel-quest nav override for this turn, or None to defer to waypoints.
@@ -1184,6 +1299,27 @@ class PokemonAgent:
 
         self.turn_count += 1
 
+    def _learn_forest_warp(self, prev, state, last_act):
+        """Detect and hard-block Viridian Forest warp tiles.
+
+        A directional press that lands somewhere other than the adjacent tile — a different map, or
+        an intra-map jump (observed: "down" from (5,0) teleports to (17,47)) — means the tile we
+        stepped onto is a WARP. The occupancy map records warps as ordinary walkable cells, so
+        plan_step/known_reachable route THROUGH them as if they connect to their grid-neighbours
+        (phantom connectivity that makes known_reachable(exit) lie), and the agent also warps
+        backward out of the forest by accident (51 -> 0 -> a house). Block the warp tile so routing
+        treats it as the dead end it is — except the exit (2,0), which we deliberately step onto to
+        cross into Route 2."""
+        if prev is None or prev.map_id != 51 or last_act not in _DIR_DELTA:
+            return
+        edx, edy = _DIR_DELTA[last_act]
+        expected = (prev.x + edx, prev.y + edy)
+        moved_unexpectedly = state.map_id != prev.map_id or (
+            (state.x, state.y) != expected and (state.x, state.y) != (prev.x, prev.y)
+        )
+        if moved_unexpectedly and expected != FOREST_EXIT:
+            self.world.block(prev.map_id, *expected)
+
     def run_overworld(self):
         """Move in the overworld."""
         state = self.memory.read_overworld_state()
@@ -1202,18 +1338,19 @@ class PokemonAgent:
         # swallows our inputs (e.g. the Mart clerk's parcel script) never poisons the map.
         if (
             prev is not None
-            and last_act in ("up", "down", "left", "right")
+            and last_act in _DIR_DELTA
             and state.map_id == prev.map_id
             and state.x == prev.x
             and state.y == prev.y
             and self.memory.read_player_facing_name() == last_act
         ):
-            bdx = {"left": -1, "right": 1}.get(last_act, 0)
-            bdy = {"up": -1, "down": 1}.get(last_act, 0)
+            bdx, bdy = _DIR_DELTA[last_act]
             attempted = (state.map_id, state.x + bdx, state.y + bdy)
             if attempted == getattr(self, "_last_fail_tile", None):
                 self.world.block(*attempted)  # turned into it twice → a real wall
         self._last_fail_tile = attempted  # None on a move or an ignored input, resetting the streak
+
+        self._learn_forest_warp(prev, state, last_act)
 
         self.update_overworld_progress(state)
         try:
@@ -1601,6 +1738,7 @@ class PokemonAgent:
                     self.battles_won += 1
                     self._last_progress_turn = self.turn_count
                     self.battle_strategy._run_attempts = 0
+                    self.battle_strategy._stall_run_attempts = 0
                     self.battle_strategy._wild_fight_turns = 0
                     self.battle_strategy._last_enemy_hp = None
                     self.encounter_log.append(

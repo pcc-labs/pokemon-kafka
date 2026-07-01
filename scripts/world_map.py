@@ -55,7 +55,15 @@ class WorldMap:
                 gx = px + (c - _PLAYER_COL)
                 gy = py + (r - _PLAYER_ROW)
                 if 0 <= gx <= _MAX_COORD and 0 <= gy <= _MAX_COORD:
-                    m[(gx, gy)] = 1 if row[c] else 0
+                    if row[c]:
+                        m[(gx, gy)] = 1
+                    elif map_id != 51:
+                        # In Viridian Forest, do NOT learn walls from the collision grid: bug-catcher
+                        # NPC tiles read impassable and the 2x2 downsample masks one-tile corridors,
+                        # so observation stamps phantom walls that fragment the maze and trap the
+                        # frontier planner. In the forest, walls are learned only from confirmed
+                        # failed moves (block()); everything unobserved stays an explorable frontier.
+                        m[(gx, gy)] = 0
 
     def block(self, map_id: int, x: int, y: int) -> None:
         """Record that ``(x, y)`` can't be entered (a move into it just failed)."""
@@ -121,6 +129,19 @@ class WorldMap:
             return False  # tried and failed — never enter, even if the grid claims walkable
         return m.get((x, y), 1) != 0  # unknown -> passable (optimistic, draws search to the goal)
 
+    def _warp_approach_ok(self, map_id: int, cell: tuple[int, int], goal: tuple[int, int]) -> bool:
+        """A warp exit's immediate approach tile reads impassable (the collision grid stamps
+        warp-adjacent tiles as walls) but is actually steppable. Allow the search to traverse a tile
+        orthogonally adjacent to the warp goal — unless it's off-map or a hard-block (a real failed
+        step). Without this, the Viridian Forest exit (2,0) has every neighbour stamped a wall, so no
+        path can reach it and the agent wedges on frontier exploration instead of crossing."""
+        x, y = cell
+        if abs(x - goal[0]) + abs(y - goal[1]) != 1:
+            return False
+        if x < 0 or y < 0 or x > _MAX_COORD or y > _MAX_COORD:
+            return False
+        return cell not in self.blocked.get(map_id, ())
+
     def plan_step(
         self,
         map_id: int,
@@ -130,6 +151,7 @@ class WorldMap:
         ty: int,
         max_nodes: int = 8000,
         encounter_cost: int = 0,
+        goal_is_warp: bool = False,
     ) -> str | None:
         """First step ("up"/"down"/"left"/"right") of an A* path from ``(px, py)`` to ``(tx, ty)``
         over the accumulated map. ``None`` only when already on the target. Falls back to a greedy
@@ -137,6 +159,10 @@ class WorldMap:
 
         ``encounter_cost`` (>= 0) is added to the g-cost of entering a known encounter tile, so the
         planner prefers fewer-grass routes among comparable paths without treating grass as a wall.
+
+        ``goal_is_warp`` lets the path traverse the goal's immediate approach tile even if the grid
+        stamped it a wall (warp-adjacent tiles read impassable but are steppable) — see
+        :meth:`_warp_approach_ok`.
         """
         if (px, py) == (tx, ty):
             return None
@@ -175,7 +201,8 @@ class WorldMap:
                     ):
                         continue
                 elif not self._passable(map_id, m, nb[0], nb[1]):
-                    continue
+                    if not (goal_is_warp and self._warp_approach_ok(map_id, nb, goal)):
+                        continue
                 ng = g + 1 + (encounter_cost if nb in grass else 0)
                 if nb not in gscore or ng < gscore[nb]:
                     gscore[nb] = ng
@@ -224,12 +251,15 @@ class WorldMap:
         step = self._first_step(came, (px, py), target)
         return (step and self._dir(px, py, step)) or fwd
 
-    def known_reachable(self, map_id: int, px: int, py: int, tx: int, ty: int) -> bool:
+    def known_reachable(self, map_id: int, px: int, py: int, tx: int, ty: int, goal_is_warp: bool = False) -> bool:
         """Can ``(tx, ty)`` be reached from ``(px, py)`` over tiles *known* to be walkable?
 
         Strict (unlike :meth:`plan_step`'s optimism): unknown tiles do NOT count. Used to decide
         whether to commit to the goal or keep exploring — heading for a goal that is only
-        ``optimistically`` reachable is what makes the agent oscillate against a wall."""
+        ``optimistically`` reachable is what makes the agent oscillate against a wall.
+
+        ``goal_is_warp`` additionally lets the search traverse the goal's stamped-wall approach tile
+        (warp-adjacent tiles read impassable but are steppable) — see :meth:`_warp_approach_ok`."""
         if (px, py) == (tx, ty):
             return True
         m = self.cells.get(map_id, {})
@@ -247,17 +277,70 @@ class WorldMap:
                     # warp/door (the forest exit at (2,0)) reads as impassable but is steppable. A
                     # hard-block (checked above) is the only thing that bars entering the goal.
                     return True
-                if m.get(nb, 0) != 1:
+                # The warp's immediate approach also reads as a wall but is steppable; let the
+                # strict search pass through it so a fully walled-off warp is still reachable.
+                if m.get(nb, 0) != 1 and not (goal_is_warp and self._warp_approach_ok(map_id, nb, (tx, ty))):
                     continue
                 seen.add(nb)
                 q.append(nb)
         return False
 
-    def explore_step(self, map_id: int, px: int, py: int, max_nodes: int = 8000) -> str | None:
-        """First step toward the nearest *unexplored* tile, so the agent maps new ground instead of
-        oscillating against an unreachable goal. BFS over passable tiles (unknown counts as
-        passable); the first unknown tile reached is the frontier. ``None`` when nothing reachable
-        is still unknown (the area is fully mapped)."""
+    def _borders_unknown(self, map_id: int, x: int, y: int) -> tuple[int, int] | None:
+        """The first unobserved (in-bounds, not hard-blocked) neighbour of ``(x, y)``, or None.
+
+        A known-walkable tile with such a neighbour is a *frontier*: standing there lets the agent
+        reveal new ground by probing the unknown tile."""
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        for _name, dx, dy in _DIRS:
+            nx, ny = x + dx, y + dy
+            if nx < 0 or ny < 0 or nx > _MAX_COORD or ny > _MAX_COORD:
+                continue
+            if (nx, ny) in blocked:
+                continue
+            if (nx, ny) not in m:  # never observed -> the frontier we want to reveal
+                return (nx, ny)
+        return None
+
+    def nearest_frontier(self, map_id: int, px: int, py: int, max_nodes: int = 20000) -> tuple[int, int] | None:
+        """The nearest *frontier* tile reachable over KNOWN-walkable tiles, or None when the whole
+        reachable area is mapped. Routing only over known-walkable tiles means the returned frontier
+        is always genuinely reachable (no walking through unknown walls)."""
+        m = self.cells.get(map_id, {})
+        blocked = self.blocked.get(map_id, ())
+        start = (px, py)
+        seen = {start}
+        q = deque([start])
+        nodes = 0
+        while q and nodes < max_nodes:
+            cur = q.popleft()
+            nodes += 1
+            if self._borders_unknown(map_id, cur[0], cur[1]) is not None:
+                return cur
+            cx, cy = cur
+            for _name, dx, dy in _DIRS:
+                nb = (cx + dx, cy + dy)
+                if nb in seen or nb in blocked:
+                    continue
+                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map)
+                    continue
+                seen.add(nb)
+                q.append(nb)
+        return None
+
+    def route_known(self, map_id: int, px: int, py: int, tx: int, ty: int, max_nodes: int = 20000) -> str | None:
+        """First step of a path from ``(px, py)`` to ``(tx, ty)`` over KNOWN-walkable tiles only.
+
+        Used to *commit* to a chosen frontier: pursuing one fixed target until it's reached or
+        proven unreachable avoids the oscillation that re-picking the nearest frontier every turn
+        causes (two ~equidistant frontiers flip the agent back and forth — observed at (29,33)).
+
+        At the target, returns a step toward one of its unobserved neighbours (probe the frontier),
+        or None if it no longer borders the unknown. None also when the target is unreachable over
+        known-walkable tiles — both signal the caller to pick a fresh frontier."""
+        if (px, py) == (tx, ty):
+            u = self._borders_unknown(map_id, tx, ty)
+            return self._dir(px, py, u) if u is not None else None
         m = self.cells.get(map_id, {})
         blocked = self.blocked.get(map_id, ())
         start = (px, py)
@@ -267,14 +350,15 @@ class WorldMap:
         while q and nodes < max_nodes:
             cur = q.popleft()
             nodes += 1
-            # A frontier: a passable tile we have never observed (not in the occupancy map).
-            if cur != start and cur not in m and cur not in blocked:
+            if cur == (tx, ty):
                 step = self._first_step(came, start, cur)
                 return self._dir(px, py, step) if step else None
             cx, cy = cur
             for _name, dx, dy in _DIRS:
                 nb = (cx + dx, cy + dy)
-                if nb in came or not self._passable(map_id, m, nb[0], nb[1]):
+                if nb in came or nb in blocked:
+                    continue
+                if m.get(nb, 0) != 1:  # strict: only known-walkable (also rejects off-map)
                     continue
                 came[nb] = cur
                 q.append(nb)
