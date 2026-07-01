@@ -1859,6 +1859,44 @@ class TestRun:
 
         ag.collector.tick.assert_has_calls([call(1), call(2)])
 
+    def test_run_battle_turn_captures_battle_frame(self, tmp_path):
+        """Each battle turn captures a protected battle frame at its start.
+
+        Unlike ``test_run_ticks_collector_every_turn`` (which only needs one
+        real battle turn, since ``tick`` fires every main-loop iteration
+        regardless of turn type), this asserts a call *per battle turn*, so
+        the mock must keep the battle alive across two full turns: the
+        pre-turn check, the read inside ``run_battle_turn``, and the
+        post-turn "did it end" check, twice, before finally resolving.
+        ``battle_frame`` is read at the top of ``run_battle_turn`` (before
+        ``self.turn_count`` is incremented at the end of the turn), so turns
+        1 and 2 are observed as turn_count 0 and 1 respectively.
+        """
+        ag = _make_agent(tmp_path)
+        self._mock_battle_helpers(ag)
+        ag.collector = MagicMock()
+
+        battle_active = BattleState(
+            battle_type=1,
+            player_hp=50,
+            player_max_hp=100,
+            enemy_hp=30,
+            enemy_max_hp=40,
+            moves=[0x01, 0x00, 0x00, 0x00],
+            move_pp=[10, 0, 0, 0],
+            player_level=5,
+        )
+        battle_none = BattleState(battle_type=0)
+        overworld = OverworldState(map_id=0, x=5, y=5)
+
+        ag.memory.read_battle_state = MagicMock(side_effect=[battle_active] * 5 + [battle_none])
+        ag.memory.read_overworld_state = MagicMock(return_value=overworld)
+
+        with patch.object(agent, "Image", None):
+            ag.run(max_turns=2)
+
+        ag.collector.battle_frame.assert_has_calls([call(0), call(1)])
+
     def test_run_resets_run_attempts_on_battle_end(self, tmp_path):
         ag = _make_agent(tmp_path)
         self._mock_battle_helpers(ag)

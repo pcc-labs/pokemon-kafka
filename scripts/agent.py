@@ -1071,6 +1071,11 @@ class PokemonAgent:
 
     def run_battle_turn(self):
         """Execute one battle turn."""
+        # Capture the battle screen now, while it is guaranteed up — before menu
+        # selection, animations, and the post-faint return to the overworld. The
+        # recorder keys this under a protected tag so a same-turn overworld write
+        # cannot clobber it (the root cause of "no battle screen" in playback).
+        self.collector.battle_frame(self.turn_count)
         battle = self.memory.read_battle_state()
         bag_healing = self.memory.find_healing_item()
         action = self.battle_strategy.choose_action(battle, bag_healing=bag_healing)
