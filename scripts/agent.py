@@ -331,12 +331,17 @@ class BattleStrategy:
 class Navigator:
     """Simple overworld movement."""
 
-    def __init__(self, routes: dict, stuck_threshold: int = 8, skip_distance: int = 3):
+    def __init__(self, routes: dict, stuck_threshold: int = 8, skip_distance: int = 3, naive: bool | None = None):
         self.routes = routes
         self.current_waypoint = 0
         self.current_map = None
         self.stuck_threshold = stuck_threshold
         self.skip_distance = skip_distance
+        # DEMO_NAIVE=1 strips the learned early-game scaffolding (scripted targets + route
+        # waypoints) so the agent wanders like the pre-observation baseline. Off by default.
+        if naive is None:
+            naive = os.environ.get("DEMO_NAIVE", "") not in ("", "0", "false", "False")
+        self.naive = naive
         # An optional per-turn override target (same shape as EARLY_GAME_TARGETS entries) set by
         # the Oak's Parcel quest; takes precedence over the baked early-game targets when present.
         self.quest_target: dict | None = None
@@ -420,6 +425,12 @@ class Navigator:
         if map_key != self.current_map:
             self.current_map = map_key
             self.current_waypoint = 0
+
+        # DEMO_NAIVE: skip scripted targets + route waypoints entirely and just cycle directions,
+        # reproducing the aimless early-game wandering from before the agent learned to route.
+        if self.naive:
+            directions = ["down", "right", "down", "left", "up", "down"]
+            return directions[turn % len(directions)]
 
         # An active quest override wins over the baked early-game targets (e.g. the map-0 rule).
         special_target = self.quest_target

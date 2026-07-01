@@ -500,6 +500,22 @@ class TestNavigator:
         nav._add_direction(dirs, None)
         assert dirs == []
 
+    # -- DEMO_NAIVE --
+
+    def test_naive_off_by_default(self):
+        assert Navigator({}).naive is False
+
+    def test_naive_env_enables(self, monkeypatch):
+        monkeypatch.setenv("DEMO_NAIVE", "1")
+        assert Navigator({}).naive is True
+
+    def test_naive_ignores_scripted_targets_and_cycles(self):
+        """Naive mode skips EARLY_GAME_TARGETS/routes and just cycles directions."""
+        nav = Navigator({}, naive=True)
+        state = OverworldState(x=7, y=1, map_id=38)  # Red's bedroom (has a scripted target)
+        cycle = ["down", "right", "down", "left", "up", "down"]
+        assert [nav.next_direction(state, turn=t) for t in range(6)] == cycle
+
     # -- _direction_toward_target --
 
     def test_direction_at_target_returns_none(self):
