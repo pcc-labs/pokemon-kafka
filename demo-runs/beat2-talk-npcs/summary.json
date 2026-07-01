@@ -1,0 +1,25 @@
+{
+  "turns": 300,
+  "battles_won": 1,
+  "maps_visited": 7,
+  "final_map_id": 42,
+  "final_x": 2,
+  "final_y": 5,
+  "badges": 0,
+  "party_size": 1,
+  "stuck_count": 19,
+  "backtrack_restores": 0,
+  "encounters": 1,
+  "level_ups": 0,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null,
+  "params": {
+    "strategy": "high",
+    "rom": "rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+    "label": "2 \u00b7 Talk to NPCs"
+  },
+  "run_id": "20260701-160902-efab"
+}
