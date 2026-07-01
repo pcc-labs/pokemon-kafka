@@ -55,90 +55,127 @@ in the first ~10 minutes:
   starter is the one thing that *must* land — keep a recorded run in a browser
   tab as fallback.
 
-### The beat sheet
+### The notes are the star (say this out loud)
 
-Anchored to lines already in the talk. "Cue" = existing words; when you hit
-them, prompt Claude Code.
+The through-line for all six beats: **every fix the agent found is written down
+in its own notes, and those notes are what turn failure into a speedrun.** Two
+artifacts, shown repeatedly — not once:
 
-**Beat 1 — Boot it (the world)**
+- `pokedex/memory/observations.md` — the human-readable journal the agent writes
+  at the end of sessions ("talk to NPCs", "hit B to pick a starter", "flee to
+  keep moving"). This is observational memory.
+- `pokedex/log*.md` — the per-session logs (`log1`–`log6` are committed as
+  examples; hundreds more are local run output). The raw record each observation
+  is distilled from.
+
+The demo's real argument isn't "the agent plays Pokémon" — it's *"the agent kept
+notes, and the notes compounded."* Keep coming back to these files. Every beat
+below ends by pointing at the note that made it possible.
+
+### The beat sheet (6 beats)
+
+Each beat introduces **one** piece of learned knowledge, and each one lives in
+the notes. Anchored to lines already in the talk. "Cue" = existing words; when
+you hit them, prompt Claude Code.
+
+**Beat 1 — Professor Oak's cabin, no help (the failure state)**
 - **Cue:** *"You start as a kid in your house… you have to go to Professor Oak's
   cabin to get your first Pokémon."*
-- **Prompt:** "Boot Pokémon Red from a new game in the live viewer and start
-  playing — try to reach Professor Oak's lab."
-- **Under the hood:** Claude Code runs `scripts/agent.py … --live`.
-- **Audience sees:** the actual Game Boy booting in the browser, agent taking
-  control.
-- **Point:** no display server, no vision — it reads RAM. This is real, running
-  now, driven by a prompt.
+- **Prompt:** "Boot Pokémon Red from a new game in the live viewer. No hints —
+  just try to reach Professor Oak's lab."
+- **Under the hood:** `scripts/agent.py … --live`, discovery/NPC help *off*.
+- **Audience sees:** the agent wandering, bumping walls, ignoring NPCs. Let it
+  flail ~20–30s — the failure *is* the content.
+- **The note:** open a failing `pokedex/log*.md` — the wall got *recorded*. "It
+  didn't just fail, it wrote down that it failed."
+- **Point:** *"I forgot to tell the agent to talk to people."* Land the laugh:
+  *"it was politely hallucinating progress."* Low-risk beat — it's meant to look
+  bad.
 
-**Beat 2 — The failure (NOT talking to NPCs)**
-- **Cue:** *"the challenge is I ran this for hours, and it would not get to
-  anything."*
-- **Audience sees:** the agent wandering, bumping walls, ignoring the mom NPC.
-  Let it flail ~20–30 seconds — the failure *is* the content.
-- **Point:** *"I forgot to tell the agent to talk to people."* Land the laugh
-  line: *"it was politely hallucinating progress."*
-- **Fallback:** this one is *supposed* to look bad, so it's low-risk. If it
-  accidentally succeeds, cut early.
-
-**Beat 3 — Talk to mom (the first context clue)**
+**Beat 2 — Discovery engine: talk to NPCs**
 - **Cue:** *"one of the first context clues… talk to your mom, and your mom will
   tell you exactly where to go."*
-- **Prompt:** "Talk to mom first — she tells you where to go — then head to Oak's
-  lab."
-- **Audience sees:** agent facing mom, `A` to talk, dialogue clears, direction
-  acquired. (In `agent.py` this is the `return "a"` — talk to clear dialogue;
-  the early-game scripted targets then route Red's room → house → Pallet →
-  Oak's lab.)
+- **Prompt:** "Turn on discovery — talk to NPCs and read what they say — then head
+  to Oak's lab."
+- **Under the hood:** discovery capture decodes on-screen NPC dialogue & signs
+  into context (`return "a"` clears dialogue; scripted targets then route Red's
+  room → house → Pallet → Oak's lab).
+- **Audience sees:** agent faces mom, reads the clue, routes correctly.
+- **The note:** the observation "NPCs give directions — always talk to them" in
+  `observations.md`. *This* is the moment the failure became a written rule.
 - **Point:** the rule you set — *no internet, self-learned inside the game.* The
-  knowledge had to come from *observing*, not from a walkthrough.
+  knowledge came from *observing and writing it down*, not a walkthrough.
 
-**Beat 4 — The learning, made visible**
-- **Cue:** *"I just dump all the context into a tapes database… this memory
-  folder… observations in Markdown."*
-- **Show live:** `pokedex/memory/observations.md` — the human-readable notes the
-  agent wrote. Scroll it on screen (you can even ask Claude Code to summarize
-  it — driving stays in the harness).
-- **Then the observer state:** land the best real detail — *"through a door, it
-  takes seven seconds of cooldown… you can't spam back and forth."* Show that
-  this is a *learned* fact, written down, fed back.
-- **Point:** *"we never learned from the last five hours of sessions"* — this is
-  the whole thesis in one artifact. Also gesture at `pokedex/log*.md` (hundreds
-  of session logs) and `evolve_results.json` for scale.
+**Beat 3 — Choose your Pokémon (door cooldown + B, not A)**
+- **Cue:** *"you don't hit A when you pick your Pokémon, you hit B."*
+- **Prompt:** "Get to the Pokéball table and pick a starter."
+- **The two gotchas, both from the notes:**
+  - **Door cooldown** — the observer learned you can't spam through doors; there's
+    a cooldown (the `door_cooldown` knob exists *because* the notes flagged
+    door-spam). Show the observer state.
+  - **B, not A** — picking a starter is a yes/no confirm, so `A` loops you; `B`
+    confirms. This exact detail is in `observations.md`.
+- **Audience sees:** agent reaches the table, handles the door, confirms with `B`,
+  walks out with a Pokémon.
+- **Point:** two tiny, non-obvious rules that no walkthrough gave it — it found
+  them by playing and *saved them*. Payoff of note-taking, made literal.
 
-**Beat 5 — The speedrun (the "after" — the payoff demo)**
-- **Cue:** *"a self-healing loop to eventually get the three seconds to
-  Pokémon."*
-- **Prompt / skill:** `/route1-speedrun-demo` (or "run the Route 1 speedrun
-  demo").
-- **Audience sees:** same opening as Beat 1, but now it *blasts* through — spams
-  `A` through intro/naming, walks straight to Oak, picks the starter.
-- **Point:** land the nuance you earned: *"you don't hit A to pick your Pokémon,
-  you hit B — he asks yes/no, you hit B to confirm."* That single detail *came
-  from the observations in Beat 4.* Explicitly connect them: "that B-instead-of-A?
-  That's in the observations file I just showed you."
-- **This closes the loop on stage:** failure (2) → observation (4) → solved (5).
-  The audience *watched* the learning pay off — all driven from prompts.
+**Beat 4 — First battle (battle knowledge)**
+- **Cue:** *"when you're below a certain HP, you should probably eat a berry, or
+  switch Pokémon… a lot of nuance I had to have the agent learn."*
+- **Prompt / state:** load `first_battle.state`, then "win this battle."
+- **Under the hood:** `--load-state first_battle.state`; battle heuristics score
+  moves (`unknown_move_score`, `status_move_score` genome knobs), type chart in
+  `references/type_chart.json`.
+- **Audience sees:** the agent reading the battle, picking an effective move.
+- **The note:** battle-mechanics observations + the per-battle win/loss rows
+  behind the win-probability model. "It's not guessing which move — it learned
+  matchups and wrote them down."
+- **Point:** battle competence is another learned layer, not baked in.
+
+**Beat 5 — Complete Route 1 by fleeing**
+- **Cue:** *"get to the point of battling… a lot of nuance about the game."*
+- **Prompt / state:** load `route1.state`, then "cross Route 1 — don't waste turns,
+  flee wild battles."
+- **Under the hood:** `--load-state route1.state`; flee logic + `hp_run_threshold`
+  keep it moving.
+- **Audience sees:** the agent *declining* fights to traverse the route fast.
+- **The note:** the observation "flee to preserve HP and make progress." Fleeing
+  is a *strategy the agent recorded*, not cowardice.
+- **Point:** sometimes the right move is to *not* fight. Sets up the reversal.
+
+**Beat 6 — Level up and never flee (the reversal)**
+- **Cue:** *"a self-healing loop… I had the agent learn when to fight."*
+- **Prompt / state:** load `route1.state`, then "grind Route 1 — fight everything,
+  level up." (This is the `/route1-speedrun-demo` grind loop.)
+- **Audience sees:** *same starting state as Beat 5*, opposite behavior — it now
+  *seeks* battles and levels up.
+- **The note:** the observation about *when* to fight vs. flee — context decides.
+  Beats 5 and 6 start from the identical `route1.state`; the only difference is
+  which learned rule applies.
+- **Point (the closer):** the "right" behavior is context-dependent, and the
+  agent only knows the difference *because it wrote both rules down.* Failure (1)
+  → discovery (2) → saved rules (3–6) → the notes are the product.
 
 ### Why this ordering works
 
-The talk builds to "all the Pokémon turned into Sweeper Agent" and then the
-tapes/fine-tuning arc. Beats 1–5 give a **concrete, watched-it-happen**
-foundation in the first 10 minutes, so when you later say "10 parallel agents,
-77k sessions, fine-tune a 4B model," the audience is scaling up something they
-*saw work small* — not taking it on faith. The observations file in Beat 4 is
-also the setup for the "observational memory / check the tapes" section later.
+Six beats, one argument: **the notes compound.** Each beat adds a rule to
+`observations.md`, and by Beat 6 the same starting state produces the *opposite*
+correct behavior depending on which saved rule fires. When you later say "10
+parallel agents, 77k sessions, fine-tune a 4B model," the audience is scaling up
+something they *watched* work small — and they already believe the notes are the
+asset, because they saw six of them earn their keep.
 
 ### The one risk to manage
 
-A from-scratch live run reaching the starter is the only fragile beat. Two ways
-to de-risk, pick one:
+Beats 1–3 run from a fresh NEW GAME, so reaching the lab live is the only fragile
+stretch. Beats 4–6 load a pinned savestate (`first_battle.state`, `route1.state`)
+so they're deterministic. Two ways to de-risk the from-scratch beats:
 
-- **(a) Live with a net (recommended):** rehearse it cold; if it reliably
-  reaches the starter in rehearsal, run it live with the recorded run one tab
-  away.
-- **(b) Guaranteed:** play the recorded speedrun for Beat 5 and narrate over it —
-  zero stage risk, slightly less magic.
+- **(a) Live with a net (recommended):** rehearse cold; run live with a recorded
+  run one tab away.
+- **(b) Guaranteed:** capture an "at Oak's lab" savestate and load it for Beat 3
+  so even the starter pick is deterministic (see `docs/worktree.md`).
 
 ---
 
