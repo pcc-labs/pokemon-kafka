@@ -1,0 +1,25 @@
+{
+  "turns": 2000,
+  "battles_won": 11,
+  "maps_visited": 10,
+  "final_map_id": 51,
+  "final_x": 1,
+  "final_y": 18,
+  "badges": 0,
+  "party_size": 1,
+  "stuck_count": 39,
+  "backtrack_restores": 0,
+  "encounters": 11,
+  "level_ups": 0,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null,
+  "params": {
+    "strategy": "low",
+    "rom": "rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+    "label": "9 \u00b7 Discovery \u2014 reading the world"
+  },
+  "run_id": "20260701-213209-0b31"
+}

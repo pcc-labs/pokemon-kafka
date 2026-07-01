@@ -153,6 +153,70 @@ run for the level-ups.
 
 ---
 
+## Beat 7 — Viridian Forest, mapping the maze (navigation is hard)
+
+```
+Run demo Beat 7 live in the background from worktree .worktrees/demo-7-forest.
+The forest is a maze the agent only sees 9x10 tiles of — watch the WorldMap on
+the right fill in as it explores:
+
+  cd .worktrees/demo-7-forest
+  ROM="$(ls rom/*.gb | head -1)"
+  uv run python scripts/agent.py "$ROM" \
+    --strategy low --live --frame-interval 20 --runs-dir ../../runs \
+    --load-state states/viridian-forest.state \
+    --worldmap-file states/forest.worldmap --max-turns 700 \
+    --label "7 · Viridian Forest — mapping the maze"
+
+Background it, run_id, remind me to click the live tile. Point out `STUCK`
+events when it wedges and recovers, and that it maps the maze but doesn't walk
+straight out — the exit is the frontier. Run it 2–3× keeping forest.worldmap to
+show the learned map accumulate. Skill: /forest-navigation-demo
+```
+
+---
+
+## Beat 8 — Bug hunt on Route 2 (battle intelligence)
+
+```
+Run demo Beat 8 live in the background from worktree .worktrees/demo-8-bughunt —
+force-fight through Route 2's bug grass into the forest:
+
+  cd .worktrees/demo-8-bughunt
+  ROM="$(ls rom/*.gb | head -1)"
+  AUTOTUNE_FORCE_FIGHT=1 uv run python scripts/agent.py "$ROM" \
+    --strategy low --live --frame-interval 15 --runs-dir ../../runs \
+    --load-state states/route2.state --max-turns 1300 --battle-limit 6 \
+    --label "8 · Bug hunt — Route 2 into the Forest"
+
+Background it, run_id, remind me to click the live tile. Point out the `MOVE`
+lines — Tackle vs Weedle(bug), the KO, the level-up. It fights, it doesn't catch
+(no catch mechanic). Skill: /bug-catcher-demo
+```
+
+---
+
+## Beat 9 — Discovery engine, reading the world (signs + dialogue)
+
+```
+Run demo Beat 9 live in the background from worktree .worktrees/demo-9-signs —
+a fresh NEW GAME so the dialogue-dense intro feeds the discovery stream:
+
+  cd .worktrees/demo-9-signs
+  rm -f rom/*.gb.ram
+  ROM="$(ls rom/*.gb | head -1)"
+  uv run python scripts/agent.py "$ROM" \
+    --strategy low --live --frame-interval 30 --runs-dir ../../runs \
+    --max-turns 2000 --label "9 · Discovery — reading the world"
+
+Background it, run_id, remind me to click the live tile. Filter the feed to
+`discovery` — each is a sign / NPC line / Pokedex blurb decoded off the tilemap
+into a Kafka event. The agent reads pixels, not an API. Skill:
+/discovery-signs-demo
+```
+
+---
+
 ## Between beats / reset
 
 ```

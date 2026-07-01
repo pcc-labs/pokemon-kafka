@@ -1,0 +1,25 @@
+{
+  "turns": 700,
+  "battles_won": 2,
+  "maps_visited": 1,
+  "final_map_id": 51,
+  "final_x": 1,
+  "final_y": 18,
+  "badges": 0,
+  "party_size": 1,
+  "stuck_count": 9,
+  "backtrack_restores": 0,
+  "encounters": 2,
+  "level_ups": 0,
+  "evolutions": 0,
+  "brock_turns": null,
+  "brock_won": null,
+  "brock_lead_species": null,
+  "brock_lead_level": null,
+  "params": {
+    "strategy": "low",
+    "rom": "rom/Pokemon - Red Version (USA, Europe) (SGB Enhanced).gb",
+    "label": "7 \u00b7 Viridian Forest \u2014 mapping the maze"
+  },
+  "run_id": "20260701-212542-5fed"
+}
