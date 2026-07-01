@@ -61,10 +61,37 @@ def test_force_capture_types_bypass_interval(tmp_path: Path):
     rec.start({})
     rec.on_event({"event_type": "discovery", "turn": 8, "data": {}})
     rec.on_event({"event_type": "milestone", "turn": 9, "data": {}})
-    rec.on_event({"event_type": "battle", "turn": 11, "data": {}})
     rec.finish({})
     frames = sorted((tmp_path / "run2d" / "frames").glob("*.png"))
-    assert [f.name for f in frames] == ["000008.png", "000009.png", "000011.png"]
+    assert [f.name for f in frames] == ["000008.png", "000009.png"]
+
+
+def test_battle_event_off_interval_no_longer_force_captures(tmp_path: Path):
+    rec = RunRecorder("run2f", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.on_event({"event_type": "battle", "turn": 11, "data": {}})
+    rec.finish({})
+    assert list((tmp_path / "run2f" / "frames").glob("*.png")) == []
+
+
+def test_tagged_capture_does_not_clobber_untagged(tmp_path: Path):
+    rec = RunRecorder("runtag", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.capture_frame(10)  # 000010.png
+    rec.capture_frame(10, tag="battle")  # 000010_battle.png (protected)
+    rec.capture_frame(10)  # overwrites 000010.png only
+    rec.finish({})
+    frames = sorted(p.name for p in (tmp_path / "runtag" / "frames").glob("*.png"))
+    assert frames == ["000010.png", "000010_battle.png"]
+
+
+def test_battle_frame_writes_protected_battle_frame(tmp_path: Path):
+    rec = RunRecorder("runbf", tmp_path, frame_grabber=_grabber, frame_interval=10)
+    rec.start({})
+    rec.battle_frame(7)  # off-interval, still captured under its tag
+    rec.finish({})
+    frames = sorted(p.name for p in (tmp_path / "runbf" / "frames").glob("*.png"))
+    assert frames == ["000007_battle.png"]
 
 
 def test_non_force_capture_type_off_interval_produces_no_frame(tmp_path: Path):

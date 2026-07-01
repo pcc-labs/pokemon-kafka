@@ -16,7 +16,7 @@ except Exception:  # pragma: no cover - import guard
 
 
 class RunRecorder:
-    _FORCE_CAPTURE_TYPES = {"discovery", "milestone", "battle"}
+    _FORCE_CAPTURE_TYPES = {"discovery", "milestone"}
 
     def __init__(
         self,
@@ -70,11 +70,21 @@ class RunRecorder:
         if turn % self.frame_interval == 0:
             self.capture_frame(turn)
 
-    def capture_frame(self, turn: int) -> None:
+    def battle_frame(self, turn: int) -> None:
+        """Capture the battle screen under a protected tag.
+
+        Called at the start of a battle turn, while the battle screen is up.
+        The tag keys the frame separately from the same-turn overworld/interval
+        frame, so a later post-faint overworld capture cannot clobber it.
+        """
+        self.capture_frame(turn, tag="battle")
+
+    def capture_frame(self, turn: int, tag: str = "") -> None:
         if self.frame_grabber is None:
             return
         img = self.frame_grabber()
-        img.save(self.frames_dir / f"{turn:06d}.png")
+        name = f"{turn:06d}.png" if not tag else f"{turn:06d}_{tag}.png"
+        img.save(self.frames_dir / name)
         if self.live is not None:
             buf = io.BytesIO()
             img.save(buf, format="PNG")
