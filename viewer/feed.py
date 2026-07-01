@@ -46,7 +46,7 @@ def _event_text(event: dict) -> str:
         outcome = "won" if data.get("won") else "lost"
         return f"Battle outcome: {outcome} vs {data.get('enemy_species')} (Lv{data.get('enemy_level')})"
     if et == "move_result":
-        result = "fainted" if data.get("fainted") else f"{data.get('damage_dealt')} dmg"
+        result = "enemy fainted" if data.get("fainted") else f"{data.get('damage_dealt')} dmg"
         return f"{data.get('user_species')} used {data.get('move')} — {result}"
     return et or "event"
 

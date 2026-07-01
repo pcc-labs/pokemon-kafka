@@ -100,7 +100,7 @@ def test_event_text_move_result_fainted():
     text = _event_text(
         {"event_type": "move_result", "data": {"user_species": "CHARMANDER", "move": "Scratch", "fainted": True}}
     )
-    assert "fainted" in text
+    assert "enemy fainted" in text
 
 
 def test_load_anomalies_parses_jsonl(tmp_path: Path):

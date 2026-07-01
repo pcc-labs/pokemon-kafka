@@ -33,7 +33,7 @@ function textForEvent(msg) {
     return `Battle outcome: ${outcome} vs ${data.enemy_species} (Lv${data.enemy_level})`;
   }
   if (et === "move_result") {
-    const result = data.fainted ? "fainted" : `${data.damage_dealt} dmg`;
+    const result = data.fainted ? "enemy fainted" : `${data.damage_dealt} dmg`;
     return `${data.user_species} used ${data.move} — ${result}`;
   }
   return et || "event";
