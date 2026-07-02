@@ -129,8 +129,8 @@ SELECT
     'POSITION_DEADLOCK' AS alert_type,
     '' AS root_hash,
     CONCAT('map=', CAST(data.map_id AS STRING),
-           ' pos=(', CAST(data.position.x AS STRING), ',',
-           CAST(data.position.y AS STRING), ')') AS detail,
+           ' pos=(', CAST(data.`position`.x AS STRING), ',',
+           CAST(data.`position`.y AS STRING), ')') AS detail,
     window_start,
     window_end,
     COUNT(*) AS event_count
@@ -138,7 +138,7 @@ FROM TABLE(
     TUMBLE(TABLE game_events, DESCRIPTOR(occurred_at), INTERVAL '2' MINUTES)
 )
 WHERE event_type = 'overworld'
-GROUP BY data.map_id, data.position.x, data.position.y, window_start, window_end
+GROUP BY data.map_id, data.`position`.x, data.`position`.y, window_start, window_end
 HAVING COUNT(*) >= 50;
 
 -- No progress: 100+ overworld events on same map hitting <=5 unique positions in 5 min
@@ -158,7 +158,7 @@ FROM TABLE(
 WHERE event_type = 'overworld'
 GROUP BY data.map_id, window_start, window_end
 HAVING COUNT(*) >= 100
-   AND COUNT(DISTINCT CONCAT(CAST(data.position.x AS STRING), ',', CAST(data.position.y AS STRING))) <= 5;
+   AND COUNT(DISTINCT CONCAT(CAST(data.`position`.x AS STRING), ',', CAST(data.`position`.y AS STRING))) <= 5;
 
 -- ============================================================
 -- Stuck-detection rules (value-based, added 2026-07)
@@ -180,8 +180,8 @@ SELECT
     'IN_PLACE_WEDGE' AS alert_type,
     '' AS root_hash,
     CONCAT('map=', CAST(data.map_id AS STRING),
-           ' pos=(', CAST(data.position.x AS STRING), ',',
-           CAST(data.position.y AS STRING), ')',
+           ' pos=(', CAST(data.`position`.x AS STRING), ',',
+           CAST(data.`position`.y AS STRING), ')',
            ' stuck_turns=', CAST(MAX(data.stuck_turns) AS STRING)) AS detail,
     window_start,
     window_end,
@@ -190,7 +190,7 @@ FROM TABLE(
     TUMBLE(TABLE game_events, DESCRIPTOR(occurred_at), INTERVAL '2' MINUTES)
 )
 WHERE event_type = 'overworld' AND data.stuck_turns >= 100
-GROUP BY data.map_id, data.position.x, data.position.y, window_start, window_end;
+GROUP BY data.map_id, data.`position`.x, data.`position`.y, window_start, window_end;
 
 -- Stuck streak spike: one hard thrash where the failed-move streak climbs fast.
 -- GAME_STUCK_LOOP needs 5+ stuck events per map in the window; this fires on the
@@ -222,8 +222,8 @@ SELECT
     'DOOR_STALL' AS alert_type,
     '' AS root_hash,
     CONCAT('map=', CAST(data.map_id AS STRING),
-           ' pos=(', CAST(data.position.x AS STRING), ',',
-           CAST(data.position.y AS STRING), ')',
+           ' pos=(', CAST(data.`position`.x AS STRING), ',',
+           CAST(data.`position`.y AS STRING), ')',
            ' action=', COALESCE(data.last_action, '?')) AS detail,
     window_start,
     window_end,
@@ -232,5 +232,5 @@ FROM TABLE(
     TUMBLE(TABLE game_events, DESCRIPTOR(occurred_at), INTERVAL '90' SECONDS)
 )
 WHERE event_type = 'stuck'
-GROUP BY data.map_id, data.position.x, data.position.y, data.last_action, window_start, window_end
+GROUP BY data.map_id, data.`position`.x, data.`position`.y, data.last_action, window_start, window_end
 HAVING COUNT(*) >= 3;

@@ -80,7 +80,10 @@ services:
     environment:
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: flink-jobmanager
-        taskmanager.numberOfTaskSlots: 4
+        # One slot per streaming INSERT job. init.sql now defines 8 anomaly jobs
+        # (was 5); 4 slots silently starved the extras (they FAIL with no slot),
+        # so keep this >= the number of INSERT statements in flink-sql/init.sql.
+        taskmanager.numberOfTaskSlots: 12
 
   # Downloads the Kafka connector JAR required by Flink SQL.
   # The flink:1.18 image does NOT include it by default.
