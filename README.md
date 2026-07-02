@@ -6,6 +6,14 @@
 
 Autonomous Pokemon Red player that reads game memory, makes strategic decisions, and plays headlessly inside a stereOS VM.
 
+## Talk & Demo
+
+- **[Slides](https://docs.google.com/presentation/d/1cRwYlDrB4s_98LaCUq-H0Zo6_4li87DslH4ozLn2wbM/edit)** — "Training AI on Your Own Code"
+- **[Talk demo outline](docs/talk-demo-outline.md)** — the narrative and beat sheet
+- **[Demo prompts](docs/demo-prompts.md)** — copy-paste prompts to drive each beat live
+- **[Worktree setup](docs/worktree.md)** — isolated, pinned-state worktrees per beat
+- **[Replayable demo runs](demo-runs/)** — committed frames + events; replay with `uv run python -m viewer --runs-dir demo-runs`
+
 ## Architecture
 
 ```
