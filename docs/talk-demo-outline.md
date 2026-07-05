@@ -244,27 +244,33 @@ metric, keep the best."*
   Local-first analytics (DuckDB on disk today, Kafka-backed tomorrow, same
   queries).
 
-### Act 4 — "It trains weights" (autotune — the crescendo)
+### Act 4 — "It trains weights" (empirical-evidence — the crescendo)
 
-Switch to `../autotune`. The reveal: **the weights don't play Pokémon.** They're
-a fine-tuned local model whose only job is to output the 12-number genome. Draw
-the loop: **Try → Check → Reward → Nudge**.
+Switch to `../empirical-evidence`. The reveal: **the telemetry you just watched stream is the
+training data.** `autotune/convert_telemetry.py` turns ~38k `pokemon.game.v1` events into a
+590-example multi-domain SFT corpus (battle-outcome, move-choice, battle-action, genome,
+narrator — labels straight from game RAM), and a SmolLM3-3B LoRA trained on it beats the base
+model on held-out rows. Draw the loop: **Try → Check → Reward → Nudge**.
 
-Do **not** train live — 300 LoRA iters is unwatchable. Use the already-trained
-adapter in `out/sft/adapters.safetensors`.
+Do **not** train live (~3 min on the 5090, still unwatchable on stage). Use the fused
+checkpoint in `out/package/fused/`.
 
-- **Prompt:** "Ask the trained local model to propose a genome for the Route 1
-  beat." (Under the hood: `autotune.generate --prompt-beat route1`.)
+- **Prompt (live inference, the money shot):** ask the fused model a battle question — it
+  answers `{"win": true, "recommendation": "fight"}`. Then show the eval gate table:
+  tuned **1.00 / 0.56** vs base **0.00 / 0.00** on win-prediction / type-effectiveness.
 - **Land, in order:**
-  - LoRA = freeze the 3B base, train tiny rank-16 adapters (few MB, trains on a
-    Mac via MLX). Show `adapter_config.json`: rank 16, 300 iters, smollm3-3b.
+  - LoRA = freeze the 3B base, train tiny adapters; corpus → weights is deterministic and
+    fingerprinted (`manifest.json` records the corpus SHA; seed 42 reproduces it byte-for-byte).
   - Three ways learnings flow back: L1 best genome (`out/best_genome.json`), L2
     `notes.md` block the live agent reads at startup, L3 local model as proposer.
+  - Publish path is one runbook away: PR
+    [empirical-evidence#12](https://github.com/pcc-labs/empirical-evidence/pull/12) has the
+    Hugging Face upload steps (model + dataset repos, cards already written).
 
 ### Act 5 — "The wall" (the strongest slide) + what's next
 
-The part most people would hide. Read `autotune/docs/experiment-findings.md`
-aloud: the harness works, but on early-game tasks **the reward saturated** —
+The part most people would hide. Read `empirical-evidence/docs/experiment-findings.md`
+aloud: the harness works, but on early-game genome-tuning tasks **the reward saturated** —
 every rollout scored the same 5.0, so "do more of what passed" had nothing to
 select on. Validation loss fell (5.3→3.0) but the model only learned the
 *output format*, not a better *strategy*.
@@ -273,6 +279,12 @@ Say the line verbatim: **"The walls are experimental-design walls, not code
 bugs."** Then the three compounding causes: Route 1 already solved by baked-in
 heuristics; save states replay deterministically → zero variance; 12-param
 genome has low leverage.
+
+**Then the resolution beat (findings addendum, 2026-07-05):** the wall was the *task*, not
+the harness. Pointing the same loop at the telemetry's ground-truth domains — win/loss and
+damage labels read from game RAM — produced the first tuned-beats-base result on withheld
+data. The lesson lands cleanly: *the fitness function is the hard part; when the labels carry
+signal, the loop learns.*
 
 **Pivot to `/goal`:** be honest it doesn't exist yet. Frame it as the roadmap —
 the piece that would incorporate all these learnings into a single goal-directed
@@ -309,7 +321,7 @@ the gap `/goal` is meant to close.
 | Agent plays Pokémon and learns from past sessions | **Real** | `scripts/historical_observer.py` (DuckDB over JSONL); L1/L2/L3 seams persist learnings into live play. Caveat: learns via a 12-param genome, not weights-from-scratch. |
 | AlphaEvolve + Factorio part of the algorithm | **Real (AlphaEvolve), unverified (Factorio)** | `scripts/evolve.py` opens "AlphaEvolve-inspired"; blog frames source-as-genome. No Factorio reference in code — present it as analogy only. |
 | `/goal` will incorporate all the learnings | **Aspirational** | No `/goal` skill or command exists in either repo. Roadmap, not demo. |
-| We have weights in `../autotune` | **Real, on disk** | `autotune/out/sft/adapters.safetensors` + checkpoints (100/200/300 iters), base `smollm3-3b-mlx`, trained locally via MLX. |
+| We have weights in `../empirical-evidence` | **Real, on disk, eval-gated** | Fused SmolLM3-3B at `empirical-evidence/out/package/fused/` + LoRA adapter at `out/sft/`, trained on the 590-example sft_v3 telemetry corpus (RTX 5090, TRL/PEFT). Held-out gate: tuned 1.00/0.56 vs base 0.00/0.00 (win-prediction / type-effectiveness). Publish runbook: empirical-evidence PR #12. |
 
 ## Source material
 
