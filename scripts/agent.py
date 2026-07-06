@@ -279,19 +279,26 @@ class BattleStrategy:
         hp_ratio = battle.player_hp / max(battle.player_max_hp, 1)
         enemy_type = battle.enemy_type_name
 
-        # Stall guard (wild only): if the enemy's HP isn't dropping, we're in a battle we can't
-        # end (PP-dry damaging moves, a 0-power move scored as "unknown", or a stuck menu). Track
-        # progress and bail out before looping forever; real damage resets the counter so winnable
-        # fights are never abandoned.
-        if battle.battle_type == 1:
-            if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
-                self._wild_fight_turns = 0
-            self._last_enemy_hp = battle.enemy_hp
-            if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
-                # Stalled: keep fleeing until the battle actually ends. Unlike the low-HP run
-                # (capped, because fighting on can still level us), a stall means fighting is
-                # futile, so never fall back to fight here.
+        # Stall guard (both battle types): if the enemy's HP isn't dropping across turns, we're
+        # stuck — PP-dry damaging moves, a 0-power move scored as "unknown", or a desynced battle
+        # menu (observed: the Brock fight frozen at a constant enemy HP for 40+ turns). Track
+        # progress and recover before looping forever; real damage resets the counter, so winnable
+        # fights are never abandoned. Recovery differs by battle type (below).
+        if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
+            self._wild_fight_turns = 0
+        self._last_enemy_hp = battle.enemy_hp
+        if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
+            if battle.battle_type == 1:
+                # Wild: keep fleeing until the battle ends. Unlike the low-HP run (capped, because
+                # fighting on can still level us), a stall means fighting is futile — never fall
+                # back to fight here.
                 return {"action": "run"}
+            if battle.battle_type == 2:
+                # Trainer battles can't be fled, so a stall is a stuck menu, not a futile matchup.
+                # Reset the battle menu (mash B) so the next FIGHT lands. Reset the counter so we
+                # alternate unstick/fight rather than unsticking forever.
+                self._wild_fight_turns = 0
+                return {"action": "unstick"}
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
@@ -318,8 +325,8 @@ class BattleStrategy:
         else:
             move_index = max(moves, key=lambda x: x[1])[0]
 
-        if battle.battle_type == 1:
-            self._wild_fight_turns += 1  # advance the stall guard for wild battles
+        if battle.battle_type in (1, 2):
+            self._wild_fight_turns += 1  # advance the stall guard (reset above on real damage)
         return {"action": "fight", "move_index": move_index}
 
 
@@ -1181,6 +1188,17 @@ class PokemonAgent:
             self.controller.navigate_menu(action.get("slot", 1))
             self.controller.wait(120)
             self.controller.mash_a(5, delay=30)
+
+        elif action["action"] == "unstick":
+            # Recover a stalled trainer battle: the enemy's HP hasn't dropped for several turns and
+            # the FIGHT selection isn't landing (a desynced battle menu / lingering text box). Mash
+            # B to close any submenu/text and return to a clean top-level battle menu so the next
+            # FIGHT selection registers. Trainer battles can't be fled, so recovery is a menu reset,
+            # never "run".
+            for _ in range(6):
+                self.controller.press("b")
+                self.controller.wait(20)
+            self.controller.wait(40)
 
         self.turn_count += 1
 

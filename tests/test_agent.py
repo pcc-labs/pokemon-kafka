@@ -382,6 +382,32 @@ class TestBattleStrategy:
             assert s.choose_action(battle)["action"] == "fight"
         assert s.choose_action(battle) == {"action": "run"}
 
+    def test_choose_action_unsticks_stalled_trainer_battle(self):
+        # Trainer battles can't be fled, so a stall (enemy HP frozen — the observed Brock soft-lock
+        # where a desynced menu never lands the move) must trigger a menu-reset 'unstick', not 'run'.
+        s = BattleStrategy(self.chart)
+        battle = self._make_battle(
+            battle_type=2,
+            player_hp=80,
+            player_max_hp=100,  # healthy -> no heal/run
+            enemy_hp=26,
+            enemy_max_hp=33,  # frozen across turns
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(battle)["action"] == "fight"
+        assert s.choose_action(battle) == {"action": "unstick"}
+
+    def test_choose_action_winnable_trainer_never_unsticks(self):
+        # A winnable trainer fight (enemy HP dropping) keeps fighting well past the patience window.
+        s = BattleStrategy(self.chart)
+        hp = 40
+        for _ in range(WILD_BATTLE_PATIENCE * 2):
+            battle = self._make_battle(battle_type=2, player_hp=80, player_max_hp=100, enemy_hp=hp, enemy_max_hp=40)
+            assert s.choose_action(battle)["action"] == "fight"
+            hp -= 1  # real progress -> stall counter resets
+
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
         # counter, so the agent keeps fighting well past the patience window.
