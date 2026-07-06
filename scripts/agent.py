@@ -77,6 +77,20 @@ GRASS_ENCOUNTER_COST = 8
 # Reset whenever real damage lands, so winnable battles are never abandoned.
 WILD_BATTLE_PATIENCE = 10
 
+# Gen-1's physical/special split is decided by a move's TYPE (not per-move): these types are
+# physical (they hit the target's Defense); the rest (fire/water/grass/electric/psychic/ice/
+# dragon) are special (they hit its Special). This matters against physical walls that pump
+# Defense — Brock's Geodude/Onix have high Defense and low Special and boost Defense further, so a
+# physical move (Scratch) stalls to ~0 while a resisted special move (Ember) still lands real
+# damage. When our move stops denting the enemy we switch category instead of looping a dead move.
+_PHYSICAL_TYPES = frozenset({"normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost"})
+
+
+def move_category(move_type: str) -> str:
+    """Gen-1 physical/special category, decided by the move's type."""
+    return "physical" if move_type in _PHYSICAL_TYPES else "special"
+
+
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
 EARLY_GAME_TARGETS = {
@@ -244,6 +258,12 @@ class BattleStrategy:
         # Stall guard: count fight turns in the current wild battle without enemy-HP progress.
         self._wild_fight_turns = 0
         self._last_enemy_hp: int | None = None
+        # Move-category selection: the last damage each category dealt to the current enemy (-1 =
+        # not yet tried), the category of our last move (to attribute the next enemy-HP delta), and
+        # the enemy's species (to reset all of this when a new Pokemon is sent out).
+        self._cat_dmg: dict[str, int] = {"physical": -1, "special": -1}
+        self._last_move_cat: str | None = None
+        self._stall_enemy_species: int | None = None
 
     def score_move(self, move_id: int, move_pp: int, enemy_type: str = "normal") -> float:
         """Score a move based on power, PP, and type effectiveness."""
@@ -284,8 +304,26 @@ class BattleStrategy:
         # menu (observed: the Brock fight frozen at a constant enemy HP for 40+ turns). Track
         # progress and recover before looping forever; real damage resets the counter, so winnable
         # fights are never abandoned. Recovery differs by battle type (below).
-        if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
+        # A new enemy Pokemon (e.g. Brock's Onix after Geodude faints) resets the per-enemy stall
+        # state and the category-damage memory, so we re-probe from scratch.
+        if battle.enemy_species != self._stall_enemy_species:
+            self._stall_enemy_species = battle.enemy_species
             self._wild_fight_turns = 0
+            self._last_enemy_hp = None
+            self._cat_dmg = {"physical": -1, "special": -1}
+            self._last_move_cat = None
+        # Attribute the enemy-HP delta since our last move to that move's category — this is how we
+        # LEARN (rather than are told) which category actually damages this enemy: a physical wall
+        # (Onix: high Defense, low Special) takes far more from a resisted special move (Ember) than
+        # a physical one (Scratch). Record the LAST amount (including 0), not the best, so a move
+        # that DEGRADES — a physical move once a Defense-Curl'd Geodude walls it — is demoted and we
+        # commit to the category still landing damage.
+        if self._last_enemy_hp is not None:
+            dealt = self._last_enemy_hp - battle.enemy_hp
+            if dealt > 0:
+                self._wild_fight_turns = 0
+            if self._last_move_cat is not None and dealt >= 0:
+                self._cat_dmg[self._last_move_cat] = dealt
         self._last_enemy_hp = battle.enemy_hp
         if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
             if battle.battle_type == 1:
@@ -312,22 +350,47 @@ class BattleStrategy:
             bag_index, item_id = bag_healing
             return {"action": "item", "item": HEALING_ITEM_IDS.get(item_id, "potion"), "bag_index": bag_index}
 
-        # Score all moves using the enemy's actual type for effectiveness
-        moves = [
+        # Score all moves using the enemy's actual type for effectiveness.
+        scored = [
             (i, self.score_move(battle.moves[i], battle.move_pp[i], enemy_type))
             for i in range(4)
             if battle.moves[i] != 0x00
         ]
+        move_index = self._pick_move(battle, scored)
 
-        if not moves or all(score < 0 for _, score in moves):
-            # No PP left — Struggle will auto-trigger, just press FIGHT
-            move_index = 0
-        else:
-            move_index = max(moves, key=lambda x: x[1])[0]
+        chosen = MOVE_DATA.get(battle.moves[move_index] if 0 <= move_index < len(battle.moves) else 0)
+        self._last_move_cat = move_category(chosen[1]) if (chosen and chosen[2] > 0) else None
 
         if battle.battle_type in (1, 2):
             self._wild_fight_turns += 1  # advance the stall guard (reset above on real damage)
         return {"action": "fight", "move_index": move_index}
+
+    def _pick_move(self, battle, scored: list[tuple[int, float]]) -> int:
+        """Choose a move index. Among damaging moves, when both a physical and a special option
+        exist, try each once and then commit to whichever dealt more (learned per enemy) — so the
+        agent picks the move that actually damages a wall, not just the type-best one. Otherwise
+        (or for status/Struggle fallbacks) take the highest-scored move."""
+        if not scored or all(s < 0 for _, s in scored):
+            return 0  # No PP left — Struggle auto-triggers, just press FIGHT.
+
+        damaging = [
+            (i, s, move_category(MOVE_DATA[battle.moves[i]][1]))
+            for i, s in scored
+            if s > 0 and MOVE_DATA.get(battle.moves[i], ("", "", 0))[2] > 0
+        ]
+        cats = {c for _, _, c in damaging}
+        if len(cats) == 2:
+            untried = [c for c in cats if self._cat_dmg[c] < 0]
+            target = None
+            if len(untried) == 1:
+                target = untried[0]  # explore the category we haven't measured yet
+            elif not untried:
+                target = max(cats, key=lambda c: self._cat_dmg[c])  # commit to the higher-damage one
+            if target is not None:
+                return max((m for m in damaging if m[2] == target), key=lambda m: m[1])[0]
+
+        pool = damaging or scored
+        return max(pool, key=lambda m: m[1])[0]
 
 
 # ---------------------------------------------------------------------------

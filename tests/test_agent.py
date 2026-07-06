@@ -28,6 +28,7 @@ from agent import (
     StrategyEngine,
     load_type_chart,
     main,
+    move_category,
 )
 from memory_reader import BattleState, MemoryReader, OverworldState
 
@@ -407,6 +408,51 @@ class TestBattleStrategy:
             battle = self._make_battle(battle_type=2, player_hp=80, player_max_hp=100, enemy_hp=hp, enemy_max_hp=40)
             assert s.choose_action(battle)["action"] == "fight"
             hp -= 1  # real progress -> stall counter resets
+
+    def test_move_category_classifies_by_type(self):
+        assert move_category("normal") == "physical"
+        assert move_category("rock") == "physical"
+        assert move_category("fire") == "special"
+        assert move_category("water") == "special"
+
+    def _brock_mon(self, s, hp, *, species=0xA9):
+        # A rock/ground wall (Brock's Geodude/Onix): Scratch(physical) and Ember(special) both PP'd.
+        return self._make_battle(
+            battle_type=2,
+            player_hp=80,
+            player_max_hp=100,  # healthy -> no heal/run
+            enemy_hp=hp,
+            enemy_max_hp=40,
+            enemy_species=species,
+            moves=[0x0A, 0x2D, 0x00, 0x00],  # Scratch (physical, index 0), Ember (special, index 1)
+            move_pp=[10, 10, 0, 0],
+        )
+
+    def test_explores_both_categories_then_prefers_higher_damage(self):
+        # Against a physical wall, Scratch does little and Ember does more. The agent tries the
+        # type-best (physical) first, explores the special move once, then commits to whichever
+        # dealt more damage — this is how L30 Charmeleon actually beats Brock's Onix.
+        s = BattleStrategy(self.chart)
+        assert s.choose_action(self._brock_mon(s, 40))["move_index"] == 0  # try physical (Scratch)
+        assert s.choose_action(self._brock_mon(s, 36))["move_index"] == 1  # physical did 4 -> explore special
+        assert s.choose_action(self._brock_mon(s, 24))["move_index"] == 1  # special did 12 > 4 -> commit special
+        assert s.choose_action(self._brock_mon(s, 12))["move_index"] == 1  # keeps using the winner
+
+    def test_prefers_physical_when_it_does_more(self):
+        # Symmetric: when the physical move out-damages the special one, commit back to physical.
+        s = BattleStrategy(self.chart)
+        assert s.choose_action(self._brock_mon(s, 40))["move_index"] == 0  # try physical
+        assert s.choose_action(self._brock_mon(s, 30))["move_index"] == 1  # physical did 10 -> explore special
+        assert s.choose_action(self._brock_mon(s, 28))["move_index"] == 0  # special did 2 < 10 -> commit physical
+
+    def test_category_memory_resets_on_new_enemy(self):
+        # After committing to special on Geodude, Onix (a new species) re-probes from the type-best
+        # physical move — its Defense/Special profile could differ.
+        s = BattleStrategy(self.chart)
+        s.choose_action(self._brock_mon(s, 40))  # physical
+        s.choose_action(self._brock_mon(s, 36))  # explore special
+        assert s.choose_action(self._brock_mon(s, 24))["move_index"] == 1  # committed to special
+        assert s.choose_action(self._brock_mon(s, 40, species=0x22))["move_index"] == 0  # new enemy -> re-probe
 
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
