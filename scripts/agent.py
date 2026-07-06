@@ -106,7 +106,8 @@ MOVE_DATA = {
     0x01: ("Pound", "normal", 40, 100),
     0x0A: ("Scratch", "normal", 40, 100),
     0x21: ("Tackle", "normal", 35, 95),
-    0x2D: ("Ember", "fire", 40, 100),
+    0x2D: ("Growl", "normal", 0, 100),  # 0x2D is Growl (status), NOT Ember — Ember is 0x34
+    0x34: ("Ember", "fire", 40, 100),
     0x37: ("Water Gun", "water", 40, 100),
     0x49: ("Vine Whip", "grass", 35, 100),
     0x55: ("Thunderbolt", "electric", 95, 100),
@@ -1194,9 +1195,20 @@ class PokemonAgent:
             move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
             mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
             enemy_hp_before = battle.enemy_hp
-            self.controller.battle_menu_select("fight")  # open the move list
-            self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
-            self.controller.wait(180)  # Wait for both attack animations
+            player_hp_before = battle.player_hp
+            # Execute the move RELIABLY. The fixed-timing menu selection occasionally catches the
+            # game mid-animation (from the enemy's previous move) and leaves the move list open
+            # without confirming — observed ~50% of hits missing vs Brock, enemy HP frozen for many
+            # turns. Confirm by watching the turn actually resolve (HP changes or the battle ends);
+            # if it didn't, back out (B) to the top menu and re-select. A real turn resolves first try.
+            for _attempt in range(4):
+                self.controller.battle_menu_select("fight")  # open the move list
+                self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
+                self.controller.press("a")  # confirm the selected move
+                if self._await_turn_resolved(enemy_hp_before, player_hp_before):
+                    break
+                self.controller.press("b")  # still at the move list — back out and retry
+                self.controller.wait(20)
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
             # OBSERVE the raw outcome via a before/after enemy-HP delta. The fight branch also runs
             # on menu/text frames (no move landed) and post-faint frames, so we EMIT ONLY a real
@@ -1264,6 +1276,22 @@ class PokemonAgent:
             self.controller.wait(40)
 
         self.turn_count += 1
+
+    def _await_turn_resolved(self, enemy_hp_before: int, player_hp_before: int, frames: int = 260) -> bool:
+        """Tick up to ``frames``, returning True once the battle turn actually resolved — our HP or
+        the enemy's HP changed, or the battle ended — i.e. the selected move registered. Returns
+        False if nothing changed, so the caller re-selects (the fixed-timing menu occasionally leaves
+        the move list open without confirming). Re-selecting a move that genuinely did 0 while the
+        enemy also did nothing is harmless (it just does 0 again)."""
+        for _ in range(max(1, frames // 4)):
+            self.controller.wait(4)
+            if self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0:
+                return True  # battle ended (a faint)
+            state = self.memory.read_battle_state()
+            if state.enemy_hp != enemy_hp_before or state.player_hp != player_hp_before:
+                self.controller.wait(60)  # let the rest of the turn's animation/text play out
+                return True
+        return False
 
     def run_overworld(self):
         """Move in the overworld."""
@@ -1723,6 +1751,16 @@ class PokemonAgent:
                     )
                     if self.brock_turns is None and is_brock:
                         badges = self.memory._read(self.memory.ADDR_BADGES)
+                        # The Boulder Badge is awarded during Brock's post-battle dialogue, which
+                        # plays AFTER battle_type clears — reading it here caught it too early and
+                        # recorded a win as a loss. On a win (not a white-out), advance the dialogue
+                        # until the badge bit sets so brock_won reflects the real outcome.
+                        if won:
+                            for _ in range(20):
+                                if badges & 0x01:
+                                    break
+                                self.controller.mash_a(3, delay=20)
+                                badges = self.memory._read(self.memory.ADDR_BADGES)
                         lead = self._pre_battle_species[0] if self._pre_battle_species else 0
                         self.brock_turns = battle_turns
                         self.brock_won = bool(badges & 0x01)

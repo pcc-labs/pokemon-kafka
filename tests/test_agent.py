@@ -270,13 +270,13 @@ class TestBattleStrategy:
         assert score == 40 * 1.0 * 1.0  # 40.0
 
     def test_score_move_super_effective(self):
-        # Ember (fire) vs grass: 40 * 1.0 * 2.0 = 80
-        score = self.strategy.score_move(0x2D, 10, "grass")
+        # Ember (0x34, fire) vs grass: 40 * 1.0 * 2.0 = 80
+        score = self.strategy.score_move(0x34, 10, "grass")
         assert score == 80.0
 
     def test_score_move_not_very_effective(self):
-        # Ember (fire) vs water: 40 * 1.0 * 0.5 = 20
-        score = self.strategy.score_move(0x2D, 10, "water")
+        # Ember (0x34, fire) vs water: 40 * 1.0 * 0.5 = 20
+        score = self.strategy.score_move(0x34, 10, "water")
         assert score == 20.0
 
     def test_score_move_type_not_in_chart(self):
@@ -285,8 +285,8 @@ class TestBattleStrategy:
         assert score == 90 * 1.0 * 1.0
 
     def test_score_move_enemy_not_in_chart_entry(self):
-        # Ember (fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
-        score = self.strategy.score_move(0x2D, 10, "dragon")
+        # Ember (0x34, fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
+        score = self.strategy.score_move(0x34, 10, "dragon")
         assert score == 40 * 1.0 * 1.0
 
     def test_score_move_accuracy_factor(self):
@@ -424,7 +424,7 @@ class TestBattleStrategy:
             enemy_hp=hp,
             enemy_max_hp=40,
             enemy_species=species,
-            moves=[0x0A, 0x2D, 0x00, 0x00],  # Scratch (physical, index 0), Ember (special, index 1)
+            moves=[0x0A, 0x34, 0x00, 0x00],  # Scratch (physical, index 0), Ember (special, index 1)
             move_pp=[10, 10, 0, 0],
         )
 
@@ -525,7 +525,7 @@ class TestBattleStrategy:
         """choose_action passes enemy_type_name to score_move for effectiveness."""
         # Ember (fire) vs grass enemy -> super effective
         battle = self._make_battle(
-            moves=[0x2D, 0x01, 0x00, 0x00],  # Ember, Pound
+            moves=[0x34, 0x01, 0x00, 0x00],  # Ember, Pound
             move_pp=[10, 10, 0, 0],
             enemy_type1=0x17,  # grass
         )
