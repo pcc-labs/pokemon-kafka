@@ -77,6 +77,20 @@ GRASS_ENCOUNTER_COST = 8
 # Reset whenever real damage lands, so winnable battles are never abandoned.
 WILD_BATTLE_PATIENCE = 10
 
+# Gen-1's physical/special split is decided by a move's TYPE (not per-move): these types are
+# physical (they hit the target's Defense); the rest (fire/water/grass/electric/psychic/ice/
+# dragon) are special (they hit its Special). This matters against physical walls that pump
+# Defense — Brock's Geodude/Onix have high Defense and low Special and boost Defense further, so a
+# physical move (Scratch) stalls to ~0 while a resisted special move (Ember) still lands real
+# damage. When our move stops denting the enemy we switch category instead of looping a dead move.
+_PHYSICAL_TYPES = frozenset({"normal", "fighting", "flying", "poison", "ground", "rock", "bug", "ghost"})
+
+
+def move_category(move_type: str) -> str:
+    """Gen-1 physical/special category, decided by the move's type."""
+    return "physical" if move_type in _PHYSICAL_TYPES else "special"
+
+
 # Early-game scripted targets to get from Red's room to Oak's lab.
 # Coords are taken from pret/pokered map object data.
 EARLY_GAME_TARGETS = {
@@ -92,7 +106,8 @@ MOVE_DATA = {
     0x01: ("Pound", "normal", 40, 100),
     0x0A: ("Scratch", "normal", 40, 100),
     0x21: ("Tackle", "normal", 35, 95),
-    0x2D: ("Ember", "fire", 40, 100),
+    0x2D: ("Growl", "normal", 0, 100),  # 0x2D is Growl (status), NOT Ember — Ember is 0x34
+    0x34: ("Ember", "fire", 40, 100),
     0x37: ("Water Gun", "water", 40, 100),
     0x49: ("Vine Whip", "grass", 35, 100),
     0x55: ("Thunderbolt", "electric", 95, 100),
@@ -244,6 +259,12 @@ class BattleStrategy:
         # Stall guard: count fight turns in the current wild battle without enemy-HP progress.
         self._wild_fight_turns = 0
         self._last_enemy_hp: int | None = None
+        # Move-category selection: the last damage each category dealt to the current enemy (-1 =
+        # not yet tried), the category of our last move (to attribute the next enemy-HP delta), and
+        # the enemy's species (to reset all of this when a new Pokemon is sent out).
+        self._cat_dmg: dict[str, int] = {"physical": -1, "special": -1}
+        self._last_move_cat: str | None = None
+        self._stall_enemy_species: int | None = None
 
     def score_move(self, move_id: int, move_pp: int, enemy_type: str = "normal") -> float:
         """Score a move based on power, PP, and type effectiveness."""
@@ -279,19 +300,44 @@ class BattleStrategy:
         hp_ratio = battle.player_hp / max(battle.player_max_hp, 1)
         enemy_type = battle.enemy_type_name
 
-        # Stall guard (wild only): if the enemy's HP isn't dropping, we're in a battle we can't
-        # end (PP-dry damaging moves, a 0-power move scored as "unknown", or a stuck menu). Track
-        # progress and bail out before looping forever; real damage resets the counter so winnable
-        # fights are never abandoned.
-        if battle.battle_type == 1:
-            if self._last_enemy_hp is not None and battle.enemy_hp < self._last_enemy_hp:
+        # Stall guard (both battle types): if the enemy's HP isn't dropping across turns, we're
+        # stuck — PP-dry damaging moves, a 0-power move scored as "unknown", or a desynced battle
+        # menu (observed: the Brock fight frozen at a constant enemy HP for 40+ turns). Track
+        # progress and recover before looping forever; real damage resets the counter, so winnable
+        # fights are never abandoned. Recovery differs by battle type (below).
+        # A new enemy Pokemon (e.g. Brock's Onix after Geodude faints) resets the per-enemy stall
+        # state and the category-damage memory, so we re-probe from scratch.
+        if battle.enemy_species != self._stall_enemy_species:
+            self._stall_enemy_species = battle.enemy_species
+            self._wild_fight_turns = 0
+            self._last_enemy_hp = None
+            self._cat_dmg = {"physical": -1, "special": -1}
+            self._last_move_cat = None
+        # Attribute the enemy-HP delta since our last move to that move's category — this is how we
+        # LEARN (rather than are told) which category actually damages this enemy: a physical wall
+        # (Onix: high Defense, low Special) takes far more from a resisted special move (Ember) than
+        # a physical one (Scratch). Record the LAST amount (including 0), not the best, so a move
+        # that DEGRADES — a physical move once a Defense-Curl'd Geodude walls it — is demoted and we
+        # commit to the category still landing damage.
+        if self._last_enemy_hp is not None:
+            dealt = self._last_enemy_hp - battle.enemy_hp
+            if dealt > 0:
                 self._wild_fight_turns = 0
-            self._last_enemy_hp = battle.enemy_hp
-            if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
-                # Stalled: keep fleeing until the battle actually ends. Unlike the low-HP run
-                # (capped, because fighting on can still level us), a stall means fighting is
-                # futile, so never fall back to fight here.
+            if self._last_move_cat is not None and dealt >= 0:
+                self._cat_dmg[self._last_move_cat] = dealt
+        self._last_enemy_hp = battle.enemy_hp
+        if self._wild_fight_turns >= WILD_BATTLE_PATIENCE:
+            if battle.battle_type == 1:
+                # Wild: keep fleeing until the battle ends. Unlike the low-HP run (capped, because
+                # fighting on can still level us), a stall means fighting is futile — never fall
+                # back to fight here.
                 return {"action": "run"}
+            if battle.battle_type == 2:
+                # Trainer battles can't be fled, so a stall is a stuck menu, not a futile matchup.
+                # Reset the battle menu (mash B) so the next FIGHT lands. Reset the counter so we
+                # alternate unstick/fight rather than unsticking forever.
+                self._wild_fight_turns = 0
+                return {"action": "unstick"}
 
         # Only run when critically low (<10%) in wild battles AND run hasn't
         # failed 3 times already.  Leveling up is more valuable than preserving HP.
@@ -305,22 +351,47 @@ class BattleStrategy:
             bag_index, item_id = bag_healing
             return {"action": "item", "item": HEALING_ITEM_IDS.get(item_id, "potion"), "bag_index": bag_index}
 
-        # Score all moves using the enemy's actual type for effectiveness
-        moves = [
+        # Score all moves using the enemy's actual type for effectiveness.
+        scored = [
             (i, self.score_move(battle.moves[i], battle.move_pp[i], enemy_type))
             for i in range(4)
             if battle.moves[i] != 0x00
         ]
+        move_index = self._pick_move(battle, scored)
 
-        if not moves or all(score < 0 for _, score in moves):
-            # No PP left — Struggle will auto-trigger, just press FIGHT
-            move_index = 0
-        else:
-            move_index = max(moves, key=lambda x: x[1])[0]
+        chosen = MOVE_DATA.get(battle.moves[move_index] if 0 <= move_index < len(battle.moves) else 0)
+        self._last_move_cat = move_category(chosen[1]) if (chosen and chosen[2] > 0) else None
 
-        if battle.battle_type == 1:
-            self._wild_fight_turns += 1  # advance the stall guard for wild battles
+        if battle.battle_type in (1, 2):
+            self._wild_fight_turns += 1  # advance the stall guard (reset above on real damage)
         return {"action": "fight", "move_index": move_index}
+
+    def _pick_move(self, battle, scored: list[tuple[int, float]]) -> int:
+        """Choose a move index. Among damaging moves, when both a physical and a special option
+        exist, try each once and then commit to whichever dealt more (learned per enemy) — so the
+        agent picks the move that actually damages a wall, not just the type-best one. Otherwise
+        (or for status/Struggle fallbacks) take the highest-scored move."""
+        if not scored or all(s < 0 for _, s in scored):
+            return 0  # No PP left — Struggle auto-triggers, just press FIGHT.
+
+        damaging = [
+            (i, s, move_category(MOVE_DATA[battle.moves[i]][1]))
+            for i, s in scored
+            if s > 0 and MOVE_DATA.get(battle.moves[i], ("", "", 0))[2] > 0
+        ]
+        cats = {c for _, _, c in damaging}
+        if len(cats) == 2:
+            untried = [c for c in cats if self._cat_dmg[c] < 0]
+            target = None
+            if len(untried) == 1:
+                target = untried[0]  # explore the category we haven't measured yet
+            elif not untried:
+                target = max(cats, key=lambda c: self._cat_dmg[c])  # commit to the higher-damage one
+            if target is not None:
+                return max((m for m in damaging if m[2] == target), key=lambda m: m[1])[0]
+
+        pool = damaging or scored
+        return max(pool, key=lambda m: m[1])[0]
 
 
 # ---------------------------------------------------------------------------
@@ -1124,9 +1195,20 @@ class PokemonAgent:
             move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
             mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
             enemy_hp_before = battle.enemy_hp
-            self.controller.battle_menu_select("fight")  # open the move list
-            self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
-            self.controller.wait(180)  # Wait for both attack animations
+            player_hp_before = battle.player_hp
+            # Execute the move RELIABLY. The fixed-timing menu selection occasionally catches the
+            # game mid-animation (from the enemy's previous move) and leaves the move list open
+            # without confirming — observed ~50% of hits missing vs Brock, enemy HP frozen for many
+            # turns. Confirm by watching the turn actually resolve (HP changes or the battle ends);
+            # if it didn't, back out (B) to the top menu and re-select. A real turn resolves first try.
+            for _attempt in range(4):
+                self.controller.battle_menu_select("fight")  # open the move list
+                self.controller.navigate_menu(mv_idx)  # pick the move (vertical list)
+                self.controller.press("a")  # confirm the selected move
+                if self._await_turn_resolved(enemy_hp_before, player_hp_before):
+                    break
+                self.controller.press("b")  # still at the move list — back out and retry
+                self.controller.wait(20)
             self.controller.mash_a(8, delay=30)  # Clear all text boxes
             # OBSERVE the raw outcome via a before/after enemy-HP delta. The fight branch also runs
             # on menu/text frames (no move landed) and post-faint frames, so we EMIT ONLY a real
@@ -1182,7 +1264,48 @@ class PokemonAgent:
             self.controller.wait(120)
             self.controller.mash_a(5, delay=30)
 
+        elif action["action"] == "unstick":
+            # Recover a stalled trainer battle: the enemy's HP hasn't dropped for several turns and
+            # the FIGHT selection isn't landing (a desynced battle menu / lingering text box). Mash
+            # B to close any submenu/text and return to a clean top-level battle menu so the next
+            # FIGHT selection registers. Trainer battles can't be fled, so recovery is a menu reset,
+            # never "run".
+            for _ in range(6):
+                self.controller.press("b")
+                self.controller.wait(20)
+            self.controller.wait(40)
+
         self.turn_count += 1
+
+    def _await_turn_resolved(self, enemy_hp_before: int, player_hp_before: int, frames: int = 260) -> bool:
+        """Tick up to ``frames``, returning True once the battle turn actually resolved — our HP or
+        the enemy's HP changed, or the battle ended — i.e. the selected move registered. Returns
+        False if nothing changed, so the caller re-selects (the fixed-timing menu occasionally leaves
+        the move list open without confirming). Re-selecting a move that genuinely did 0 while the
+        enemy also did nothing is harmless (it just does 0 again)."""
+        for _ in range(max(1, frames // 4)):
+            self.controller.wait(4)
+            if self.memory._read(self.memory.ADDR_BATTLE_TYPE) == 0:
+                return True  # battle ended (a faint)
+            state = self.memory.read_battle_state()
+            if state.enemy_hp != enemy_hp_before or state.player_hp != player_hp_before:
+                self.controller.wait(60)  # let the rest of the turn's animation/text play out
+                return True
+        return False
+
+    def _resolve_brock_badge(self, won: bool) -> bool:
+        """Whether Brock is really beaten = the Boulder Badge bit. It is awarded during Brock's
+        post-battle dialogue, which plays AFTER battle_type clears, so a straight read here caught it
+        too early and recorded a win as a loss. On a win (not a white-out), advance the dialogue
+        (mash A) until the bit sets; on a loss it never sets, so we don't waste presses."""
+        badges = self.memory._read(self.memory.ADDR_BADGES)
+        if won:
+            for _ in range(20):
+                if badges & 0x01:
+                    break
+                self.controller.mash_a(3, delay=20)
+                badges = self.memory._read(self.memory.ADDR_BADGES)
+        return bool(badges & 0x01)
 
     def run_overworld(self):
         """Move in the overworld."""
@@ -1641,10 +1764,9 @@ class PokemonAgent:
                         or (self.brock_map_id is None and self._battle_opponent_level >= 12)
                     )
                     if self.brock_turns is None and is_brock:
-                        badges = self.memory._read(self.memory.ADDR_BADGES)
                         lead = self._pre_battle_species[0] if self._pre_battle_species else 0
                         self.brock_turns = battle_turns
-                        self.brock_won = bool(badges & 0x01)
+                        self.brock_won = self._resolve_brock_badge(won)
                         self.brock_lead_species = SPECIES_ID_MAP.get(lead, f"#{lead:02X}")
                         self.brock_lead_level = self._pre_battle_level
 

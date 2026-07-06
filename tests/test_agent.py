@@ -28,6 +28,7 @@ from agent import (
     StrategyEngine,
     load_type_chart,
     main,
+    move_category,
 )
 from memory_reader import BattleState, MemoryReader, OverworldState
 
@@ -269,13 +270,13 @@ class TestBattleStrategy:
         assert score == 40 * 1.0 * 1.0  # 40.0
 
     def test_score_move_super_effective(self):
-        # Ember (fire) vs grass: 40 * 1.0 * 2.0 = 80
-        score = self.strategy.score_move(0x2D, 10, "grass")
+        # Ember (0x34, fire) vs grass: 40 * 1.0 * 2.0 = 80
+        score = self.strategy.score_move(0x34, 10, "grass")
         assert score == 80.0
 
     def test_score_move_not_very_effective(self):
-        # Ember (fire) vs water: 40 * 1.0 * 0.5 = 20
-        score = self.strategy.score_move(0x2D, 10, "water")
+        # Ember (0x34, fire) vs water: 40 * 1.0 * 0.5 = 20
+        score = self.strategy.score_move(0x34, 10, "water")
         assert score == 20.0
 
     def test_score_move_type_not_in_chart(self):
@@ -284,8 +285,8 @@ class TestBattleStrategy:
         assert score == 90 * 1.0 * 1.0
 
     def test_score_move_enemy_not_in_chart_entry(self):
-        # Ember (fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
-        score = self.strategy.score_move(0x2D, 10, "dragon")
+        # Ember (0x34, fire) vs "dragon" -- "dragon" not in fire's chart entry -> 1.0
+        score = self.strategy.score_move(0x34, 10, "dragon")
         assert score == 40 * 1.0 * 1.0
 
     def test_score_move_accuracy_factor(self):
@@ -382,6 +383,77 @@ class TestBattleStrategy:
             assert s.choose_action(battle)["action"] == "fight"
         assert s.choose_action(battle) == {"action": "run"}
 
+    def test_choose_action_unsticks_stalled_trainer_battle(self):
+        # Trainer battles can't be fled, so a stall (enemy HP frozen — the observed Brock soft-lock
+        # where a desynced menu never lands the move) must trigger a menu-reset 'unstick', not 'run'.
+        s = BattleStrategy(self.chart)
+        battle = self._make_battle(
+            battle_type=2,
+            player_hp=80,
+            player_max_hp=100,  # healthy -> no heal/run
+            enemy_hp=26,
+            enemy_max_hp=33,  # frozen across turns
+            moves=[0x0A, 0x2D, 0x00, 0x00],
+            move_pp=[0, 10, 0, 0],
+        )
+        for _ in range(WILD_BATTLE_PATIENCE):
+            assert s.choose_action(battle)["action"] == "fight"
+        assert s.choose_action(battle) == {"action": "unstick"}
+
+    def test_choose_action_winnable_trainer_never_unsticks(self):
+        # A winnable trainer fight (enemy HP dropping) keeps fighting well past the patience window.
+        s = BattleStrategy(self.chart)
+        hp = 40
+        for _ in range(WILD_BATTLE_PATIENCE * 2):
+            battle = self._make_battle(battle_type=2, player_hp=80, player_max_hp=100, enemy_hp=hp, enemy_max_hp=40)
+            assert s.choose_action(battle)["action"] == "fight"
+            hp -= 1  # real progress -> stall counter resets
+
+    def test_move_category_classifies_by_type(self):
+        assert move_category("normal") == "physical"
+        assert move_category("rock") == "physical"
+        assert move_category("fire") == "special"
+        assert move_category("water") == "special"
+
+    def _brock_mon(self, s, hp, *, species=0xA9):
+        # A rock/ground wall (Brock's Geodude/Onix): Scratch(physical) and Ember(special) both PP'd.
+        return self._make_battle(
+            battle_type=2,
+            player_hp=80,
+            player_max_hp=100,  # healthy -> no heal/run
+            enemy_hp=hp,
+            enemy_max_hp=40,
+            enemy_species=species,
+            moves=[0x0A, 0x34, 0x00, 0x00],  # Scratch (physical, index 0), Ember (special, index 1)
+            move_pp=[10, 10, 0, 0],
+        )
+
+    def test_explores_both_categories_then_prefers_higher_damage(self):
+        # Against a physical wall, Scratch does little and Ember does more. The agent tries the
+        # type-best (physical) first, explores the special move once, then commits to whichever
+        # dealt more damage — this is how L30 Charmeleon actually beats Brock's Onix.
+        s = BattleStrategy(self.chart)
+        assert s.choose_action(self._brock_mon(s, 40))["move_index"] == 0  # try physical (Scratch)
+        assert s.choose_action(self._brock_mon(s, 36))["move_index"] == 1  # physical did 4 -> explore special
+        assert s.choose_action(self._brock_mon(s, 24))["move_index"] == 1  # special did 12 > 4 -> commit special
+        assert s.choose_action(self._brock_mon(s, 12))["move_index"] == 1  # keeps using the winner
+
+    def test_prefers_physical_when_it_does_more(self):
+        # Symmetric: when the physical move out-damages the special one, commit back to physical.
+        s = BattleStrategy(self.chart)
+        assert s.choose_action(self._brock_mon(s, 40))["move_index"] == 0  # try physical
+        assert s.choose_action(self._brock_mon(s, 30))["move_index"] == 1  # physical did 10 -> explore special
+        assert s.choose_action(self._brock_mon(s, 28))["move_index"] == 0  # special did 2 < 10 -> commit physical
+
+    def test_category_memory_resets_on_new_enemy(self):
+        # After committing to special on Geodude, Onix (a new species) re-probes from the type-best
+        # physical move — its Defense/Special profile could differ.
+        s = BattleStrategy(self.chart)
+        s.choose_action(self._brock_mon(s, 40))  # physical
+        s.choose_action(self._brock_mon(s, 36))  # explore special
+        assert s.choose_action(self._brock_mon(s, 24))["move_index"] == 1  # committed to special
+        assert s.choose_action(self._brock_mon(s, 40, species=0x22))["move_index"] == 0  # new enemy -> re-probe
+
     def test_choose_action_stall_counter_resets_on_progress(self):
         # A winnable battle (enemy HP dropping) must NOT be abandoned: progress resets the stall
         # counter, so the agent keeps fighting well past the patience window.
@@ -453,7 +525,7 @@ class TestBattleStrategy:
         """choose_action passes enemy_type_name to score_move for effectiveness."""
         # Ember (fire) vs grass enemy -> super effective
         battle = self._make_battle(
-            moves=[0x2D, 0x01, 0x00, 0x00],  # Ember, Pound
+            moves=[0x34, 0x01, 0x00, 0x00],  # Ember, Pound
             move_pp=[10, 10, 0, 0],
             enemy_type1=0x17,  # grass
         )
@@ -1723,6 +1795,62 @@ class TestRunBattleTurn:
         ag.battle_strategy.choose_action = MagicMock(return_value={"action": "fight", "move_index": 0})
         ag.run_battle_turn()
         ag.battle_strategy.choose_action.assert_called_once_with(battle, bag_healing=(0, 0x14))
+
+    def test_unstick_action_mashes_b(self, tmp_path):
+        ag = self._setup_agent_for_battle(tmp_path, {"action": "unstick"})
+        ag.controller = MagicMock()
+        ag.run_battle_turn()
+        assert ag.turn_count == 1
+        assert ag.controller.press.call_args_list.count(call("b")) == 6  # menu reset
+
+    def test_await_turn_resolved_true_when_battle_ends(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0)  # battle_type reads 0 -> ended
+        assert ag._await_turn_resolved(30, 50) is True
+
+    def test_await_turn_resolved_true_on_hp_change(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=2)  # still in battle
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=2, enemy_hp=20, player_hp=50))
+        assert ag._await_turn_resolved(30, 50) is True  # enemy HP dropped -> turn landed
+
+    def test_await_turn_resolved_false_on_timeout(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=2)  # still in battle
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=2, enemy_hp=30, player_hp=50))
+        assert ag._await_turn_resolved(30, 50, frames=8) is False  # nothing changed -> retry
+
+    def test_fight_retries_when_turn_not_resolved(self, tmp_path):
+        ag = self._setup_agent_for_battle(tmp_path, {"action": "fight", "move_index": 0})
+        ag.controller = MagicMock()
+        ag._await_turn_resolved = MagicMock(return_value=False)  # never resolves -> back out + retry
+        ag.run_battle_turn()
+        assert ag.controller.press.call_args_list.count(call("b")) == 4  # one back-out per attempt
+
+    def test_resolve_brock_badge_when_already_set(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0x01)  # Boulder Badge already set
+        assert ag._resolve_brock_badge(True) is True
+        ag.controller.mash_a.assert_not_called()  # no need to advance dialogue
+
+    def test_resolve_brock_badge_advances_dialogue(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        # badge unset for the first reads, then set once the post-battle dialogue is advanced
+        ag.memory._read = MagicMock(side_effect=[0, 0, 0x01, 0x01])
+        assert ag._resolve_brock_badge(True) is True
+        assert ag.controller.mash_a.call_count == 2
+
+    def test_resolve_brock_badge_not_awarded_on_loss(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0)
+        assert ag._resolve_brock_badge(False) is False  # a loss never advances the dialogue
+        ag.controller.mash_a.assert_not_called()
 
 
 class TestRunOverworld:
