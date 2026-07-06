@@ -1796,6 +1796,62 @@ class TestRunBattleTurn:
         ag.run_battle_turn()
         ag.battle_strategy.choose_action.assert_called_once_with(battle, bag_healing=(0, 0x14))
 
+    def test_unstick_action_mashes_b(self, tmp_path):
+        ag = self._setup_agent_for_battle(tmp_path, {"action": "unstick"})
+        ag.controller = MagicMock()
+        ag.run_battle_turn()
+        assert ag.turn_count == 1
+        assert ag.controller.press.call_args_list.count(call("b")) == 6  # menu reset
+
+    def test_await_turn_resolved_true_when_battle_ends(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0)  # battle_type reads 0 -> ended
+        assert ag._await_turn_resolved(30, 50) is True
+
+    def test_await_turn_resolved_true_on_hp_change(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=2)  # still in battle
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=2, enemy_hp=20, player_hp=50))
+        assert ag._await_turn_resolved(30, 50) is True  # enemy HP dropped -> turn landed
+
+    def test_await_turn_resolved_false_on_timeout(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=2)  # still in battle
+        ag.memory.read_battle_state = MagicMock(return_value=BattleState(battle_type=2, enemy_hp=30, player_hp=50))
+        assert ag._await_turn_resolved(30, 50, frames=8) is False  # nothing changed -> retry
+
+    def test_fight_retries_when_turn_not_resolved(self, tmp_path):
+        ag = self._setup_agent_for_battle(tmp_path, {"action": "fight", "move_index": 0})
+        ag.controller = MagicMock()
+        ag._await_turn_resolved = MagicMock(return_value=False)  # never resolves -> back out + retry
+        ag.run_battle_turn()
+        assert ag.controller.press.call_args_list.count(call("b")) == 4  # one back-out per attempt
+
+    def test_resolve_brock_badge_when_already_set(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0x01)  # Boulder Badge already set
+        assert ag._resolve_brock_badge(True) is True
+        ag.controller.mash_a.assert_not_called()  # no need to advance dialogue
+
+    def test_resolve_brock_badge_advances_dialogue(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        # badge unset for the first reads, then set once the post-battle dialogue is advanced
+        ag.memory._read = MagicMock(side_effect=[0, 0, 0x01, 0x01])
+        assert ag._resolve_brock_badge(True) is True
+        assert ag.controller.mash_a.call_count == 2
+
+    def test_resolve_brock_badge_not_awarded_on_loss(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        ag.controller = MagicMock()
+        ag.memory._read = MagicMock(return_value=0)
+        assert ag._resolve_brock_badge(False) is False  # a loss never advances the dialogue
+        ag.controller.mash_a.assert_not_called()
+
 
 class TestRunOverworld:
     def test_directional_movement(self, tmp_path):

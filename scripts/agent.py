@@ -1293,6 +1293,20 @@ class PokemonAgent:
                 return True
         return False
 
+    def _resolve_brock_badge(self, won: bool) -> bool:
+        """Whether Brock is really beaten = the Boulder Badge bit. It is awarded during Brock's
+        post-battle dialogue, which plays AFTER battle_type clears, so a straight read here caught it
+        too early and recorded a win as a loss. On a win (not a white-out), advance the dialogue
+        (mash A) until the bit sets; on a loss it never sets, so we don't waste presses."""
+        badges = self.memory._read(self.memory.ADDR_BADGES)
+        if won:
+            for _ in range(20):
+                if badges & 0x01:
+                    break
+                self.controller.mash_a(3, delay=20)
+                badges = self.memory._read(self.memory.ADDR_BADGES)
+        return bool(badges & 0x01)
+
     def run_overworld(self):
         """Move in the overworld."""
         state = self.memory.read_overworld_state()
@@ -1750,20 +1764,9 @@ class PokemonAgent:
                         or (self.brock_map_id is None and self._battle_opponent_level >= 12)
                     )
                     if self.brock_turns is None and is_brock:
-                        badges = self.memory._read(self.memory.ADDR_BADGES)
-                        # The Boulder Badge is awarded during Brock's post-battle dialogue, which
-                        # plays AFTER battle_type clears — reading it here caught it too early and
-                        # recorded a win as a loss. On a win (not a white-out), advance the dialogue
-                        # until the badge bit sets so brock_won reflects the real outcome.
-                        if won:
-                            for _ in range(20):
-                                if badges & 0x01:
-                                    break
-                                self.controller.mash_a(3, delay=20)
-                                badges = self.memory._read(self.memory.ADDR_BADGES)
                         lead = self._pre_battle_species[0] if self._pre_battle_species else 0
                         self.brock_turns = battle_turns
-                        self.brock_won = bool(badges & 0x01)
+                        self.brock_won = self._resolve_brock_badge(won)
                         self.brock_lead_species = SPECIES_ID_MAP.get(lead, f"#{lead:02X}")
                         self.brock_lead_level = self._pre_battle_level
 
