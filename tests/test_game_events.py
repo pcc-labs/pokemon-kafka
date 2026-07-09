@@ -300,3 +300,15 @@ def test_collector_battle_frame_error_is_swallowed(capsys):
     c = GameEventCollector(recorder=Rec())
     c.battle_frame(1)  # must not raise
     assert "recorder error" in capsys.readouterr().out
+
+
+def test_collector_stamps_game_on_events():
+    collector = GameEventCollector(game="yellow")
+    collector.milestone(7, "Reached Viridian City!")
+    assert collector.events[-1]["game"] == "yellow"
+
+
+def test_collector_defaults_to_red_blue():
+    collector = GameEventCollector()
+    collector.session(0, "start")
+    assert collector.events[-1]["game"] == "red_blue"

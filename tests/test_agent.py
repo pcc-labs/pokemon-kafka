@@ -2246,7 +2246,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=5,
             battle_limit=0,
@@ -2280,7 +2280,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=True)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=True, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=10,
             battle_limit=0,
@@ -2303,7 +2303,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=100_000,
             battle_limit=0,
