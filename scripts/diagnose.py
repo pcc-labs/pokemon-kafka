@@ -9,8 +9,12 @@ except ImportError:
     print("PyBoy not installed")
     sys.exit(1)
 
+from game_profile import detect_profile  # noqa: E402 (after the pyboy import guard)
+
 rom_path = sys.argv[1]
 pyboy = PyBoy(rom_path, window="null")
+profile = detect_profile(pyboy)
+print(f"Game: {profile.label} ({profile.name})")
 
 # Skip intro: mash A for a while
 for _ in range(1500):
@@ -29,14 +33,14 @@ for i in range(600):
 
 # Now read position
 def pos():
-    x = pyboy.memory[0xD362]
-    y = pyboy.memory[0xD361]
-    map_id = pyboy.memory[0xD35E]
-    party = pyboy.memory[0xD163]
+    x = pyboy.memory[profile.addr_player_x]
+    y = pyboy.memory[profile.addr_player_y]
+    map_id = pyboy.memory[profile.addr_map_id]
+    party = pyboy.memory[profile.addr_party_count]
     # Check several text/menu indicators
-    joypad_disabled = pyboy.memory[0xD730]
-    text_progress = pyboy.memory[0xC4F2]
-    warp_flag = pyboy.memory[0xD736]
+    joypad_disabled = pyboy.memory[profile.addr_wd730]
+    text_progress = pyboy.memory[profile.addr_text_progress]
+    warp_flag = pyboy.memory[profile.addr_warp_flag]
     return (
         f"Map:{map_id} Pos:({x},{y}) Party:{party} JoyDisabled:0x{joypad_disabled:02X}"
         f" TextProg:0x{text_progress:02X} Warp:0x{warp_flag:02X}"
