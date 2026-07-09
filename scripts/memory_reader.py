@@ -1,13 +1,14 @@
 """
 Memory Reader — Extract game state from PyBoy emulator memory.
 
-Addresses are for Pokemon Red/Blue (US release).
-Swap out the address maps for other games.
+Per-game addresses live in ``game_profile.py`` (Red/Blue and Yellow supported);
+the profile is auto-detected from the cartridge header unless passed explicitly.
 """
 
 from dataclasses import dataclass, field
 from typing import List
 
+from game_profile import RED_BLUE, GameProfile, detect_profile
 from text_decoder import decode_grid
 
 # Gen 1 type byte → name mapping (from pokered disassembly)
@@ -57,7 +58,7 @@ HEALING_ITEM_IDS: dict[int, str] = {
     0x10: "Full Restore",
 }
 
-# Bag memory layout
+# Bag memory layout (Red/Blue defaults; MemoryReader reads via its profile)
 ADDR_BAG_COUNT = 0xD31D
 ADDR_BAG_ITEMS = 0xD31E  # pairs of [item_id, quantity], terminated by 0xFF
 BAG_MAX_SLOTS = 20
@@ -115,81 +116,102 @@ class MemoryReader:
     """
     Read game state from PyBoy memory.
 
+    Addresses come from the game profile (Red/Blue or Yellow); the legacy
+    ``ADDR_*`` names are kept as instance attributes so callers are unchanged.
     Pokemon Red/Blue memory map:
     https://datacrystal.romhacking.net/wiki/Pok%C3%A9mon_Red/Blue:RAM_map
     """
 
-    # --- Address constants (Pokemon Red/Blue US) ---
-
-    # Battle
-    ADDR_BATTLE_TYPE = 0xD057
-    ADDR_ENEMY_HP_HI = 0xCFE6
-    ADDR_ENEMY_HP_LO = 0xCFE7
-    ADDR_ENEMY_MAX_HP_HI = 0xCFF4
-    ADDR_ENEMY_MAX_HP_LO = 0xCFF5
-    ADDR_ENEMY_LEVEL = 0xCFF3
-    ADDR_ENEMY_SPECIES = 0xCFE5
-    ADDR_ENEMY_TYPE1 = 0xCFEA
-    ADDR_ENEMY_TYPE2 = 0xCFEB
-
-    # Player party (lead pokemon)
-    ADDR_PLAYER_HP_HI = 0xD015
-    ADDR_PLAYER_HP_LO = 0xD016
-    ADDR_PLAYER_MAX_HP_HI = 0xD023
-    ADDR_PLAYER_MAX_HP_LO = 0xD024
-    ADDR_PLAYER_LEVEL = 0xD022
-    ADDR_PLAYER_SPECIES = 0xD014
-
-    # Moves (lead pokemon)
-    ADDR_MOVE_1 = 0xD01C
-    ADDR_MOVE_2 = 0xD01D
-    ADDR_MOVE_3 = 0xD01E
-    ADDR_MOVE_4 = 0xD01F
-
-    # Move PP (lead pokemon)
-    ADDR_PP_1 = 0xD02C
-    ADDR_PP_2 = 0xD02D
-    ADDR_PP_3 = 0xD02E
-    ADDR_PP_4 = 0xD02F
-
-    # Party
-    ADDR_PARTY_COUNT = 0xD163
-    ADDR_PARTY_SPECIES_LIST = 0xD164  # 6 bytes, one species ID per party member
-
-    # Party pokemon HP addresses (6 pokemon, 44 bytes apart)
-    PARTY_BASE = 0xD16B
+    # Game-invariant layout constants
     PARTY_STRUCT_SIZE = 44
     PARTY_HP_OFFSET = 1  # Offset to current HP within party struct
 
-    # Overworld
-    ADDR_MAP_ID = 0xD35E
-    ADDR_PLAYER_X = 0xD362
-    ADDR_PLAYER_Y = 0xD361
-    ADDR_BADGES = 0xD356
+    # Class-level defaults (Red/Blue) for callers/tests that reference the constants
+    # without an instance; __init__ shadows every one of these from the actual profile.
+    ADDR_BATTLE_TYPE = RED_BLUE.addr_battle_type
+    ADDR_ENEMY_HP_HI = RED_BLUE.addr_enemy_hp_hi
+    ADDR_ENEMY_HP_LO = RED_BLUE.addr_enemy_hp_lo
+    ADDR_ENEMY_MAX_HP_HI = RED_BLUE.addr_enemy_max_hp_hi
+    ADDR_ENEMY_MAX_HP_LO = RED_BLUE.addr_enemy_max_hp_lo
+    ADDR_ENEMY_LEVEL = RED_BLUE.addr_enemy_level
+    ADDR_ENEMY_SPECIES = RED_BLUE.addr_enemy_species
+    ADDR_ENEMY_TYPE1 = RED_BLUE.addr_enemy_type1
+    ADDR_ENEMY_TYPE2 = RED_BLUE.addr_enemy_type2
+    ADDR_PLAYER_HP_HI = RED_BLUE.addr_player_hp_hi
+    ADDR_PLAYER_HP_LO = RED_BLUE.addr_player_hp_lo
+    ADDR_PLAYER_MAX_HP_HI = RED_BLUE.addr_player_max_hp_hi
+    ADDR_PLAYER_MAX_HP_LO = RED_BLUE.addr_player_max_hp_lo
+    ADDR_PLAYER_LEVEL = RED_BLUE.addr_player_level
+    ADDR_PLAYER_SPECIES = RED_BLUE.addr_player_species
+    ADDR_MOVE_1 = RED_BLUE.addr_move_1
+    ADDR_MOVE_2 = RED_BLUE.addr_move_2
+    ADDR_MOVE_3 = RED_BLUE.addr_move_3
+    ADDR_MOVE_4 = RED_BLUE.addr_move_4
+    ADDR_PP_1 = RED_BLUE.addr_pp_1
+    ADDR_PP_2 = RED_BLUE.addr_pp_2
+    ADDR_PP_3 = RED_BLUE.addr_pp_3
+    ADDR_PP_4 = RED_BLUE.addr_pp_4
+    ADDR_PARTY_COUNT = RED_BLUE.addr_party_count
+    ADDR_PARTY_SPECIES_LIST = RED_BLUE.addr_party_species_list
+    PARTY_BASE = RED_BLUE.party_base
+    ADDR_MAP_ID = RED_BLUE.addr_map_id
+    ADDR_PLAYER_X = RED_BLUE.addr_player_x
+    ADDR_PLAYER_Y = RED_BLUE.addr_player_y
+    ADDR_BADGES = RED_BLUE.addr_badges
+    ADDR_MONEY_1 = RED_BLUE.addr_money_1
+    ADDR_MONEY_2 = RED_BLUE.addr_money_2
+    ADDR_MONEY_3 = RED_BLUE.addr_money_3
+    ADDR_WD730 = RED_BLUE.addr_wd730
+    ADDR_WD74B = RED_BLUE.addr_wd74b
+    ADDR_PLAYER_FACING = RED_BLUE.addr_player_facing
 
-    # Money (BCD encoded, 3 bytes)
-    ADDR_MONEY_1 = 0xD347
-    ADDR_MONEY_2 = 0xD348
-    ADDR_MONEY_3 = 0xD349
-
-    # Game state flags (pokered wd730)
-    # bit 1: d-pad input disabled (text boxes, menus)
-    # bit 5: simulated joypad active (scripted movement, e.g. Oak walking)
-    # bit 6: text/script display active (set by DisplayTextID)
-    ADDR_WD730 = 0xD730
-
-    # Player facing direction (pokered wSpritePlayerStateData1FacingDirection).
+    # Player facing direction (wSpritePlayerStateData1FacingDirection).
     # Encoded as multiples of 4: 0=down, 4=up, 8=left, 12=right.
-    ADDR_PLAYER_FACING = 0xC109
     FACING_NAMES = {0: "down", 4: "up", 8: "left", 12: "right"}
 
     # Early-game event flags (pokered wd74b). bit 5 (0x20) = obtained the Pokedex, set when
     # Oak takes the parcel. Confirmed against telemetry in the discovery spike.
-    ADDR_WD74B = 0xD74B
     BIT_GOT_POKEDEX = 0x20
 
-    def __init__(self, pyboy):
+    def __init__(self, pyboy, profile: GameProfile | None = None):
         self.pyboy = pyboy
+        self.profile = profile or detect_profile(pyboy)
+        p = self.profile
+        # Legacy attribute names, now per-instance from the profile.
+        self.ADDR_BATTLE_TYPE = p.addr_battle_type
+        self.ADDR_ENEMY_HP_HI = p.addr_enemy_hp_hi
+        self.ADDR_ENEMY_HP_LO = p.addr_enemy_hp_lo
+        self.ADDR_ENEMY_MAX_HP_HI = p.addr_enemy_max_hp_hi
+        self.ADDR_ENEMY_MAX_HP_LO = p.addr_enemy_max_hp_lo
+        self.ADDR_ENEMY_LEVEL = p.addr_enemy_level
+        self.ADDR_ENEMY_SPECIES = p.addr_enemy_species
+        self.ADDR_ENEMY_TYPE1 = p.addr_enemy_type1
+        self.ADDR_ENEMY_TYPE2 = p.addr_enemy_type2
+        self.ADDR_PLAYER_HP_HI = p.addr_player_hp_hi
+        self.ADDR_PLAYER_HP_LO = p.addr_player_hp_lo
+        self.ADDR_PLAYER_MAX_HP_HI = p.addr_player_max_hp_hi
+        self.ADDR_PLAYER_MAX_HP_LO = p.addr_player_max_hp_lo
+        self.ADDR_PLAYER_LEVEL = p.addr_player_level
+        self.ADDR_PLAYER_SPECIES = p.addr_player_species
+        self.ADDR_MOVE_1, self.ADDR_MOVE_2 = p.addr_move_1, p.addr_move_2
+        self.ADDR_MOVE_3, self.ADDR_MOVE_4 = p.addr_move_3, p.addr_move_4
+        self.ADDR_PP_1, self.ADDR_PP_2 = p.addr_pp_1, p.addr_pp_2
+        self.ADDR_PP_3, self.ADDR_PP_4 = p.addr_pp_3, p.addr_pp_4
+        self.ADDR_PARTY_COUNT = p.addr_party_count
+        self.ADDR_PARTY_SPECIES_LIST = p.addr_party_species_list
+        self.PARTY_BASE = p.party_base
+        self.ADDR_MAP_ID = p.addr_map_id
+        self.ADDR_PLAYER_X = p.addr_player_x
+        self.ADDR_PLAYER_Y = p.addr_player_y
+        self.ADDR_BADGES = p.addr_badges
+        self.ADDR_MONEY_1, self.ADDR_MONEY_2, self.ADDR_MONEY_3 = (
+            p.addr_money_1,
+            p.addr_money_2,
+            p.addr_money_3,
+        )
+        self.ADDR_WD730 = p.addr_wd730
+        self.ADDR_WD74B = p.addr_wd74b
+        self.ADDR_PLAYER_FACING = p.addr_player_facing
 
     def _read(self, addr: int) -> int:
         """Read a single byte from memory."""
@@ -323,10 +345,10 @@ class MemoryReader:
 
     def read_bag_items(self) -> list[tuple[int, int]]:
         """Read item_id/quantity pairs from the bag."""
-        count = self._read(ADDR_BAG_COUNT)
+        count = self._read(self.profile.addr_bag_count)
         items: list[tuple[int, int]] = []
         for i in range(min(count, BAG_MAX_SLOTS)):
-            addr = ADDR_BAG_ITEMS + i * 2
+            addr = self.profile.addr_bag_items + i * 2
             item_id = self._read(addr)
             if item_id == 0xFF:
                 break
