@@ -70,7 +70,7 @@ def test_red_blue_matches_legacy_constants():
     assert RED_BLUE.addr_text_progress == 0xC4F2
     assert RED_BLUE.addr_warp_flag == 0xD736
     assert RED_BLUE.routes_file == "routes.json"
-    assert RED_BLUE.starter_flow == "table_pick"
+    assert RED_BLUE.lab_ball_x == 6  # Charmander ball column
 
 
 def test_yellow_is_red_minus_one_in_wram_block():
@@ -87,7 +87,7 @@ def test_yellow_story_hooks():
     assert YELLOW.name == "yellow"
     assert YELLOW.label == "Yellow"
     assert YELLOW.routes_file == "routes.yellow.json"
-    assert YELLOW.starter_flow == "gift"
+    assert YELLOW.lab_ball_x == 7  # the single Eevee ball (pokeyellow OaksLab objects)
 
 
 def test_profile_for_title():

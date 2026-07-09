@@ -23,7 +23,11 @@ class GameProfile:
     name: str  # stamped into telemetry events
     label: str  # human-readable, for logs/prompts
     routes_file: str  # waypoint file under references/
-    starter_flow: str  # "table_pick" (R/B lab Pokeballs) | "gift" (Yellow dialogue)
+    # Column of the lab Pokeball the agent walks to (interact from y=4 facing up):
+    # Red/Blue have three balls at (6..8, 3) and the agent picks Charmander at x=6;
+    # Yellow has a single Eevee ball at (7, 3) — interacting triggers the rival grab
+    # and Oak handing over Pikachu (pokeyellow scripts/OaksLab.asm).
+    lab_ball_x: int
     # Pallet Town y-coordinate where the Oak intercept fires with an empty party:
     # pokered PalletTownDefaultScript checks wYCoord == 1; pokeyellow checks == 0
     # (the player must actually step onto the north boundary row).
@@ -90,7 +94,7 @@ RED_BLUE = GameProfile(
     name="red_blue",
     label="Red/Blue",
     routes_file="routes.json",
-    starter_flow="table_pick",
+    lab_ball_x=6,
     oak_trigger_y=1,
     addr_battle_type=0xD057,
     addr_enemy_hp_hi=0xCFE6,
@@ -154,7 +158,7 @@ YELLOW = _shift_wram(
     name="yellow",
     label="Yellow",
     routes_file="routes.yellow.json",
-    starter_flow="gift",
+    lab_ball_x=7,
     oak_trigger_y=0,
 )
 

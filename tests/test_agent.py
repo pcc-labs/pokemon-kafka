@@ -3806,18 +3806,25 @@ def test_env_evolve_params_override_notes(tmp_path, monkeypatch):
 # ===================================================================
 
 
-class TestYellowLabGiftFlow:
-    """Yellow: Oak hands over Pikachu via dialogue — no Pokeball-table walk."""
+class TestYellowLabBallColumn:
+    """Yellow: one Eevee ball at (7,3) — the table walk targets x=7, not Red's x=6."""
 
-    def test_yellow_lab_uses_dialogue_not_table(self, tmp_path):
+    def test_yellow_lab_walks_past_red_column(self, tmp_path):
         from game_profile import YELLOW
 
         ag = _make_agent(tmp_path)
         ag.profile = YELLOW
-        state = OverworldState(map_id=40, party_count=0, x=3, y=2)
-        actions = [ag.choose_overworld_action(state) for _ in range(4)]
-        assert actions == ["a", "a", "a", "b"]
-        assert not hasattr(ag, "_lab_phase")  # table-walk state machine never engages
+        ag._lab_turns = 0
+        ag._lab_phase = 1
+        with patch.object(agent, "Image", None):
+            # At Red's Charmander column (x=6): Yellow must keep walking right
+            state = OverworldState(map_id=40, party_count=0, x=6, y=4)
+            assert ag.choose_overworld_action(state) == "right"
+            assert ag._lab_phase == 1
+            # At the Eevee ball column (x=7): switch to the interact phase
+            state = OverworldState(map_id=40, party_count=0, x=7, y=4)
+            assert ag.choose_overworld_action(state) == "up"
+            assert ag._lab_phase == 2
 
     def test_red_blue_lab_still_walks_to_table(self, tmp_path):
         ag = _make_agent(tmp_path)
