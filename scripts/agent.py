@@ -874,8 +874,18 @@ class PokemonAgent:
                 return "down"  # walk south away from door
             return "left"  # sidestep to avoid door on return north
 
-        # In Oak's lab with no Pokemon: walk to Pokeball table and pick one.
-        # Oak's Lab script (0xD5F1) tracks the cutscene state but we don't
+        # In Oak's lab with no Pokemon: acquire the starter, per the game's flow.
+        # Yellow ("gift"): Oak hands over Pikachu through the escorted-to-lab
+        # dialogue — there is no Pokeball table to pick from. Advance text with A
+        # and back out of any accidental menu with B until the party exists.
+        if state.map_id == 40 and state.party_count == 0 and self.profile.starter_flow == "gift":
+            if not hasattr(self, "_lab_turns"):
+                self._lab_turns = 0
+            self._lab_turns += 1
+            return "b" if self._lab_turns % 4 == 0 else "a"
+
+        # Red/Blue ("table_pick"): walk to the Pokeball table and pick one.
+        # The Pallet Town script (0xD5F1) tracks the cutscene state but we don't
         # gate on it — the phases below handle all states by pressing B to
         # dismiss dialogue and navigating to the Pokeball table.
         # Pokeball sprites at (6,3)=Charmander, (7,3)=Squirtle, (8,3)=Bulbasaur.

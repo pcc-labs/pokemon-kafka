@@ -1,0 +1,129 @@
+{
+  "_comment": "Yellow variant of routes.json. Overworld maps (Pallet, Route 1, Viridian, Route 2, Pewter) share Red's layouts; Viridian Forest was rearranged in Yellow, so its waypoints are reduced to the exit target and the WorldMap planner explores the maze (cross_step sweeps the top boundary for the true exit column).",
+  "0": {
+    "name": "Pallet Town",
+    "waypoints": [
+      {
+        "x": 8,
+        "y": 10,
+        "note": "Center path between houses"
+      },
+      {
+        "x": 10,
+        "y": 4,
+        "note": "North through gap \u2014 x=10 is the walkable corridor"
+      },
+      {
+        "x": 10,
+        "y": 2,
+        "note": "Approach north tree line"
+      },
+      {
+        "x": 10,
+        "y": 1,
+        "note": "Oak trigger tile \u2014 only x=10 is open at y=1"
+      }
+    ]
+  },
+  "12": {
+    "name": "Route 1",
+    "_comment": "Northbound to Viridian. NOT a loop \u2014 the old grind loop never exited north, which stranded the agent before the Oak's Parcel gate (the parcel quest needs to reach Viridian).",
+    "waypoints": [
+      {
+        "x": 10,
+        "y": 28,
+        "note": "North from the Pallet entry"
+      },
+      {
+        "x": 17,
+        "y": 27,
+        "note": "Weave east around the first ledge"
+      },
+      {
+        "x": 10,
+        "y": 18,
+        "note": "Back to center, climbing"
+      },
+      {
+        "x": 15,
+        "y": 13,
+        "note": "Up the mid-route gap"
+      },
+      {
+        "x": 16,
+        "y": 4,
+        "note": "North column toward the exit"
+      },
+      {
+        "x": 16,
+        "y": 0,
+        "note": "Exit north into Viridian City"
+      }
+    ]
+  },
+  "1": {
+    "name": "Viridian City",
+    "waypoints": [
+      {
+        "x": 17,
+        "y": 17,
+        "note": "Enter from Route 1"
+      },
+      {
+        "x": 17,
+        "y": 10,
+        "note": "Pokemon Center"
+      },
+      {
+        "x": 17,
+        "y": 1,
+        "note": "Exit north to Route 2"
+      }
+    ]
+  },
+  "13": {
+    "name": "Route 2",
+    "waypoints": [
+      {
+        "x": 3,
+        "y": 43,
+        "note": "Enter from Viridian"
+      },
+      {
+        "x": 3,
+        "y": 1,
+        "note": "Exit north to Viridian Forest entrance"
+      }
+    ]
+  },
+  "51": {
+    "name": "Viridian Forest (Yellow layout)",
+    "waypoints": [
+      {
+        "x": 1,
+        "y": 0,
+        "note": "North exit toward Pewter \u2014 layout differs from Red; WorldMap explores, cross_step sweeps the top boundary for the real exit column"
+      }
+    ]
+  },
+  "2": {
+    "name": "Pewter City",
+    "waypoints": [
+      {
+        "x": 13,
+        "y": 25,
+        "note": "Enter from forest"
+      },
+      {
+        "x": 19,
+        "y": 17,
+        "note": "Pokemon Center"
+      },
+      {
+        "x": 16,
+        "y": 11,
+        "note": "Pewter Gym"
+      }
+    ]
+  }
+}

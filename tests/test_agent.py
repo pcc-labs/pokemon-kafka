@@ -3799,3 +3799,30 @@ def test_env_evolve_params_override_notes(tmp_path, monkeypatch):
     (tmp_path / "notes.md").write_text('<!-- autotune:genome\n{"door_cooldown": 12}\n-->\n')
     ag = _build_agent_with_script_dir(tmp_path, scripts_dir)
     assert ag._evolve_door_cooldown == 4
+
+
+# ===================================================================
+# choose_overworld_action -- Yellow gift-starter lab flow
+# ===================================================================
+
+
+class TestYellowLabGiftFlow:
+    """Yellow: Oak hands over Pikachu via dialogue — no Pokeball-table walk."""
+
+    def test_yellow_lab_uses_dialogue_not_table(self, tmp_path):
+        from game_profile import YELLOW
+
+        ag = _make_agent(tmp_path)
+        ag.profile = YELLOW
+        state = OverworldState(map_id=40, party_count=0, x=3, y=2)
+        actions = [ag.choose_overworld_action(state) for _ in range(4)]
+        assert actions == ["a", "a", "a", "b"]
+        assert not hasattr(ag, "_lab_phase")  # table-walk state machine never engages
+
+    def test_red_blue_lab_still_walks_to_table(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        with patch.object(agent, "Image", None):
+            state = OverworldState(map_id=40, party_count=0, x=3, y=4)
+            result = ag.choose_overworld_action(state)
+        assert result == "right"
+        assert ag._lab_phase == 1
