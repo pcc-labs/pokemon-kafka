@@ -268,13 +268,15 @@ class GameEventCollector:
     Confluent Cloud immediately instead of being batched after the run.
     """
 
-    def __init__(self, publisher=None, recorder=None):
+    def __init__(self, publisher=None, recorder=None, game: str = "red_blue"):
         self.events: list[dict] = []
         self._publisher = publisher
         self._recorder = recorder
+        self.game = game
 
     def _emit(self, event: dict) -> None:
         """Append *event* to the local list, publish, and record if configured."""
+        event["game"] = self.game
         self.events.append(event)
         if self._publisher is not None:
             try:

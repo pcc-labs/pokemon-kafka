@@ -32,6 +32,7 @@ viewer = "viewer.__main__:main"
 testpaths = ["tests"]
 pythonpath = ["scripts", "tests", "."]
 filterwarnings = ["ignore::starlette.exceptions.StarletteDeprecationWarning"]
+markers = ["rom: needs real ROMs under rom/ and several minutes of emulation"]
 
 [tool.coverage.run]
 source = ["scripts", "viewer"]

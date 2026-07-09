@@ -2246,7 +2246,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=5,
             battle_limit=0,
@@ -2280,7 +2280,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=True)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=True, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=10,
             battle_limit=0,
@@ -2303,7 +2303,7 @@ class TestMain:
         ):
             main()
 
-        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False)
+        mock_cls.assert_called_once_with(str(rom), strategy="low", screenshots=False, game=None)
         mock_agent.run.assert_called_once_with(
             max_turns=100_000,
             battle_limit=0,
@@ -3799,3 +3799,37 @@ def test_env_evolve_params_override_notes(tmp_path, monkeypatch):
     (tmp_path / "notes.md").write_text('<!-- autotune:genome\n{"door_cooldown": 12}\n-->\n')
     ag = _build_agent_with_script_dir(tmp_path, scripts_dir)
     assert ag._evolve_door_cooldown == 4
+
+
+# ===================================================================
+# choose_overworld_action -- Yellow gift-starter lab flow
+# ===================================================================
+
+
+class TestYellowLabBallColumn:
+    """Yellow: one Eevee ball at (7,3) — the table walk targets x=7, not Red's x=6."""
+
+    def test_yellow_lab_walks_past_red_column(self, tmp_path):
+        from game_profile import YELLOW
+
+        ag = _make_agent(tmp_path)
+        ag.profile = YELLOW
+        ag._lab_turns = 0
+        ag._lab_phase = 1
+        with patch.object(agent, "Image", None):
+            # At Red's Charmander column (x=6): Yellow must keep walking right
+            state = OverworldState(map_id=40, party_count=0, x=6, y=4)
+            assert ag.choose_overworld_action(state) == "right"
+            assert ag._lab_phase == 1
+            # At the Eevee ball column (x=7): switch to the interact phase
+            state = OverworldState(map_id=40, party_count=0, x=7, y=4)
+            assert ag.choose_overworld_action(state) == "up"
+            assert ag._lab_phase == 2
+
+    def test_red_blue_lab_still_walks_to_table(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        with patch.object(agent, "Image", None):
+            state = OverworldState(map_id=40, party_count=0, x=3, y=4)
+            result = ag.choose_overworld_action(state)
+        assert result == "right"
+        assert ag._lab_phase == 1

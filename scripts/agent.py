@@ -34,6 +34,7 @@ except ImportError:
     Image = None
 
 from game_events import GameEventCollector
+from game_profile import RED_BLUE, YELLOW, detect_profile
 from memory_file import MemoryFile
 from memory_reader import (
     HEALING_ITEM_IDS,
@@ -656,11 +657,13 @@ class StrategyEngine:
 class PokemonAgent:
     """Autonomous Pokemon player."""
 
-    def __init__(self, rom_path: str, strategy: str = "low", screenshots: bool = False):
+    def __init__(self, rom_path: str, strategy: str = "low", screenshots: bool = False, game: str | None = None):
         self.rom_path = rom_path
         self.pyboy = PyBoy(rom_path, window="null")
         self.controller = GameController(self.pyboy)
-        self.memory = MemoryReader(self.pyboy)
+        overrides = {"red_blue": RED_BLUE, "yellow": YELLOW}
+        self.profile = overrides.get(game or "") or detect_profile(self.pyboy)
+        self.memory = MemoryReader(self.pyboy, self.profile)
         self.type_chart = load_type_chart()
         self.battle_strategy = BattleStrategy(self.type_chart)  # re-created below with evolve params
         self.strategy_engine = StrategyEngine(
@@ -677,7 +680,7 @@ class PokemonAgent:
         self.recent_positions: list[tuple[int, int, int]] = []
         self.maps_visited: set[int] = set()
         self.events: list[str] = []
-        self.collector = GameEventCollector()
+        self.collector = GameEventCollector(game=self.profile.name)
         self.collision_map = CollisionMap()
         self.door_cooldown: int = 0  # Steps to walk away from door after exiting a building
         # Oak's Parcel quest: drives the Viridian Mart pickup → Oak delivery → Old-Man gate, the
@@ -724,10 +727,11 @@ class PokemonAgent:
         self.pokedex_dir = SCRIPT_DIR.parent / "pokedex"
         self.pokedex_dir.mkdir(parents=True, exist_ok=True)
 
-        # Load routes
+        # Load routes (waypoint file is per-game: Yellow rearranged some maps)
         routes = {}
-        if ROUTES_PATH.exists():
-            with open(ROUTES_PATH) as f:
+        routes_path = ROUTES_PATH.parent / self.profile.routes_file
+        if routes_path.exists():
+            with open(routes_path) as f:
                 routes = json.load(f)
         self.navigator = Navigator(routes)  # re-created below with evolve params
 
@@ -775,6 +779,7 @@ class PokemonAgent:
             )
 
         print(f"[agent] Loaded ROM: {rom_path}")
+        print(f"[agent] Game: {self.profile.label} ({self.profile.name})")
         print(f"[agent] Strategy: {strategy}")
         if self.evolve_params:
             print(f"[agent] Evolve params: {json.dumps(self.evolve_params)}")
@@ -869,14 +874,16 @@ class PokemonAgent:
                 return "down"  # walk south away from door
             return "left"  # sidestep to avoid door on return north
 
-        # In Oak's lab with no Pokemon: walk to Pokeball table and pick one.
-        # Oak's Lab script (0xD5F1) tracks the cutscene state but we don't
+        # In Oak's lab with no Pokemon: walk to the Pokeball table and pick one.
+        # The Pallet Town script (0xD5F1) tracks the cutscene state but we don't
         # gate on it — the phases below handle all states by pressing B to
         # dismiss dialogue and navigating to the Pokeball table.
-        # Pokeball sprites at (6,3)=Charmander, (7,3)=Squirtle, (8,3)=Bulbasaur.
-        # Interact from y=4 facing UP.
+        # Red/Blue: balls at (6,3)=Charmander, (7,3)=Squirtle, (8,3)=Bulbasaur.
+        # Yellow: a single Eevee ball at (7,3) — interacting triggers the rival
+        # grabbing it and Oak handing over Pikachu. The target column comes from
+        # the game profile. Interact from y=4 facing UP.
         if state.map_id == 40 and state.party_count == 0:
-            lab_script = self.memory._read(0xD5F1)
+            lab_script = self.memory._read(self.profile.addr_lab_script)
             if not hasattr(self, "_lab_turns"):
                 self._lab_turns = 0
             self._lab_turns += 1
@@ -900,8 +907,8 @@ class PokemonAgent:
                 return "down"
 
             elif self._lab_phase == 1:
-                # Move east to x=6 (Charmander's Pokeball column)
-                if state.x >= 6:
+                # Move east to the target Pokeball column (per-game, from the profile)
+                if state.x >= self.profile.lab_ball_x:
                     self._lab_phase = 2
                     self.log(f"LAB | phase 1→2 at pokeball column ({state.x},{state.y})")
                     return "up"
@@ -1442,9 +1449,9 @@ class PokemonAgent:
 
         if state.map_id == 0 and state.y <= 3 and state.party_count == 0:
             # Log game state near the Oak trigger zone
-            wd730 = self.memory._read(0xD730)
-            wd74b = self.memory._read(0xD74B)
-            cur_script = self.memory._read(0xD625)
+            wd730 = self.memory._read(self.profile.addr_wd730)
+            wd74b = self.memory._read(self.profile.addr_wd74b)
+            cur_script = self.memory._read(self.profile.addr_diag_script)
             if self.turn_count % 5 == 0:
                 self.log(
                     f"DIAG | Pallet y={state.y} x={state.x} wd730=0x{wd730:02X} wd74b=0x{wd74b:02X} script={cur_script}"
@@ -1453,9 +1460,11 @@ class PokemonAgent:
                 self._pallet_diag_done = True
                 self.take_screenshot("pallet_north", force=True)
 
-            # At y<=1, Oak's PalletTownScript0 triggers. Stop movement and
-            # wait for Oak to walk to the player, then mash A through dialogue.
-            if state.y <= 1:
+            # Oak's Pallet Town script triggers at a per-game y (Red/Blue: y==1;
+            # Yellow: y==0 — the player must step onto the north boundary row).
+            # Stop movement and wait for Oak to walk over, then mash A through
+            # dialogue (in Yellow that includes the scripted wild-Pikachu catch).
+            if state.y <= self.profile.oak_trigger_y:
                 if not hasattr(self, "_oak_wait_done"):
                     self._oak_wait_done = True
                     self.log(f"OAK TRIGGER | At y={state.y} x={state.x}. Waiting for Oak script...")
@@ -1472,7 +1481,7 @@ class PokemonAgent:
                         self.controller.mash_a(30, delay=30)
                         self.controller.wait(300)
                     s = self.memory.read_overworld_state()
-                    wd730 = self.memory._read(0xD730)
+                    wd730 = self.memory._read(self.profile.addr_wd730)
                     self.log(
                         f"OAK TRIGGER | After wait: map={s.map_id} ({s.x},{s.y}) "
                         f"party={s.party_count} wd730=0x{wd730:02X}"
@@ -1584,8 +1593,8 @@ class PokemonAgent:
         # Diagnostic: capture game state right after intro
         intro_state = self.memory.read_overworld_state()
         self.take_screenshot("post_intro", force=True)
-        wd730 = self.memory._read(0xD730)
-        wd74b = self.memory._read(0xD74B)
+        wd730 = self.memory._read(self.profile.addr_wd730)
+        wd74b = self.memory._read(self.profile.addr_wd74b)
         self.log(
             f"DIAG | Post-intro: map={intro_state.map_id} pos=({intro_state.x},{intro_state.y}) "
             f"party={intro_state.party_count} wd730=0x{wd730:02X} wd74b=0x{wd74b:02X}"
@@ -1873,6 +1882,12 @@ def main():
         help="Decision strategy (default: low)",
     )
     parser.add_argument(
+        "--game",
+        choices=["auto", "red_blue", "yellow"],
+        default="auto",
+        help="Force a game profile (default: auto-detect from the ROM header title)",
+    )
+    parser.add_argument(
         "--max-turns",
         type=int,
         default=100_000,
@@ -1948,7 +1963,12 @@ def main():
         except Exception as exc:
             print(f"[agent] game publisher setup failed: {exc}")
 
-    agent = PokemonAgent(args.rom, strategy=args.strategy, screenshots=args.save_screenshots)
+    agent = PokemonAgent(
+        args.rom,
+        strategy=args.strategy,
+        screenshots=args.save_screenshots,
+        game=None if args.game == "auto" else args.game,
+    )
     if args.worldmap_file:
         agent.worldmap_file = args.worldmap_file
         agent.world = WorldMap.load(args.worldmap_file)  # resume learned geometry, if any
@@ -1974,7 +1994,7 @@ def main():
             live=producer.send if producer is not None else None,
         )
     if game_pub is not None or recorder is not None:
-        agent.collector = GameEventCollector(publisher=game_pub, recorder=recorder)
+        agent.collector = GameEventCollector(publisher=game_pub, recorder=recorder, game=agent.profile.name)
     if recorder is not None:
         recorder.start({"strategy": args.strategy, "rom": args.rom, "label": args.label})
 
