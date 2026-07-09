@@ -1468,9 +1468,11 @@ class PokemonAgent:
                 self._pallet_diag_done = True
                 self.take_screenshot("pallet_north", force=True)
 
-            # At y<=1, Oak's PalletTownScript0 triggers. Stop movement and
-            # wait for Oak to walk to the player, then mash A through dialogue.
-            if state.y <= 1:
+            # Oak's Pallet Town script triggers at a per-game y (Red/Blue: y==1;
+            # Yellow: y==0 — the player must step onto the north boundary row).
+            # Stop movement and wait for Oak to walk over, then mash A through
+            # dialogue (in Yellow that includes the scripted wild-Pikachu catch).
+            if state.y <= self.profile.oak_trigger_y:
                 if not hasattr(self, "_oak_wait_done"):
                     self._oak_wait_done = True
                     self.log(f"OAK TRIGGER | At y={state.y} x={state.x}. Waiting for Oak script...")

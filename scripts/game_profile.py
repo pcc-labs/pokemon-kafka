@@ -24,6 +24,10 @@ class GameProfile:
     label: str  # human-readable, for logs/prompts
     routes_file: str  # waypoint file under references/
     starter_flow: str  # "table_pick" (R/B lab Pokeballs) | "gift" (Yellow dialogue)
+    # Pallet Town y-coordinate where the Oak intercept fires with an empty party:
+    # pokered PalletTownDefaultScript checks wYCoord == 1; pokeyellow checks == 0
+    # (the player must actually step onto the north boundary row).
+    oak_trigger_y: int
 
     # Battle
     addr_battle_type: int
@@ -87,6 +91,7 @@ RED_BLUE = GameProfile(
     label="Red/Blue",
     routes_file="routes.json",
     starter_flow="table_pick",
+    oak_trigger_y=1,
     addr_battle_type=0xD057,
     addr_enemy_hp_hi=0xCFE6,
     addr_enemy_hp_lo=0xCFE7,
@@ -150,6 +155,7 @@ YELLOW = _shift_wram(
     label="Yellow",
     routes_file="routes.yellow.json",
     starter_flow="gift",
+    oak_trigger_y=0,
 )
 
 

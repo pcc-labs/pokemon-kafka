@@ -102,3 +102,9 @@ def test_detect_profile_reads_cartridge_title():
     pyboy = MagicMock()
     pyboy.cartridge_title = "POKEMON YELLOW"
     assert detect_profile(pyboy) is YELLOW
+
+
+def test_oak_trigger_row_is_per_game():
+    # pokered PalletTownDefaultScript: cp 1; pokeyellow: cp 0 (north boundary row)
+    assert RED_BLUE.oak_trigger_y == 1
+    assert YELLOW.oak_trigger_y == 0
