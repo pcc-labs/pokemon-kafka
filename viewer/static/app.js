@@ -1,5 +1,5 @@
 const API = "";
-let frames = [], feed = [], runId = null, idx = 0, timer = null, liveWs = null;
+let frames = [], feed = [], states = [], runId = null, idx = 0, timer = null, liveWs = null;
 let isolated = null; // null = show every kind; otherwise show only this one
 
 function kindForEvent(et) {
@@ -9,6 +9,7 @@ function kindForEvent(et) {
     et === "battle_end" || et === "battle_outcome" || et === "move_result"
   ) return "telemetry";
   if (et === "discovery") return "observation";
+  if (et === "decision") return "decision";
   return null;
 }
 
@@ -35,6 +36,10 @@ function textForEvent(msg) {
   if (et === "move_result") {
     const result = data.fainted ? "enemy fainted" : `${data.damage_dealt} dmg`;
     return `${data.user_species} used ${data.move} — ${result}`;
+  }
+  if (et === "decision") {
+    const buttons = (data.buttons || []).join("+") || "wait";
+    return `▸ ${buttons} — ${data.reason || ""}`;
   }
   return et || "event";
 }
@@ -94,6 +99,7 @@ async function selectRun(id, label) {
   const detail = await (await fetch(`${API}/api/runs/${id}`)).json();
   frames = detail.frames;
   feed = (await (await fetch(`${API}/api/runs/${id}/feed`)).json()).feed;
+  states = (await (await fetch(`${API}/api/runs/${id}/agent_state`)).json()).states;
   idx = 0;
   renderFeed();
   showFrame(idx);
@@ -105,6 +111,11 @@ async function selectRun(id, label) {
       if (msg.type === "done") {
         closeLive();
       } else if (msg.type === "event") {
+        if (msg.event_type === "agent_state") {
+          states.push({ turn: msg.turn, ts: msg.occurred_at || "", data: msg.data || {} });
+          renderStatePanel(msg.turn);
+          return;
+        }
         const kind = kindForEvent(msg.event_type);
         if (kind !== null) {
           feed.push({ kind, turn: msg.turn, text: textForEvent(msg) });
@@ -132,6 +143,43 @@ function renderFeed() {
     ul.appendChild(li);
   });
   highlightCurrentFeedEntry();
+}
+
+function stateForTurn(turn) {
+  let best = null;
+  for (const s of states) {
+    if (s.turn <= turn) best = s;
+    else break;
+  }
+  return best;
+}
+
+function renderStatePanel(turn) {
+  const snap = stateForTurn(turn);
+  const policy = document.getElementById("st-policy");
+  if (!snap) {
+    policy.textContent = "no agent state";
+    ["st-plan", "st-memory", "st-status"].forEach(id => { document.getElementById(id).textContent = ""; });
+    updateStatsBar(turn, null);
+    return;
+  }
+  const d = snap.data;
+  policy.textContent = `tier: ${d.tier || "?"}`;
+  const wps = (d.route_waypoints || []).map(w => `(${w.x},${w.y})`).join(" → ");
+  document.getElementById("st-plan").textContent = `${d.goal || "no active goal"}${wps ? "\nroute: " + wps : ""}`;
+  document.getElementById("st-memory").textContent = d.notes_excerpt || "(empty)";
+  const pos = d.position || {};
+  document.getElementById("st-status").textContent =
+    `map ${pos.map_id} (${pos.x},${pos.y})\nparty: ${d.party_count}  stuck: ${d.stuck_streak}`;
+  updateStatsBar(turn, d);
+}
+
+function updateStatsBar(turn, d) {
+  document.getElementById("sb-run").textContent = runId || "";
+  document.getElementById("sb-tier").textContent = d ? `tier ${d.tier}` : "";
+  document.getElementById("sb-turn").textContent = `Turn ${turn}`;
+  document.getElementById("sb-battles").textContent = d ? `⚔️ ${d.battles_won}` : "";
+  document.getElementById("sb-maps").textContent = d ? `🗺️ ${d.maps_visited}` : "";
 }
 
 function turnForFrame(i) {
@@ -175,6 +223,7 @@ function showFrame(i) {
   const readout = document.getElementById("turn-readout");
   if (readout) readout.textContent = `Turn ${turnForFrame(idx)}`;
   highlightCurrentFeedEntry();
+  renderStatePanel(turnForFrame(idx));
 }
 
 // Playback speed (ms per frame). Higher = slower. Tune live with [ and ] keys.
