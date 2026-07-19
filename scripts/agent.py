@@ -1072,7 +1072,7 @@ class PokemonAgent:
 
     def _maybe_emit_agent_state(self, state: OverworldState) -> None:
         """Snapshot agent state every 10 turns, plus on map/party/stuck-transition changes."""
-        sig = (state.map_id, state.party_count, self.stuck_turns > 0)
+        sig = (state.map_id, state.party_count, self.stuck_turns > 0, self.battles_won)
         if self.turn_count % 10 != 0 and sig == getattr(self, "_last_state_sig", None):
             return
         self._last_state_sig = sig

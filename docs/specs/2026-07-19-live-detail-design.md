@@ -36,7 +36,7 @@ Two new builders using the existing `_envelope` (which already carries
 ```python
 build_decision_event(turn, mode, reason, buttons)
 # event_type "decision"
-# data: {"mode": "overworld" | "battle" | "menu" | "dialogue",
+# data: {"mode": "overworld" | "battle",
 #        "reason": "pilot to staircase (7,1) on map 38",
 #        "buttons": ["right"]}
 
@@ -55,8 +55,8 @@ following the existing builder-thin-wrapper pattern.
 
 - Call `collector.decision(...)` at existing choice points with a one-line
   human-readable reason: overworld pilot step (goal tile + chosen direction),
-  battle move pick, stuck recovery, dialogue/menu handling. One decision event
-  per acted turn.
+  battle move pick, stuck recovery. Dialogue/menu presses surface through the
+  overworld mode. One decision event per acted turn.
 - Call `collector.agent_state(...)` on the frame-interval cadence (same turns
   as `tick()` captures frames) **plus** on map change, stuck-streak change,
   and party change.
@@ -108,3 +108,5 @@ as `currentFeedEntryIndex`).
 - LLM transcript/cost display (agent is heuristic; no $ metric exists).
 - Exo-style dark dashboard theme.
 - JS test infrastructure.
+- Distinct menu/dialogue decision modes (dialogue presses surface via the
+  overworld mode; possible follow-up).

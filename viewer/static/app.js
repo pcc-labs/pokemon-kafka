@@ -103,6 +103,7 @@ async function selectRun(id, label) {
   idx = 0;
   renderFeed();
   showFrame(idx);
+  renderStatePanel(frames.length ? turnForFrame(idx) : 0);
   if (detail.status === "live") {
     const proto = location.protocol === "https:" ? "wss:" : "ws:";
     liveWs = new WebSocket(`${proto}//${location.host}/ws/live/${id}`);
