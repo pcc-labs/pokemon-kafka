@@ -40,6 +40,17 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
         feed = build_feed(store.load_events(run_id), observations, anomalies)
         return {"feed": [e.to_dict() for e in feed]}
 
+    @app.get("/api/runs/{run_id}/agent_state")
+    def run_agent_state(run_id: str):
+        if not (runs_dir / run_id).is_dir():
+            raise HTTPException(status_code=404, detail="run not found")
+        states = [
+            {"turn": int(ev.get("turn", 0)), "ts": ev.get("occurred_at", ""), "data": ev.get("data", {})}
+            for ev in store.load_events(run_id)
+            if ev.get("event_type") == "agent_state"
+        ]
+        return {"states": sorted(states, key=lambda s: s["turn"])}
+
     @app.get("/runs/{run_id}/frames/{name}")
     def frame(run_id: str, name: str):
         path = runs_dir / run_id / "frames" / name

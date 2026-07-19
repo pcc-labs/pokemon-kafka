@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from pathlib import Path
 
 import pytest
@@ -197,3 +198,21 @@ def test_ws_produce_disconnect_no_hub(tmp_path: Path):
     with client.websocket_connect("/ws/produce/r") as prod:
         prod.send_json({"type": "event", "turn": 1})
     # No assertion needed beyond no exception being raised
+
+
+def test_agent_state_endpoint_and_404(tmp_path: Path):
+    run = tmp_path / "r1"
+    run.mkdir()
+    events = [
+        {"event_type": "agent_state", "turn": 20, "occurred_at": "t2", "data": {"tier": "low", "stuck_streak": 0}},
+        {"event_type": "agent_state", "turn": 10, "occurred_at": "t1", "data": {"tier": "low", "stuck_streak": 3}},
+        {"event_type": "decision", "turn": 10, "occurred_at": "t1", "data": {"mode": "overworld"}},
+    ]
+    (run / "events.jsonl").write_text("\n".join(json.dumps(e) for e in events))
+    client = TestClient(create_app(tmp_path))
+    resp = client.get("/api/runs/r1/agent_state")
+    assert resp.status_code == 200
+    states = resp.json()["states"]
+    assert [s["turn"] for s in states] == [10, 20]
+    assert states[0] == {"turn": 10, "ts": "t1", "data": {"tier": "low", "stuck_streak": 3}}
+    assert client.get("/api/runs/nope/agent_state").status_code == 404

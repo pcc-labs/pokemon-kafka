@@ -128,3 +128,20 @@ def test_event_text_fallback():
     assert text == "unknown"
     text = _event_text({})
     assert text == "event"
+
+
+def test_build_feed_decision_entries_and_agent_state_excluded():
+    events = [
+        {
+            "event_type": "decision",
+            "turn": 70,
+            "occurred_at": "2026-07-19T14:17:26.000000Z",
+            "data": {"mode": "overworld", "reason": "map 38 (3,7) stuck=0", "buttons": ["right"]},
+        },
+        {"event_type": "decision", "turn": 71, "data": {"mode": "overworld", "reason": "settling", "buttons": []}},
+        {"event_type": "agent_state", "turn": 70, "data": {"tier": "low"}},
+    ]
+    feed = build_feed(events)
+    assert [(e.turn, e.kind) for e in feed] == [(70, "decision"), (71, "decision")]
+    assert feed[0].text == "▸ right — map 38 (3,7) stuck=0"
+    assert feed[1].text == "▸ wait — settling"
