@@ -1059,6 +1059,38 @@ class PokemonAgent:
             )
         return target
 
+    def _waypoint_goal(self, state: OverworldState) -> tuple[str, list[dict]]:
+        """Current navigator goal for this map: ("WP 2→(7,1)", waypoint list) or ("", [])."""
+        route = self.navigator.routes.get(str(state.map_id))
+        if not route:
+            return "", []
+        waypoints = route["waypoints"] if isinstance(route, dict) and "waypoints" in route else route
+        if self.navigator.current_waypoint >= len(waypoints):
+            return "", list(waypoints)
+        wp = waypoints[self.navigator.current_waypoint]
+        return f"WP {self.navigator.current_waypoint}→({wp['x']},{wp['y']})", list(waypoints)
+
+    def _maybe_emit_agent_state(self, state: OverworldState) -> None:
+        """Snapshot agent state every 10 turns, plus on map/party/stuck-transition changes."""
+        sig = (state.map_id, state.party_count, self.stuck_turns > 0)
+        if self.turn_count % 10 != 0 and sig == getattr(self, "_last_state_sig", None):
+            return
+        self._last_state_sig = sig
+        goal, waypoints = self._waypoint_goal(state)
+        notes = self.strategy_engine.notes
+        self.collector.agent_state(
+            self.turn_count,
+            tier=self.strategy_engine.tier,
+            goal=goal,
+            route_waypoints=waypoints,
+            stuck_streak=self.stuck_turns,
+            notes_excerpt=notes.read()[:500] if notes is not None else "",
+            party_count=state.party_count,
+            position={"map_id": state.map_id, "x": state.x, "y": state.y},
+            battles_won=self.battles_won,
+            maps_visited=len(self.maps_visited),
+        )
+
     def log(self, msg: str):
         """Structured log line for Tapes to capture."""
         timestamp = time.strftime("%H:%M:%S")
@@ -1157,6 +1189,18 @@ class PokemonAgent:
         battle = self.memory.read_battle_state()
         bag_healing = self.memory.find_healing_item()
         action = self.battle_strategy.choose_action(battle, bag_healing=bag_healing)
+
+        act_desc = action["action"]
+        if act_desc == "fight":
+            act_desc = f"fight move#{action['move_index']}"
+        elif act_desc == "item":
+            act_desc = f"item {action.get('item', '?')}"
+        self.collector.decision(
+            self.turn_count,
+            "battle",
+            f"vs Lv{battle.enemy_level} {battle.enemy_species_name}: {act_desc}",
+            ["a"],
+        )
 
         self._current_enemy_species = battle.enemy_species_name
         self._current_enemy_type = battle.enemy_type_name
@@ -1410,6 +1454,12 @@ class PokemonAgent:
                     f"map={snap.map_id} ({snap.x},{snap.y}) "
                     f"attempt={snap.attempts}"
                 )
+                self.collector.decision(
+                    self.turn_count,
+                    "overworld",
+                    f"backtrack restore to turn {snap.turn} map={snap.map_id} ({snap.x},{snap.y})",
+                    [],
+                )
 
         # Restore when stuck too long (skip in Oak's Lab / Forest and while the quest pilot drives)
         if (
@@ -1438,6 +1488,12 @@ class PokemonAgent:
                     f"BACKTRACK | Restored to turn {snap.turn} "
                     f"map={snap.map_id} ({snap.x},{snap.y}) "
                     f"attempt={snap.attempts}"
+                )
+                self.collector.decision(
+                    self.turn_count,
+                    "overworld",
+                    f"backtrack restore to turn {snap.turn} map={snap.map_id} ({snap.x},{snap.y})",
+                    [],
                 )
 
         # Diagnostic: capture screen and collision data at key positions
@@ -1500,6 +1556,14 @@ class PokemonAgent:
         else:
             self.controller.press("a", hold_frames=20, release_frames=12)
             self.controller.wait(24)
+
+        goal, _ = self._waypoint_goal(state)
+        reason = f"map {state.map_id} ({state.x},{state.y}) stuck={self.stuck_turns}"
+        if goal:
+            reason += f" | {goal}"
+        buttons = [action] if action in {"up", "down", "left", "right", "a", "b"} else []
+        self.collector.decision(self.turn_count, "overworld", reason, buttons)
+        self._maybe_emit_agent_state(state)
 
         # Log position every 50 steps (or every 10 on map 0 for debugging)
         log_interval = 10 if state.map_id == 0 else 50

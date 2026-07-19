@@ -3833,3 +3833,51 @@ class TestYellowLabBallColumn:
             result = ag.choose_overworld_action(state)
         assert result == "right"
         assert ag._lab_phase == 1
+
+
+# ===================================================================
+# Agent instrumentation -- decision and agent_state events
+# ===================================================================
+
+
+class TestDecisionAndStateEvents:
+    def test_waypoint_goal_reads_navigator_route(self, tmp_path):
+        ag = _make_agent(tmp_path, routes={"38": [{"x": 7, "y": 1}]})
+        ag.navigator.current_waypoint = 0
+        state = OverworldState(map_id=38, party_count=0, x=3, y=7)
+        goal, waypoints = ag._waypoint_goal(state)
+        assert goal == "WP 0→(7,1)"
+        assert waypoints == [{"x": 7, "y": 1}]
+
+    def test_waypoint_goal_without_route(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        state = OverworldState(map_id=99, party_count=0, x=0, y=0)
+        goal, waypoints = ag._waypoint_goal(state)
+        assert goal == ""
+        assert waypoints == []
+
+    def test_maybe_emit_agent_state_on_interval_and_changes(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        state = OverworldState(map_id=38, party_count=0, x=3, y=7)
+        ag.turn_count = 10  # interval turn -> emits
+        ag._maybe_emit_agent_state(state)
+        ag.turn_count = 11  # nothing changed -> no emit
+        ag._maybe_emit_agent_state(state)
+        ag.turn_count = 12  # party changed -> emits
+        state2 = OverworldState(map_id=38, party_count=1, x=3, y=7)
+        ag._maybe_emit_agent_state(state2)
+        states = [e for e in ag.collector.events if e["event_type"] == "agent_state"]
+        assert [e["turn"] for e in states] == [10, 12]
+        assert states[0]["data"]["position"] == {"map_id": 38, "x": 3, "y": 7}
+        assert states[0]["data"]["tier"] == ag.strategy_engine.tier
+
+    def test_run_overworld_emits_decision_each_turn(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        with patch.object(agent, "Image", None):
+            ag.run_overworld()
+        decisions = [e for e in ag.collector.events if e["event_type"] == "decision"]
+        assert len(decisions) == 1
+        d = decisions[0]["data"]
+        assert d["mode"] == "overworld"
+        assert isinstance(d["buttons"], list)
+        assert d["reason"]
