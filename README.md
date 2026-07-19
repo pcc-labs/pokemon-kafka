@@ -117,10 +117,11 @@ Sessions are discovered from paperd (read from `ANTHROPIC_BASE_URL`), or from th
 
 ## Kafka Telemetry Pipeline
 
-The agent streams real-time **game events** to Kafka as structured events. `scripts/agent.py` publishes `pokemon.game.v1` events directly to the `agent.game.events` topic via `scripts/publisher.py` — no proxy required. Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
+The agent emits real-time **game events** (`pokemon.game.v1`) as JSONL via `scripts/publisher.py`; the local `agent.game.events` Kafka topic is fed from those events (seed it with `kafka-console-producer` from the JSONL sink, or pre-run before a demo). Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
 
 ```
-Agent → Kafka (agent.game.events)
+Agent → JSONL (data/telemetry/game/*.jsonl)
+  └→ seed → Kafka (agent.game.events)
             ├→ game-consumer (prints + writes JSONL)
             ├→ Flink SQL (anomaly detection)
             │    └→ Kafka (agent.telemetry.alerts)

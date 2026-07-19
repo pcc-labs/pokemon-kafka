@@ -197,7 +197,7 @@ is still driven by prompts into Claude Code.
 |---|---|---|
 | Intro (existing) | 20 | slides + interwoven demo (beats above) |
 | Act 1 — It plays | 8 | **live** (prompt → `--live` viewer) |
-| Act 2 — It streams | 7 | **live** Confluent |
+| Act 2 — It streams | 7 | **live** local Kafka + Flink |
 | Act 3 — It learns across sessions | 8 | 10 bots in 36s + artifacts |
 | Act 4 — It trains weights | 10 | pre-baked + live inference |
 | Act 5 — The wall + what's next | 7 | slides + `/goal` vision |
@@ -217,10 +217,14 @@ One agent is a toy. Stream every event and you have a dataset — the substrate
 everything after is built on.
 
 - **Prompt / skill:** `/route1-speedrun-demo` again, but this time point at the
-  Confluent side. Split screen: agent left, Confluent `pokemon.game.events`
-  topic right.
+  local stack (`docker compose up -d` beforehand). Split screen: agent left;
+  right shows the `agent.game.events` topic streaming
+  (`docker compose logs -f game-consumer`) with the Flink dashboard
+  (localhost:8081) and `alerts-consumer` ready for the anomaly beat.
 - **Land:** the event schema is the contract. Everything downstream reads these
-  same JSONL/Kafka events. **Pre-run once** so the topic already has messages.
+  same JSONL/Kafka events — all of it running on this laptop, no cloud account.
+  **Pre-seed once** (`kafka-console-producer` from the JSONL sink) so the topic
+  already has messages.
 
 ### Act 3 — "It learns across sessions" (AlphaEvolve — "10 bots in 36 seconds")
 
