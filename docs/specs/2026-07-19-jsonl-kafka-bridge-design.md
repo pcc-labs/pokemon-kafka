@@ -51,10 +51,17 @@ New `game-event-bridge` service:
 
 - `depends_on: kafka: condition: service_healthy` (same as the consumers).
 - Env: `KAFKA_BOOTSTRAP_SERVERS=kafka:29092`, `KAFKA_TOPIC=agent.game.events`,
-  `TELEMETRY_DIR=/telemetry`, `STATE_FILE=/state/offsets.json`,
-  `POLL_MS=500`, `FROM_BEGINNING=1`.
-- Volumes: `./data/telemetry/game:/telemetry:ro` and
-  `./data/.bridge-state:/state` (state lives outside the read-only sink).
+  `TELEMETRY_DIR=/telemetry`, `POLL_MS=500`, `FROM_BEGINNING=1`.
+- Volume: `./data/telemetry/game:/telemetry:ro` only.
+- **State is container-local** (`STATE_FILE` defaults to
+  `/tmp/bridge-offsets.json`, no volume). Found during the live E2E test:
+  the kafka service has no volume, so a `compose down && up` wipes the
+  topic — durable bridge state would then skip the replay and leave the
+  topic silently empty. Tying state to the container lifecycle keeps them
+  in sync: fresh stack → fresh state → full replay. `compose restart`
+  keeps the container filesystem, so offsets survive routine restarts; a
+  force-recreate against a surviving broker re-replays, which
+  at-least-once semantics already tolerate.
 
 ## Semantics
 

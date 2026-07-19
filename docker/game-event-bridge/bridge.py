@@ -22,7 +22,11 @@ from confluent_kafka import Producer
 TOPIC = os.environ.get("KAFKA_TOPIC", "agent.game.events")
 BOOTSTRAP = os.environ.get("KAFKA_BOOTSTRAP_SERVERS", "kafka:29092")
 TELEMETRY_DIR = os.environ.get("TELEMETRY_DIR", "/telemetry")
-STATE_FILE = os.environ.get("STATE_FILE", "/state/offsets.json")
+# Container-local by default: state must share the broker's lifecycle. The
+# kafka service has no volume, so a recreated stack has an empty topic —
+# fresh state makes the bridge replay the sink into it. Mount a volume and
+# point STATE_FILE at it only if the broker's data is also made durable.
+STATE_FILE = os.environ.get("STATE_FILE", "/tmp/bridge-offsets.json")
 POLL_MS = int(os.environ.get("POLL_MS", "500"))
 FROM_BEGINNING = os.environ.get("FROM_BEGINNING", "1") == "1"
 

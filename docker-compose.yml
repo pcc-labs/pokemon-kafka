@@ -61,8 +61,10 @@ services:
 
   # Tails the agent's JSONL game-event sink and produces each line to
   # agent.game.events, so the Kafka + Flink stack streams live while the
-  # agent runs. First start with empty state replays the whole sink
-  # (FROM_BEGINNING=1), which doubles as demo seeding.
+  # agent runs. Offset state is container-local ON PURPOSE: the kafka
+  # service has no volume either, so `compose down && up` gives a fresh
+  # topic AND fresh state — the bridge replays the whole sink
+  # (FROM_BEGINNING=1) and the topic repopulates. Seeding is automatic.
   game-event-bridge:
     build: docker/game-event-bridge
     depends_on:
@@ -72,12 +74,10 @@ services:
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       KAFKA_TOPIC: agent.game.events
       TELEMETRY_DIR: /telemetry
-      STATE_FILE: /state/offsets.json
       POLL_MS: 500
       FROM_BEGINNING: 1
     volumes:
       - ./data/telemetry/game:/telemetry:ro
-      - ./data/.bridge-state:/state
 
   flink-jobmanager:
     image: flink:1.18
