@@ -1060,7 +1060,7 @@ class PokemonAgent:
         return target
 
     def _waypoint_goal(self, state: OverworldState) -> tuple[str, list[dict]]:
-        """Current navigator goal for this map: ("WP 2→(7,1)", waypoint list) or ("", [])."""
+        """Current navigator goal for this map: ("WP: 2→(7,1)", waypoint list) or ("", [])."""
         route = self.navigator.routes.get(str(state.map_id))
         if not route:
             return "", []
@@ -1068,7 +1068,7 @@ class PokemonAgent:
         if self.navigator.current_waypoint >= len(waypoints):
             return "", list(waypoints)
         wp = waypoints[self.navigator.current_waypoint]
-        return f"WP {self.navigator.current_waypoint}→({wp['x']},{wp['y']})", list(waypoints)
+        return f"WP: {self.navigator.current_waypoint}→({wp['x']},{wp['y']})", list(waypoints)
 
     def _maybe_emit_agent_state(self, state: OverworldState) -> None:
         """Snapshot agent state every 10 turns, plus on map/party/stuck-transition changes."""
@@ -1192,7 +1192,10 @@ class PokemonAgent:
 
         act_desc = action["action"]
         if act_desc == "fight":
-            act_desc = f"fight move#{action['move_index']}"
+            mv_idx = action["move_index"]
+            move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
+            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
+            act_desc = f"fight {mv_name}"
         elif act_desc == "item":
             act_desc = f"item {action.get('item', '?')}"
         self.collector.decision(
@@ -1242,9 +1245,7 @@ class PokemonAgent:
             self.log(f"MOVESET | L{battle.player_level} {ms_names}")
 
         if action["action"] == "fight":
-            mv_idx = action["move_index"]
-            move_id = battle.moves[mv_idx] if 0 <= mv_idx < len(battle.moves) else 0
-            mv_name, mv_type, mv_power, _acc = MOVE_DATA.get(move_id, (f"#{move_id:02X}", "unknown", 0, 0))
+            # mv_idx / move_id / mv_name / mv_type / mv_power were resolved at decision time above.
             enemy_hp_before = battle.enemy_hp
             player_hp_before = battle.player_hp
             # Execute the move RELIABLY. The fixed-timing menu selection occasionally catches the
@@ -1568,14 +1569,7 @@ class PokemonAgent:
         # Log position every 50 steps (or every 10 on map 0 for debugging)
         log_interval = 10 if state.map_id == 0 else 50
         if self.turn_count % log_interval == 0:
-            wp_info = ""
-            map_key = str(state.map_id)
-            if map_key in self.navigator.routes:
-                route = self.navigator.routes[map_key]
-                waypoints = route["waypoints"] if isinstance(route, dict) and "waypoints" in route else route
-                if self.navigator.current_waypoint < len(waypoints):
-                    wp = waypoints[self.navigator.current_waypoint]
-                    wp_info = f" | WP: {self.navigator.current_waypoint}→({wp['x']},{wp['y']})"
+            wp_info = f" | {goal}" if goal else ""
             self.log(
                 f"OVERWORLD | Map: {state.map_id} | "
                 f"Pos: ({state.x}, {state.y}) | "

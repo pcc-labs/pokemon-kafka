@@ -119,7 +119,7 @@ async function selectRun(id, label) {
         }
         const kind = kindForEvent(msg.event_type);
         if (kind !== null) {
-          feed.push({ kind, turn: msg.turn, text: textForEvent(msg) });
+          feed.push({ kind, turn: msg.turn, ts: msg.occurred_at || "", text: textForEvent(msg) });
           renderFeed();
         }
       } else if (msg.type === "frame") {
@@ -139,7 +139,9 @@ function renderFeed() {
     const li = document.createElement("li");
     li.className = `entry ${e.kind}`;
     li.dataset.feedIdx = i;
-    li.textContent = `T${e.turn} [${e.kind}] ${e.text}`;
+    // ts is ISO-8601 ("2026-07-19T14:17:26.000000Z") — show the HH:MM:SS slice.
+    const time = e.ts ? e.ts.slice(11, 19) : "";
+    li.textContent = `T${e.turn}${time ? " " + time : ""} [${e.kind}] ${e.text}`;
     li.addEventListener("click", () => { stop(); showFrame(frameIndexForTurn(e.turn)); });
     ul.appendChild(li);
   });

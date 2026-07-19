@@ -44,8 +44,15 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
     def run_agent_state(run_id: str):
         if not (runs_dir / run_id).is_dir():
             raise HTTPException(status_code=404, detail="run not found")
+
+        def _turn(ev: dict) -> int:
+            try:
+                return int(ev.get("turn", 0))
+            except (TypeError, ValueError):
+                return 0
+
         states = [
-            {"turn": int(ev.get("turn", 0)), "ts": ev.get("occurred_at", ""), "data": ev.get("data", {})}
+            {"turn": _turn(ev), "ts": ev.get("occurred_at", ""), "data": ev.get("data", {})}
             for ev in store.load_events(run_id)
             if ev.get("event_type") == "agent_state"
         ]

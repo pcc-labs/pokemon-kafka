@@ -216,3 +216,17 @@ def test_agent_state_endpoint_and_404(tmp_path: Path):
     assert [s["turn"] for s in states] == [10, 20]
     assert states[0] == {"turn": 10, "ts": "t1", "data": {"tier": "low", "stuck_streak": 3}}
     assert client.get("/api/runs/nope/agent_state").status_code == 404
+
+
+def test_agent_state_endpoint_tolerates_malformed_turn(tmp_path: Path):
+    run = tmp_path / "r1"
+    run.mkdir()
+    events = [
+        {"event_type": "agent_state", "turn": None, "occurred_at": "t1", "data": {"tier": "low"}},
+        {"event_type": "agent_state", "turn": 5, "occurred_at": "t2", "data": {"tier": "low"}},
+    ]
+    (run / "events.jsonl").write_text("\n".join(json.dumps(e) for e in events))
+    client = TestClient(create_app(tmp_path))
+    resp = client.get("/api/runs/r1/agent_state")
+    assert resp.status_code == 200
+    assert [s["turn"] for s in resp.json()["states"]] == [0, 5]
