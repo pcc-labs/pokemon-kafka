@@ -6,8 +6,10 @@ import json
 from game_events import (
     SCHEMA_GAME_EVENT,
     GameEventCollector,
+    build_agent_state_event,
     build_battle_end_event,
     build_battle_event,
+    build_decision_event,
     build_discovery_event,
     build_map_change_event,
     build_milestone_event,
@@ -312,3 +314,60 @@ def test_collector_defaults_to_red_blue():
     collector = GameEventCollector()
     collector.session(0, "start")
     assert collector.events[-1]["game"] == "red_blue"
+
+
+def test_build_decision_event():
+    ev = build_decision_event(70, "overworld", "pilot to WP 2→(7,1) on map 38", ["right"])
+    assert ev["event_type"] == "decision"
+    assert ev["turn"] == 70
+    assert ev["schema"] == SCHEMA_GAME_EVENT
+    assert ev["occurred_at"].endswith("Z")
+    assert ev["data"] == {
+        "mode": "overworld",
+        "reason": "pilot to WP 2→(7,1) on map 38",
+        "buttons": ["right"],
+    }
+
+
+def test_build_agent_state_event():
+    ev = build_agent_state_event(
+        70,
+        tier="medium",
+        goal="WP 2→(7,1)",
+        route_waypoints=[{"x": 7, "y": 1}],
+        stuck_streak=3,
+        notes_excerpt="# Agent Notes",
+        party_count=1,
+        position={"map_id": 38, "x": 3, "y": 7},
+        battles_won=2,
+        maps_visited=5,
+    )
+    assert ev["event_type"] == "agent_state"
+    assert ev["data"]["tier"] == "medium"
+    assert ev["data"]["goal"] == "WP 2→(7,1)"
+    assert ev["data"]["route_waypoints"] == [{"x": 7, "y": 1}]
+    assert ev["data"]["stuck_streak"] == 3
+    assert ev["data"]["notes_excerpt"] == "# Agent Notes"
+    assert ev["data"]["party_count"] == 1
+    assert ev["data"]["position"] == {"map_id": 38, "x": 3, "y": 7}
+    assert ev["data"]["battles_won"] == 2
+    assert ev["data"]["maps_visited"] == 5
+
+
+def test_collector_decision_and_agent_state_emit():
+    c = GameEventCollector()
+    c.decision(1, "battle", "vs Lv5 PIDGEY: fight", ["a"])
+    c.agent_state(
+        2,
+        tier="low",
+        goal="",
+        route_waypoints=[],
+        stuck_streak=0,
+        notes_excerpt="",
+        party_count=0,
+        position={"map_id": 0, "x": 0, "y": 0},
+        battles_won=0,
+        maps_visited=1,
+    )
+    assert [e["event_type"] for e in c.events] == ["decision", "agent_state"]
+    assert all(e["game"] == "red_blue" for e in c.events)

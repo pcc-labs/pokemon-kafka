@@ -259,6 +259,40 @@ def build_session_event(
     return _envelope("session", turn, data)
 
 
+def build_decision_event(turn: int, mode: str, reason: str, buttons: list[str]) -> dict:
+    return _envelope("decision", turn, {"mode": mode, "reason": reason, "buttons": list(buttons)})
+
+
+def build_agent_state_event(
+    turn: int,
+    *,
+    tier: str,
+    goal: str,
+    route_waypoints: list[dict],
+    stuck_streak: int,
+    notes_excerpt: str,
+    party_count: int,
+    position: dict,
+    battles_won: int,
+    maps_visited: int,
+) -> dict:
+    return _envelope(
+        "agent_state",
+        turn,
+        {
+            "tier": tier,
+            "goal": goal,
+            "route_waypoints": route_waypoints,
+            "stuck_streak": stuck_streak,
+            "notes_excerpt": notes_excerpt,
+            "party_count": party_count,
+            "position": position,
+            "battles_won": battles_won,
+            "maps_visited": maps_visited,
+        },
+    )
+
+
 class GameEventCollector:
     """Collects structured game events during an agent session.
 
@@ -456,3 +490,9 @@ class GameEventCollector:
 
     def session(self, turn: int, phase: str, battles_won: int | None = None, maps_visited: int | None = None):
         self._emit(build_session_event(turn, phase, battles_won, maps_visited))
+
+    def decision(self, turn: int, mode: str, reason: str, buttons: list[str]):
+        self._emit(build_decision_event(turn, mode, reason, buttons))
+
+    def agent_state(self, turn: int, **kwargs):
+        self._emit(build_agent_state_event(turn, **kwargs))
