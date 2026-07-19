@@ -299,7 +299,7 @@ class GameEventCollector:
     Provides typed emit methods so agent.py call sites stay concise.
     Events accumulate in ``self.events``.  When an optional *publisher* is
     provided, each event is also published in real-time so data reaches
-    Confluent Cloud immediately instead of being batched after the run.
+    the telemetry sink immediately instead of being batched after the run.
     """
 
     def __init__(self, publisher=None, recorder=None, game: str = "red_blue"):

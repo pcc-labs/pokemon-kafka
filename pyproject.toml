@@ -22,9 +22,6 @@ dev = [
     "httpx>=0.27",
 ]
 
-[project.optional-dependencies]
-confluent = ["confluent-kafka>=2.3.0"]
-
 [project.scripts]
 viewer = "viewer.__main__:main"
 

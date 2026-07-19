@@ -7,9 +7,8 @@ parameter effectiveness. Writes insights to a markdown file that the
 evolution loop feeds to the LLM for smarter parameter proposals.
 
 This is the local-first analytics layer. The same DuckDB queries work
-against JSONL files on disk today; when the cloud path is ready, the
-query target switches to a Kafka-backed data store (Confluent Cloud,
-Snowflake, etc.) while the insight extraction logic stays the same.
+against JSONL files on disk today; if the query target ever switches to
+a Kafka-backed data store, the insight extraction logic stays the same.
 
 Usage:
     python scripts/historical_observer.py [TELEMETRY_DIR] [--output PATH]
