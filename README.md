@@ -117,11 +117,11 @@ Sessions are discovered from paperd (read from `ANTHROPIC_BASE_URL`), or from th
 
 ## Kafka Telemetry Pipeline
 
-The agent emits real-time **game events** (`pokemon.game.v1`) as JSONL via `scripts/publisher.py`; the local `agent.game.events` Kafka topic is fed from those events (seed it with `kafka-console-producer` from the JSONL sink, or pre-run before a demo). Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
+The agent emits real-time **game events** (`pokemon.game.v1`) as JSONL via `scripts/publisher.py` — it never touches the broker. The `game-event-bridge` service tails that sink and produces each event to the local `agent.game.events` topic, so the stream is live while the agent runs; on first start it replays the whole sink (`FROM_BEGINNING=1`), so the topic is populated even before a fresh run. Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
 
 ```
 Agent → JSONL (data/telemetry/game/*.jsonl)
-  └→ seed → Kafka (agent.game.events)
+  └→ game-event-bridge → Kafka (agent.game.events)
             ├→ game-consumer (prints + writes JSONL)
             ├→ Flink SQL (anomaly detection)
             │    └→ Kafka (agent.telemetry.alerts)
@@ -135,11 +135,17 @@ JSONL sink (data/telemetry/*.jsonl)
 Each event carries the event type (`battle`, `overworld`, `map_change`, `stuck`, `milestone`, `session`), turn, timestamp, and a flat data payload (map, position, HP, action, badges, …). Flink reads these to flag navigation deadlocks and battle loops in real time: `GAME_STUCK_LOOP`, `BATTLE_WIPE`, `BATTLE_LOOP`, `POSITION_DEADLOCK`, `NO_PROGRESS`.
 
 ```bash
-# Start the full pipeline (Kafka, Flink, consumers)
+# Start the full pipeline (Kafka, Flink, bridge, consumers)
 docker compose up -d
+
+# Run the agent with telemetry — events reach the topic live via the bridge
+uv run scripts/agent.py rom/pokemon_red.gb --strategy low --max-turns 500
 
 # Watch raw game events
 docker compose logs -f game-consumer
+
+# Watch the bridge tail the JSONL sink
+docker compose logs -f game-event-bridge
 
 # Watch anomaly alerts
 docker compose logs -f alerts-consumer
@@ -299,8 +305,9 @@ pokemon-agent/
 ├── jcard.toml               # stereOS VM configuration
 ├── frames/                  # screenshot output (gitignored)
 ├── rom/                     # user-provided ROM files (gitignored)
-├── docker-compose.yml       # Kafka + Flink + consumers stack
+├── docker-compose.yml       # Kafka + Flink + bridge + consumers stack
 ├── docker/
+│   ├── game-event-bridge/   # tails JSONL sink → agent.game.events topic
 │   ├── game-consumer/       # game event consumer + JSONL writer
 │   ├── alerts-consumer/     # anomaly alert consumer → pokedex/memory
 │   └── flink-sql/
