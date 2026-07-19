@@ -59,13 +59,30 @@
         <h1>Pokédex</h1>
         <button id="back-btn" onclick="showGrid()">&#8592; Runs</button>
       </div>
+      <div id="stats-bar">
+        <span id="sb-run"></span>
+        <span id="sb-tier"></span>
+        <span id="sb-turn"></span>
+        <span id="sb-battles"></span>
+        <span id="sb-maps"></span>
+      </div>
       <div class="filter-chips">
         <button class="chip" data-kind="milestone">Milestone</button>
         <button class="chip" data-kind="telemetry">Telemetry</button>
         <button class="chip" data-kind="observation">Observation</button>
         <button class="chip" data-kind="anomaly">Anomaly</button>
+        <button class="chip" data-kind="decision">Decision</button>
       </div>
       <ul id="feed"></ul>
+    </div>
+
+    <!-- THIRD COLUMN: agent state panel -->
+    <div id="state-panel">
+      <h2>Agent State</h2>
+      <div class="state-section"><h3>Policy</h3><pre id="st-policy">no agent state</pre></div>
+      <div class="state-section"><h3>Plan</h3><pre id="st-plan"></pre></div>
+      <div class="state-section"><h3>Memory</h3><pre id="st-memory"></pre></div>
+      <div class="state-section"><h3>Status</h3><pre id="st-status"></pre></div>
     </div>
   </div>
 

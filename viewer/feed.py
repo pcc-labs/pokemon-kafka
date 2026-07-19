@@ -9,6 +9,7 @@ from pathlib import Path
 _MILESTONE_TYPES = {"milestone", "map_change"}
 _TELEMETRY_TYPES = {"battle", "overworld", "stuck", "battle_end", "battle_outcome", "move_result"}
 _OBSERVATION_TYPES = {"discovery"}
+_DECISION_TYPES = {"decision"}
 
 
 @dataclass
@@ -48,6 +49,9 @@ def _event_text(event: dict) -> str:
     if et == "move_result":
         result = "enemy fainted" if data.get("fainted") else f"{data.get('damage_dealt')} dmg"
         return f"{data.get('user_species')} used {data.get('move')} — {result}"
+    if et == "decision":
+        buttons = "+".join(data.get("buttons") or []) or "wait"
+        return f"▸ {buttons} — {data.get('reason', '')}"
     return et or "event"
 
 
@@ -61,6 +65,8 @@ def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
             kind = "telemetry"
         elif et in _OBSERVATION_TYPES:
             kind = "observation"
+        elif et in _DECISION_TYPES:
+            kind = "decision"
         else:
             continue
         entries.append(

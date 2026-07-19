@@ -90,7 +90,7 @@ body[data-view="grid"] #grid { display: grid; }
   display: flex;
   align-items: stretch;
   gap: 0;
-  width: min(1600px, 98vw);
+  width: min(1860px, 98vw);
   background: linear-gradient(160deg, #e11919 0%, #c40d0d 55%, #a70808 100%);
   border: 4px solid #7a0505;
   border-radius: 20px 26px 26px 20px;
@@ -281,6 +281,7 @@ h1 {
 .chip[data-kind="telemetry"]   { background: #1f9c3b; }
 .chip[data-kind="observation"] { background: #c07d0e; }
 .chip[data-kind="anomaly"]     { background: #cc2e2e; }
+.chip[data-kind="decision"]    { background: #7c3fd4; }
 .chip.off { opacity: 0.3; filter: grayscale(0.6); }
 
 /* ── Feed list (the on-screen logs) ──────────────────────────── */
@@ -312,4 +313,58 @@ h1 {
 #feed li.entry.telemetry   { border-left-color: #33bb55; background: #08160c; color: #97e6a8; }
 #feed li.entry.observation { border-left-color: #ffaa22; background: #1a1200; color: #ffcc77; }
 #feed li.entry.anomaly     { border-left-color: #ff4444; background: #1a0606; color: #ff9999; }
+#feed li.entry.decision    { border-left-color: #b388ff; background: #150a29; color: #d9c2ff; }
 #feed li.entry.current     { outline: 2px solid #ffffff; outline-offset: -2px; }
+.entry.decision { font-family: 'Courier New', monospace; }
+
+/* --- Header stats bar --- */
+#stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+  color: #a9e6c0;
+  padding: 2px 4px 4px;
+  opacity: 0.9;
+}
+
+/* --- Agent state panel (fourth flex child of .pokedex-shell) --- */
+#state-panel {
+  width: 240px;
+  flex-shrink: 0;
+  margin-left: 20px;
+  overflow-y: auto;
+  max-height: min(720px, 62vh);
+  padding: 16px;
+  background: #0d2818;
+  border: 4px solid #072813;
+  border-radius: 12px;
+  color: #cdfbe0;
+  font-family: 'Courier New', monospace;
+  box-shadow: inset 0 0 24px rgba(0,0,0,0.5);
+}
+#state-panel h2 {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  color: #eafff0;
+  text-shadow: 1px 1px 0 #04170b;
+  margin: 0 0 10px;
+}
+.state-section h3 {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #6bcf91;
+  margin: 12px 0 4px;
+}
+.state-section pre {
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #cdfbe0;
+}

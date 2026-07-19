@@ -3833,3 +3833,88 @@ class TestYellowLabBallColumn:
             result = ag.choose_overworld_action(state)
         assert result == "right"
         assert ag._lab_phase == 1
+
+
+# ===================================================================
+# Agent instrumentation -- decision and agent_state events
+# ===================================================================
+
+
+class TestDecisionAndStateEvents:
+    def test_waypoint_goal_reads_navigator_route(self, tmp_path):
+        ag = _make_agent(tmp_path, routes={"38": [{"x": 7, "y": 1}]})
+        ag.navigator.current_waypoint = 0
+        state = OverworldState(map_id=38, party_count=0, x=3, y=7)
+        goal, waypoints = ag._waypoint_goal(state)
+        assert goal == "WP: 0→(7,1)"
+        assert waypoints == [{"x": 7, "y": 1}]
+
+    def test_waypoint_goal_without_route(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        state = OverworldState(map_id=99, party_count=0, x=0, y=0)
+        goal, waypoints = ag._waypoint_goal(state)
+        assert goal == ""
+        assert waypoints == []
+
+    def test_maybe_emit_agent_state_on_interval_and_changes(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        state = OverworldState(map_id=38, party_count=0, x=3, y=7)
+        ag.turn_count = 10  # interval turn -> emits
+        ag._maybe_emit_agent_state(state)
+        ag.turn_count = 11  # nothing changed -> no emit
+        ag._maybe_emit_agent_state(state)
+        ag.turn_count = 12  # party changed -> emits
+        state2 = OverworldState(map_id=38, party_count=1, x=3, y=7)
+        ag._maybe_emit_agent_state(state2)
+        states = [e for e in ag.collector.events if e["event_type"] == "agent_state"]
+        assert [e["turn"] for e in states] == [10, 12]
+        assert states[0]["data"]["position"] == {"map_id": 38, "x": 3, "y": 7}
+        assert states[0]["data"]["tier"] == ag.strategy_engine.tier
+
+    def test_run_overworld_emits_decision_each_turn(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        with patch.object(agent, "Image", None):
+            ag.run_overworld()
+        decisions = [e for e in ag.collector.events if e["event_type"] == "decision"]
+        assert len(decisions) == 1
+        d = decisions[0]["data"]
+        assert d["mode"] == "overworld"
+        assert isinstance(d["buttons"], list)
+        assert d["reason"]
+
+    def test_battle_decision_resolves_move_name(self, tmp_path):
+        ag = _make_agent(tmp_path)
+        battle = BattleState(
+            battle_type=1,
+            player_hp=50,
+            player_max_hp=100,
+            enemy_hp=30,
+            enemy_max_hp=40,
+            moves=[0x01, 0x00, 0x00, 0x00],
+            move_pp=[10, 0, 0, 0],
+        )
+        ag.memory.read_battle_state = MagicMock(return_value=battle)
+        ag.memory.find_healing_item = MagicMock(return_value=None)
+        ag.battle_strategy.choose_action = MagicMock(return_value={"action": "fight", "move_index": 0})
+        ag.run_battle_turn()
+        decisions = [e for e in ag.collector.events if e["event_type"] == "decision"]
+        assert len(decisions) == 1
+        d = decisions[0]["data"]
+        assert d["mode"] == "battle"
+        assert "fight Pound" in d["reason"]
+
+    def test_decision_and_state_events_land_in_events_jsonl(self, tmp_path):
+        from recorder import RunRecorder
+
+        ag = _make_agent(tmp_path)
+        recorder = RunRecorder("r1", tmp_path / "runs")
+        recorder.start({})
+        ag.collector._recorder = recorder
+        ag.turn_count = 10  # interval turn -> agent_state emits alongside the decision
+        with patch.object(agent, "Image", None):
+            ag.run_overworld()
+        recorder.finish({})
+        lines = (tmp_path / "runs" / "r1" / "events.jsonl").read_text().splitlines()
+        types = [json.loads(line)["event_type"] for line in lines]
+        assert "decision" in types
+        assert "agent_state" in types
