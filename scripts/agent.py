@@ -14,7 +14,9 @@ import io
 import json
 import os
 import random
+import subprocess
 import sys
+import tempfile
 import time
 import uuid
 from collections import deque
@@ -676,6 +678,7 @@ class PokemonAgent:
         self.last_overworld_state: OverworldState | None = None
         self.last_overworld_action: str | None = None
         self.stuck_turns = 0
+        self.max_stuck_streak = 0  # longest unrecovered wedge — the healer's terminal-wedge signal
         self._last_progress_turn = 0  # turn of last meaningful progress (map change, battle win)
         self.recent_positions: list[tuple[int, int, int]] = []
         self.maps_visited: set[int] = set()
@@ -823,6 +826,7 @@ class PokemonAgent:
         # increment stuck counter so the navigator tries alternate directions.
         if pos in self.recent_positions:
             self.stuck_turns += 1
+            self.max_stuck_streak = max(self.max_stuck_streak, self.stuck_turns)
         else:
             self.stuck_turns = 0
 
@@ -1606,6 +1610,7 @@ class PokemonAgent:
             "badges": final.badges,
             "party_size": final.party_count,
             "stuck_count": len([e for e in self.events if "STUCK" in e]),
+            "max_stuck_streak": self.max_stuck_streak,
             "backtrack_restores": self.backtrack.total_restores,
             "encounters": len(self.encounter_log),
             "level_ups": self.level_ups,
@@ -1930,6 +1935,35 @@ class PokemonAgent:
 # ---------------------------------------------------------------------------
 
 
+def run_self_heal(fitness, rom_path, fitness_path=None, runner=subprocess.run):
+    """Chain healer.py check on this run's fitness — the self-healing loop, no wrapper needed.
+
+    Never raises and never fails the run; healing is best-effort by design.
+    Returns True if the healer was launched.
+    """
+    if not fitness:
+        return False
+    try:
+        if fitness_path is None:
+            fd, fitness_path = tempfile.mkstemp(suffix=".json", prefix="fitness-")
+            os.close(fd)
+            Path(fitness_path).write_text(json.dumps(fitness, indent=2) + "\n")
+        cmd = [
+            sys.executable,
+            str(Path(__file__).resolve().parent / "healer.py"),
+            "check",
+            "--fitness",
+            str(fitness_path),
+            "--rom",
+            str(rom_path),
+        ]
+        runner(cmd, check=False)
+        return True
+    except Exception as exc:
+        print(f"[agent] self-heal skipped: {exc}")
+        return False
+
+
 def main():
     parser = argparse.ArgumentParser(description="Pokemon Agent — autonomous RPG player")
     parser.add_argument("rom", help="Path to ROM file (.gb or .gbc)")
@@ -1997,6 +2031,12 @@ def main():
         "--worldmap-file",
         default=None,
         help="Load/save the accumulated WorldMap (learned geometry) here, so a reset run keeps it",
+    )
+    parser.add_argument(
+        "--self-heal",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Chain healer.py check on this run's fitness at session end (default: on)",
     )
     args = parser.parse_args()
 
@@ -2069,6 +2109,9 @@ def main():
     if args.output_json:
         Path(args.output_json).parent.mkdir(parents=True, exist_ok=True)
         Path(args.output_json).write_text(json.dumps(fitness, indent=2) + "\n")
+
+    if args.self_heal:
+        run_self_heal(fitness, args.rom, fitness_path=args.output_json or None)
 
     if args.telemetry_dir:
         try:

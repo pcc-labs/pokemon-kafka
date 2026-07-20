@@ -63,6 +63,20 @@ def test_both_rules_can_fire():
     assert [r["name"] for r in fired] == ["navigation-thrash", "no-progress"]
 
 
+def test_terminal_wedge_fires_on_long_streak():
+    """One long unrecovered wedge must trip healing even when stuck_count stays low."""
+    fired = healer.evaluate_rules(_fitness(max_stuck_streak=50))
+    assert [r["name"] for r in fired] == ["terminal-wedge"]
+
+
+def test_terminal_wedge_boundary_below():
+    assert healer.evaluate_rules(_fitness(max_stuck_streak=49)) == []
+
+
+def test_terminal_wedge_missing_key_is_healthy():
+    assert healer.evaluate_rules(_fitness()) == []
+
+
 def test_missing_fitness_keys_treated_as_zero():
     assert healer.evaluate_rules({}) == []
 

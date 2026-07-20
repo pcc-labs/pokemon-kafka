@@ -250,14 +250,14 @@ This is the mechanism that was missing in the case study. Run 1 locked into one 
 
 ### Self-healing loop
 
-`scripts/healer.py` closes the loop with zero human input: chain it after a run and a bad run heals itself.
+`scripts/healer.py` closes the loop with zero human input — and the agent chains it automatically: every `agent.py` run invokes `healer.py check` on its own fitness at session end. No wrapper needed; pass `--no-self-heal` to opt out (race children spawned by `evolve.run_agent` always do, so races can't recurse). The explicit chain still works for driving it by hand:
 
 ```bash
 uv run scripts/agent.py rom/pokemon_red.gb --output-json fit.json --max-turns 2000 \
   && uv run scripts/healer.py check --fitness fit.json --rom rom/pokemon_red.gb
 ```
 
-When the run's own fitness trips a rule — `navigation-thrash` (`stuck_count ≥ 12` or `backtrack_restores ≥ 3`) or `no-progress` (`maps_visited ≤ 1` after 500+ turns) — the healer races seeded variants of the implicated parameters via `evolve.run_agent`, and persists the winner to `notes.md` (the same autotune genome block the agent loads at startup) only if it beats the current genome by a 5% margin. A 6-hour cooldown (`data/healer_state.json`) prevents race cascades, and `check` always exits 0 so a healing failure never breaks the wrapper. `--dry-run` shows the decision without racing.
+When the run's own fitness trips a rule — `navigation-thrash` (`stuck_count ≥ 12` or `backtrack_restores ≥ 3`), `terminal-wedge` (`max_stuck_streak ≥ 50`, one unrecovered wedge that episode-counting misses), or `no-progress` (`maps_visited ≤ 1` after 500+ turns) — the healer races seeded variants of the implicated parameters via `evolve.run_agent`, and persists the winner to `notes.md` (the same autotune genome block the agent loads at startup) only if it beats the current genome by a 5% margin. A 6-hour cooldown (`data/healer_state.json`) prevents race cascades, and `check` always exits 0 so a healing failure never breaks the wrapper. `--dry-run` shows the decision without racing.
 
 ### Discovery engine (capability healing)
 
