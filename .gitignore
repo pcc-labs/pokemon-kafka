@@ -1,5 +1,6 @@
-# ROM files (legally obtained, not for distribution)
-rom/
+# ROM files (legally obtained, not for distribution) — keep the dir, never its contents
+rom/*
+!rom/.gitkeep
 
 # Generated agent run data (frames, events, summaries)
 runs/
