@@ -202,20 +202,20 @@ The `[[shared]]` mount maps the host repo to `/workspace` inside the VM. Host fi
 
 ### Game Events + Kafka Telemetry
 
-The agent publishes real-time game events (`pokemon.game.v1`) directly to Kafka via `scripts/publisher.py` — no proxy needed. Flink SQL jobs detect navigation and battle anomalies from the `agent.game.events` stream. LLM sessions are recorded separately by Paper (paperd) — see Observational Memory below.
+The agent emits real-time game events (`pokemon.game.v1`) as JSONL via `scripts/publisher.py`; the `game-event-bridge` service tails that sink and produces to the `agent.game.events` topic live. Flink SQL jobs detect navigation and battle anomalies from the stream. LLM sessions are recorded separately by Paper (paperd) — see Observational Memory below.
 
 ```
-Agent → Kafka (agent.game.events)
-                  ↓
+Agent → JSONL sink → game-event-bridge → Kafka (agent.game.events)
+                                              ↓
              Flink SQL jobs (stuck loops, battle wipes, position deadlocks)
-                  ↓
-          Kafka (agent.telemetry.alerts)
+                                              ↓
+                                Kafka (agent.telemetry.alerts)
 ```
 
 Start the full local stack:
 
 ```bash
-docker compose up -d   # Kafka + Zookeeper + Flink + consumers
+docker compose up -d   # Kafka + Zookeeper + Flink + bridge + consumers
 ```
 
 Inspect Paper sessions and memory:
@@ -263,7 +263,7 @@ For long speed runs, the pattern is:
 pokemon-agent/
 ├── SKILL.md              # This file
 ├── jcard.toml            # stereOS VM config
-├── docker-compose.yml    # Kafka + Flink + consumers stack
+├── docker-compose.yml    # Kafka + Flink + bridge + consumers stack
 ├── pokedex/
 │   └── memory/           # Observational memory output (observations.md)
 ├── scripts/

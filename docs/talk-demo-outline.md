@@ -223,8 +223,8 @@ everything after is built on.
   (localhost:8081) and `alerts-consumer` ready for the anomaly beat.
 - **Land:** the event schema is the contract. Everything downstream reads these
   same JSONL/Kafka events — all of it running on this laptop, no cloud account.
-  **Pre-seed once** (`kafka-console-producer` from the JSONL sink) so the topic
-  already has messages.
+  No seeding step: the `game-event-bridge` replays the sink on first start and
+  streams new events live as the agent plays.
 
 ### Act 3 — "It learns across sessions" (AlphaEvolve — "10 bots in 36 seconds")
 
