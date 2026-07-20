@@ -247,6 +247,13 @@ metric, keep the best."*
   JSONL fitness logs extracts cross-run patterns and feeds the evolve proposer.
   Local-first analytics (DuckDB on disk today, Kafka-backed tomorrow, same
   queries).
+- **Close with the healer** (`scripts/healer.py`) — the loop with the human
+  removed. Run once with a deliberately bad `door_cooldown=16`; the run's own
+  fitness trips `navigation-thrash`, the healer races variants unattended and
+  writes the winner into notes.md; the next run just plays better. Show the
+  receipt it leaves: `Healer: navigation-thrash — door_cooldown 16→4
+  (score 3120→3510)`. Land the line: **"Nobody watched it. Nobody tuned it.
+  It measured itself back to health."**
 
 ### Act 4 — "It trains weights" (autotune — the crescendo)
 
