@@ -70,8 +70,10 @@ file, overridable by CLI flags of the same name.
 ### Acceptance guardrails
 
 - **Win margin:** persist the winner only if
-  `score(winner) > score(control) * (1 + MARGIN)` with `MARGIN = 0.05`.
-  Ties and losses keep the current genome (no churn from noise).
+  `score(winner) > score(control) + abs(score(control)) * MARGIN` with
+  `MARGIN = 0.05` — the abs form works for negative control scores, where
+  `control * (1 + margin)` would invert the threshold. Ties and losses keep
+  the current genome (no churn from noise).
 - **Cooldown:** `healer_state.json` records
   `{last_race_at, races: [{at, rule, accepted, genome}]}`. No new race
   within `COOLDOWN_HOURS = 6` of the last one (timestamp comes from the

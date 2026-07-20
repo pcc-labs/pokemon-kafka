@@ -229,6 +229,17 @@ This is the mechanism that was missing in the case study. Run 1 locked into one 
 
 **First finding:** `door_cooldown=2` beats the default of 8. Shorter cooldown means fewer wasted turns walking away from doors before retrying. Confirmed across two milestones (Pokemon selection and rival battle) with 10 independent runs each.
 
+### Self-healing loop
+
+`scripts/healer.py` closes the loop with zero human input: chain it after a run and a bad run heals itself.
+
+```bash
+uv run scripts/agent.py rom/pokemon_red.gb --output-json fit.json --max-turns 2000 \
+  && uv run scripts/healer.py check --fitness fit.json --rom rom/pokemon_red.gb
+```
+
+When the run's own fitness trips a rule — `navigation-thrash` (`stuck_count ≥ 12` or `backtrack_restores ≥ 3`) or `no-progress` (`maps_visited ≤ 1` after 500+ turns) — the healer races seeded variants of the implicated parameters via `evolve.run_agent`, and persists the winner to `notes.md` (the same autotune genome block the agent loads at startup) only if it beats the current genome by a 5% margin. A 6-hour cooldown (`data/healer_state.json`) prevents race cascades, and `check` always exits 0 so a healing failure never breaks the wrapper. `--dry-run` shows the decision without racing.
+
 ### Long-session mode
 
 You can still run the agent the traditional way for a single long session, the way [ClaudePlaysPokemon](https://www.twitch.tv/claudeplayspokemon) works on Twitch:
