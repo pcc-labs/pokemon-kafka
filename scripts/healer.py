@@ -35,6 +35,7 @@ NO_PROGRESS_MAX_MAPS = 1
 NO_PROGRESS_MIN_TURNS = 500
 MARGIN = 0.05
 COOLDOWN_HOURS = 6.0
+ESCALATE_AFTER_REJECTS = 2
 
 # Trigger rules are data: adding one is a table edit, not new machinery.
 RULES = [
@@ -115,6 +116,36 @@ def append_genome(notes_path, genome: dict, reason_line: str) -> None:
     path.write_text(existing + block)
 
 
+def should_escalate(state: dict, rule_name: str) -> str | None:
+    """Escalation check, run AFTER the current race is recorded in state.
+
+    Escalates only when the knobs have failed: the current race rejected AND
+    either the previous race for this rule was accepted (the tuned fix did
+    not hold) or the last ESCALATE_AFTER_REJECTS races for it all rejected.
+    """
+    races = [r for r in state.get("races", []) if r.get("rule") == rule_name]
+    if not races or races[-1].get("accepted"):
+        return None
+    if len(races) >= 2 and races[-2].get("accepted"):
+        return "refire-after-accept"
+    recent = races[-ESCALATE_AFTER_REJECTS:]
+    if len(recent) == ESCALATE_AFTER_REJECTS and not any(r.get("accepted") for r in recent):
+        return "rejects-exhausted"
+    return None
+
+
+def append_escalation(queue_path, entry: dict) -> None:
+    """Append an escalation entry for the discovery engine (loop 3)."""
+    path = Path(queue_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        entries = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError):
+        entries = []
+    entries.append(entry)
+    path.write_text(json.dumps(entries, indent=2))
+
+
 def default_seed(fitness_path) -> int:
     """Deterministic per fitness-file content, so a rerun races the same variants."""
     digest = hashlib.sha256(Path(fitness_path).read_bytes()).hexdigest()
@@ -182,6 +213,14 @@ def _check(args) -> None:
     state["last_race_at"] = now_ts
     save_state(args.state, state)
 
+    escalation = should_escalate(state, rule["name"])
+    if escalation:
+        append_escalation(
+            args.queue,
+            {"at": now_ts, "rule": rule["name"], "reason": escalation, "fitness": fitness, "handled": False},
+        )
+        print(f"[healer] escalating {rule['name']} to the discovery engine ({escalation})")
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Self-healing tuning loop")
@@ -195,6 +234,7 @@ def main() -> int:
     check.add_argument("--dry-run", action="store_true", help="print the decision without racing")
     check.add_argument("--notes", default="notes.md", help="notes.md holding the autotune genome")
     check.add_argument("--state", default="data/healer_state.json", help="healer cooldown/race history")
+    check.add_argument("--queue", default="data/discovery_queue.json", help="loop-3 escalation queue")
     check.add_argument("--cooldown-hours", type=float, default=COOLDOWN_HOURS)
     args = parser.parse_args()
 

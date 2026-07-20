@@ -216,6 +216,8 @@ def check_env(tmp_path):
         str(notes),
         "--state",
         str(state),
+        "--queue",
+        str(tmp_path / "queue.json"),
         "--variants",
         "2",
     ]
@@ -326,3 +328,69 @@ def test_check_seed_flag_passed_to_sampling(check_env):
     # Control (baseline) is first, then deterministic variants.
     assert captured["candidates"] == first
     assert captured["candidates"][0] == dict(DEFAULT_PARAMS)
+
+
+# ---------------------------------------------------------------------------
+# Escalation (loop 3 hand-off)
+# ---------------------------------------------------------------------------
+
+
+def _race(rule, accepted):
+    return {"at": 1.0, "rule": rule, "accepted": accepted, "genome": None}
+
+
+def test_should_escalate_refire_after_accept():
+    state = {"races": [_race("navigation-thrash", True), _race("navigation-thrash", False)]}
+    assert healer.should_escalate(state, "navigation-thrash") == "refire-after-accept"
+
+
+def test_should_escalate_rejects_exhausted():
+    state = {"races": [_race("navigation-thrash", False), _race("navigation-thrash", False)]}
+    assert healer.should_escalate(state, "navigation-thrash") == "rejects-exhausted"
+
+
+def test_should_escalate_none_on_first_reject():
+    state = {"races": [_race("navigation-thrash", False)]}
+    assert healer.should_escalate(state, "navigation-thrash") is None
+
+
+def test_should_escalate_none_when_current_accepted():
+    state = {"races": [_race("navigation-thrash", False), _race("navigation-thrash", True)]}
+    assert healer.should_escalate(state, "navigation-thrash") is None
+
+
+def test_should_escalate_ignores_other_rules():
+    state = {"races": [_race("no-progress", True), _race("navigation-thrash", False)]}
+    assert healer.should_escalate(state, "navigation-thrash") is None
+
+
+def test_append_escalation_creates_and_appends(tmp_path):
+    q = tmp_path / "sub" / "queue.json"
+    healer.append_escalation(q, {"rule": "no-progress", "reason": "rejects-exhausted"})
+    healer.append_escalation(q, {"rule": "navigation-thrash", "reason": "refire-after-accept"})
+    entries = json.loads(q.read_text())
+    assert [e["rule"] for e in entries] == ["no-progress", "navigation-thrash"]
+
+
+def test_check_escalates_refire_after_accept_to_queue(check_env, capsys):
+    tmp_path, fitness_file, notes, state, argv = check_env
+    queue = tmp_path / "queue.json"
+    # Prior accepted race for the same rule; current race rejects -> escalate.
+    healer.save_state(state, {"last_race_at": 0.0, "races": [_race("navigation-thrash", True)]})
+    with patch.object(healer, "run_race", return_value=_race_results([100.0, 101.0])):
+        with patch("sys.argv", argv):
+            assert healer.main() == 0
+    entries = json.loads(queue.read_text())
+    assert entries[0]["rule"] == "navigation-thrash"
+    assert entries[0]["reason"] == "refire-after-accept"
+    assert entries[0]["handled"] is False
+    assert entries[0]["fitness"]["stuck_count"] == 15
+    assert "escalating" in capsys.readouterr().out
+
+
+def test_check_no_queue_write_without_escalation(check_env):
+    tmp_path, fitness_file, notes, state, argv = check_env
+    with patch.object(healer, "run_race", return_value=_race_results([100.0, 300.0])):
+        with patch("sys.argv", argv):
+            healer.main()
+    assert not (tmp_path / "queue.json").exists()
