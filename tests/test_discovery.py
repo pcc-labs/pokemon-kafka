@@ -157,8 +157,10 @@ def test_run_gates_eval_skipped_when_zero(tmp_path):
 def test_eval_candidate_runs_worktree_agent(tmp_path):
     fitness = {"final_map_id": 12}
     out = tmp_path / "out.json"
+    rom_args = []
 
     def fake_sh(cmd, cwd=None, timeout=None):
+        rom_args.append(cmd[2])  # [python, agent.py, ROM, ...]
         Path(cmd[cmd.index("--output-json") + 1]).write_text(json.dumps(fitness))
         return _completed(0)
 
@@ -166,6 +168,9 @@ def test_eval_candidate_runs_worktree_agent(tmp_path):
         scores = discovery.eval_candidate(tmp_path, "rom.gb", runs=2, turns=100)
     assert scores == [discovery.score(fitness)] * 2
     assert not out.exists()  # temp files cleaned by eval_candidate itself
+    # The candidate runs with cwd=worktree, which has no ROM (gitignored):
+    # a relative rom path would be unresolvable there. Must be absolutized.
+    assert all(Path(r).is_absolute() for r in rom_args)
 
 
 # ---------------------------------------------------------------------------
