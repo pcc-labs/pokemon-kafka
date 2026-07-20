@@ -1974,12 +1974,6 @@ def main():
         default="data/telemetry",
         help="Directory for JSONL telemetry (default: data/telemetry, empty to disable)",
     )
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="config.toml",
-        help="Path to config.toml (default: config.toml in cwd)",
-    )
     parser.add_argument("--record", action="store_true", help="Record a replayable run folder")
     parser.add_argument("--runs-dir", default="runs", help="Directory for recorded runs")
     parser.add_argument("--frame-interval", type=int, default=10, help="Capture a frame every N turns")
@@ -2010,14 +2004,13 @@ def main():
         print(f"ROM not found: {args.rom}")
         sys.exit(1)
 
-    # Set up real-time game event publisher (Confluent Cloud / JSONL)
-    config_path = Path(args.config) if args.config else None
+    # Set up real-time game event publisher (local JSONL)
     game_pub = None
     if args.telemetry_dir:
         try:
             from publisher import make_publisher as _make_game_pub
 
-            game_pub = _make_game_pub(telemetry_dir=str(Path(args.telemetry_dir) / "game"), config_path=config_path)
+            game_pub = _make_game_pub(telemetry_dir=str(Path(args.telemetry_dir) / "game"))
         except Exception as exc:
             print(f"[agent] game publisher setup failed: {exc}")
 
@@ -2081,7 +2074,7 @@ def main():
         try:
             from publisher import make_publisher
 
-            pub = make_publisher(telemetry_dir=args.telemetry_dir, config_path=config_path)
+            pub = make_publisher(telemetry_dir=args.telemetry_dir)
             pub.publish(
                 {
                     "schema": "tapes.node.v1",

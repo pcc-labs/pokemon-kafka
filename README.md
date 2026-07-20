@@ -117,10 +117,11 @@ Sessions are discovered from paperd (read from `ANTHROPIC_BASE_URL`), or from th
 
 ## Kafka Telemetry Pipeline
 
-The agent streams real-time **game events** to Kafka as structured events. `scripts/agent.py` publishes `pokemon.game.v1` events directly to the `agent.game.events` topic via `scripts/publisher.py` — no proxy required. Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
+The agent emits real-time **game events** (`pokemon.game.v1`) as JSONL via `scripts/publisher.py`; the local `agent.game.events` Kafka topic is fed from those events (seed it with `kafka-console-producer` from the JSONL sink, or pre-run before a demo). Downstream consumers and Flink jobs process the stream in real time. (LLM sessions are recorded separately by Paper; see [Observational Memory](#observational-memory).)
 
 ```
-Agent → Kafka (agent.game.events)
+Agent → JSONL (data/telemetry/game/*.jsonl)
+  └→ seed → Kafka (agent.game.events)
             ├→ game-consumer (prints + writes JSONL)
             ├→ Flink SQL (anomaly detection)
             │    └→ Kafka (agent.telemetry.alerts)
@@ -129,7 +130,6 @@ Agent → Kafka (agent.game.events)
 
 JSONL sink (data/telemetry/*.jsonl)
   └→ dlt pipeline → DuckDB warehouse (local)
-                  → Snowflake / Confluent Cloud (production)
 ```
 
 Each event carries the event type (`battle`, `overworld`, `map_change`, `stuck`, `milestone`, `session`), turn, timestamp, and a flat data payload (map, position, HP, action, badges, …). Flink reads these to flag navigation deadlocks and battle loops in real time: `GAME_STUCK_LOOP`, `BATTLE_WIPE`, `BATTLE_LOOP`, `POSITION_DEADLOCK`, `NO_PROGRESS`.
@@ -149,51 +149,6 @@ open http://localhost:8081
 ```
 
 LLM sessions are recorded by Paper (paperd) on the host — point the agent at it with `ANTHROPIC_BASE_URL`. A local-first alternative for the game-event stream exists without a broker: pass `--telemetry-dir` to the agent and it writes JSONL files directly via `scripts/publisher.py`.
-
-## Confluent Cloud Setup
-
-Stream game and telemetry events to Confluent Cloud instead of (or alongside) local JSONL files. The publisher is opt-in and requires a cluster, two topics, and an API key.
-
-For a guided setup with troubleshooting, install the [confluent-cloud-setup](https://github.com/papercomputeco/skills/tree/main/skills/confluent-cloud-setup) skill:
-
-```bash
-npx skills add papercomputeco/skills
-```
-
-### Quick start
-
-1. Create a **Basic** cluster in Confluent Cloud (free tier, no ACL enforcement)
-2. Create topics: `pokemon.telemetry.raw` and `pokemon.game.events`
-3. Create a **My account** API key (not service account)
-4. Set env vars and create `config.toml`:
-
-```bash
-export CONFLUENT_API_KEY="<your-api-key>"
-export CONFLUENT_API_SECRET="<your-api-secret>"
-```
-
-```toml
-version = 1
-
-[telemetry]
-dir = "data/telemetry"
-
-[telemetry.confluent]
-enabled = true
-bootstrap_servers = "pkc-xxxxx.us-east-2.aws.confluent.cloud:9092"
-topic_prefix = "pokemon"
-api_key_env = "CONFLUENT_API_KEY"
-api_secret_env = "CONFLUENT_API_SECRET"
-```
-
-5. Install the optional dependency and run:
-
-```bash
-uv sync --extra confluent
-uv run scripts/agent.py rom/pokemon_red.gb --config config.toml --strategy low --max-turns 500
-```
-
-Events stream to both local JSONL and Confluent Cloud via the `FanoutPublisher`. If Confluent fails, the agent continues writing locally.
 
 ## Flink Anomaly Detection
 
