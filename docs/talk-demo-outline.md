@@ -290,6 +290,16 @@ the piece that would incorporate all these learnings into a single goal-directed
 driver, aimed at tasks where there's actually a *gap* to close (Brock, forest
 nav) so the loop has signal.
 
+**But the discovery engine does exist** (`scripts/discovery.py`) — the first
+rung past the wall. When the healer's parameter races stop working (the same
+anomaly re-fires after an accepted fix, or the knobs keep rejecting), it
+escalates: Claude Code headless gets the evidence bundle in an isolated
+worktree, proposes a *code* change, and the engine — never the proposer —
+runs the gates (full suite, lint, fitness eval vs baseline) and opens a PR
+with the proof. A human merges. Show the escalation queue entry, then the PR
+it produced. Land the line: **"Tuning fixes the knobs it has. This is the
+loop growing new knobs."**
+
 **Show the wall, don't just describe it (beats 7–9).** Three extension beats live
 here — the harder frontier past the solved Route 1 intro. Run them live or replay
 the committed frames (`viewer --runs-dir demo-runs`, `/7` `/8` `/9`):
