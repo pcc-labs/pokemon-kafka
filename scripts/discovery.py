@@ -177,6 +177,9 @@ def has_changes(worktree: Path, start_sha: str) -> bool:
 
 def eval_candidate(worktree: Path, rom: str, runs: int, turns: int) -> list[float]:
     """Score the WORKTREE's agent (candidate code) over *runs* headless runs."""
+    # cwd is the worktree, which has no ROM (rom/* is gitignored) — a relative
+    # rom path would resolve to a missing file and every run would score -inf.
+    rom = str(Path(rom).resolve())
     scores = []
     for _ in range(runs):
         with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
