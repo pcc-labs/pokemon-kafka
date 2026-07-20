@@ -240,6 +240,17 @@ uv run scripts/agent.py rom/pokemon_red.gb --output-json fit.json --max-turns 20
 
 When the run's own fitness trips a rule — `navigation-thrash` (`stuck_count ≥ 12` or `backtrack_restores ≥ 3`) or `no-progress` (`maps_visited ≤ 1` after 500+ turns) — the healer races seeded variants of the implicated parameters via `evolve.run_agent`, and persists the winner to `notes.md` (the same autotune genome block the agent loads at startup) only if it beats the current genome by a 5% margin. A 6-hour cooldown (`data/healer_state.json`) prevents race cascades, and `check` always exits 0 so a healing failure never breaks the wrapper. `--dry-run` shows the decision without racing.
 
+### Discovery engine (capability healing)
+
+Parameter tuning only tunes the knobs that exist. When tuning is exhausted — the same rule re-fires after an accepted fix, or the last two races both rejected — the healer escalates to `data/discovery_queue.json`, and the discovery engine turns the evidence into a **code change proposal**:
+
+```bash
+uv run scripts/discovery.py run --rom rom/pokemon_red.gb          # work the queue
+uv run scripts/discovery.py run --rom rom/pokemon_red.gb --reason "wedges at the forest exit"  # manual/demo
+```
+
+The engine builds a context bundle (escalation, recent races, observations tail, implicated code), hands it to Claude Code headless (`claude -p`, `--permission-mode acceptEdits`) in an isolated git worktree, then runs the gates itself — full test suite, ruff, and a fitness eval of the patched agent vs baseline (`--eval-runs`, same 5% margin as the healer; `--eval-runs 0` skips it and the PR is titled `[eval pending]`). Gates pass → it pushes the branch and opens a PR with the diagnosis and evidence; gates fail → the worktree and branch are discarded. **A human always merges** — the engine never touches main. One attempt per escalation, 24-hour cooldown, always exits 0.
+
 ### Long-session mode
 
 You can still run the agent the traditional way for a single long session, the way [ClaudePlaysPokemon](https://www.twitch.tv/claudeplayspokemon) works on Twitch:
