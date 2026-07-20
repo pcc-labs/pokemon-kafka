@@ -1,10 +1,29 @@
 # Pokemon Agent
 
-> See also: [pokemon-kafka](https://github.com/papercomputeco/pokemon-kafka) — Streams gameplay events through Kafka for large-scale data processing and uses Flink for real-time anomaly detection and self-healing.
+> The streaming, self-healing evolution of [pokemon](https://github.com/pcc-labs/pokemon): gameplay events flow through a local Kafka + Flink stack for real-time anomaly detection, and the agent's own telemetry drives automatic parameter tuning and LLM-proposed code fixes.
 
 ![Pokemon Agent](hero2.png)
 
-Autonomous Pokemon Red player that reads game memory, makes strategic decisions, and plays headlessly inside a stereOS VM.
+Autonomous Pokemon Red player that reads game memory, makes strategic decisions, and plays headlessly inside a stereOS VM. Everything it does streams as structured events, and everything it streams feeds a pipeline that heals it.
+
+## The Self-Healing Pipeline
+
+Three loops, each engaging only when the one before it runs out:
+
+```
+run finishes → fitness JSON
+  ├─ healthy → nothing happens
+  ├─ anomaly rule fires → HEALER races parameter variants, persists a
+  │    measured winner to notes.md (the next run loads it automatically)
+  └─ tuning exhausted (fix didn't hold / races keep rejecting)
+       → escalation queue → DISCOVERY ENGINE: Claude Code proposes a code
+         change in an isolated worktree; the engine runs the gates (full
+         test suite + fitness eval) and opens a PR. A human merges.
+```
+
+- **Detect** — [Flink SQL jobs](#flink-anomaly-detection) flag stuck loops, battle wipes, and deadlocks from the live event stream; alerts land in the agent's [observational memory](#observational-memory).
+- **Tune** — the [healer](#self-healing-loop) turns a bad run's own fitness into a parameter race: measured, margin-gated, cooldown-protected.
+- **Grow** — the [discovery engine](#discovery-engine-capability-healing) turns exhausted tuning into gated code-change proposals. Tuning fixes the knobs that exist; this is the loop growing new knobs.
 
 ## Talk & Demo
 
