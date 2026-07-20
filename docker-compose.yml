@@ -84,6 +84,12 @@ services:
     ports:
       - "8081:8081"
     command: jobmanager
+    # Flink loads lib/ at process start: without waiting for the connector
+    # download, a first boot races it and every Kafka-sourced SQL job dies
+    # with ClassNotFoundException (KafkaSource) when the sql-client submits.
+    depends_on:
+      flink-kafka-connector:
+        condition: service_completed_successfully
     volumes:
       - flink-lib:/opt/flink/lib
     environment:
@@ -93,7 +99,10 @@ services:
   flink-taskmanager:
     image: flink:1.18
     depends_on:
-      - flink-jobmanager
+      flink-jobmanager:
+        condition: service_started
+      flink-kafka-connector:
+        condition: service_completed_successfully
     command: taskmanager
     volumes:
       - flink-lib:/opt/flink/lib
