@@ -9,14 +9,16 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 from viewer.feed import build_feed, load_anomalies, load_observations
+from viewer.heal import HealJobs
 from viewer.store import RunStore
 
 _STATIC = Path(__file__).parent / "static"
 
 
-def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) -> FastAPI:
+def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None, heal_jobs=None) -> FastAPI:
     runs_dir = Path(runs_dir)
     store = RunStore(runs_dir)
+    heal = heal_jobs if heal_jobs is not None else HealJobs(runs_dir)
     app = FastAPI(title="Pokédex Viewer")
 
     @app.get("/api/runs")
@@ -57,6 +59,18 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None) 
             if ev.get("event_type") == "agent_state"
         ]
         return {"states": sorted(states, key=lambda s: s["turn"])}
+
+    @app.post("/api/runs/{run_id}/heal")
+    def run_heal(run_id: str, force: bool = False):
+        if not (runs_dir / run_id).is_dir():
+            raise HTTPException(status_code=404, detail="run not found")
+        return heal.start(run_id, force=force)
+
+    @app.get("/api/runs/{run_id}/heal")
+    def heal_status(run_id: str):
+        if not (runs_dir / run_id).is_dir():
+            raise HTTPException(status_code=404, detail="run not found")
+        return heal.status(run_id)
 
     @app.get("/runs/{run_id}/frames/{name}")
     def frame(run_id: str, name: str):

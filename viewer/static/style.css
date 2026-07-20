@@ -207,6 +207,27 @@ body[data-view="grid"] #grid { display: grid; }
   box-shadow: inset 0 2px 3px rgba(255,255,255,0.4);
 }
 
+/* HEAL button — the one shell control that does something */
+.heal-ctrl { display: flex; flex-direction: column; align-items: center; gap: 6px; max-width: 240px; }
+#heal-btn {
+  padding: 10px 26px; border-radius: 8px; cursor: pointer;
+  font-family: 'Courier New', monospace; font-weight: bold; font-size: 15px; letter-spacing: 2px;
+  color: #08260f; background: linear-gradient(160deg, #6ee39a, #34b866);
+  border: 3px solid #1f7d45;
+  box-shadow: 0 3px 5px rgba(0,0,0,0.45), inset 0 2px 3px rgba(255,255,255,0.4);
+}
+#heal-btn:hover:not(:disabled) { filter: brightness(1.08); }
+#heal-btn:disabled {
+  cursor: wait; color: #1f3326;
+  background: linear-gradient(160deg, #9fbfa8, #6d8f78); border-color: #4d6656;
+  animation: heal-pulse 1.2s ease-in-out infinite;
+}
+@keyframes heal-pulse { 50% { filter: brightness(1.15); } }
+#heal-readout {
+  font-family: 'Courier New', monospace; font-size: 11px; text-align: center;
+  color: #3b1010; min-height: 14px; max-width: 240px;
+}
+
 /* D-pad (black cross) */
 .dpad { position: relative; width: 92px; height: 92px; }
 .dpad-h, .dpad-v { position: absolute; background: #1a1a1a; border-radius: 8px; box-shadow: inset 0 0 4px rgba(255,255,255,0.15); }
