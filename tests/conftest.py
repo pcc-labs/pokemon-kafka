@@ -29,3 +29,16 @@ def mock_pyboy(fake_memory):
     pyboy = MagicMock()
     pyboy.memory = fake_memory
     return pyboy
+
+
+@pytest.fixture(autouse=True)
+def _no_real_self_heal(monkeypatch):
+    """Keep agent.main()'s automatic self-heal from spawning real healer subprocesses.
+
+    Without this, CLI tests race variants against the repo's actual
+    data/healer_state.json and notes.md. test_self_heal.py is unaffected:
+    it imports run_self_heal directly and injects its own runner.
+    """
+    import agent
+
+    monkeypatch.setattr(agent, "run_self_heal", lambda *a, **kw: False)

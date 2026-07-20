@@ -146,6 +146,7 @@ def run_agent(rom_path: str, max_turns: int, params: dict) -> dict:
         str(max_turns),
         "--output-json",
         output_path,
+        "--no-self-heal",  # race children must never spawn their own healer
     ]
 
     try:

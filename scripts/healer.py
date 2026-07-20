@@ -30,6 +30,7 @@ from autotune_bridge import load_genome_from_notes
 from evolve import DEFAULT_PARAMS, PARAM_BOUNDS, clamp_params, run_agent, score
 
 STUCK_COUNT_THRESHOLD = 12
+TERMINAL_WEDGE_STREAK = 50
 BACKTRACK_RESTORES_THRESHOLD = 3
 NO_PROGRESS_MAX_MAPS = 1
 NO_PROGRESS_MIN_TURNS = 500
@@ -45,6 +46,13 @@ RULES = [
             f.get("stuck_count", 0) >= STUCK_COUNT_THRESHOLD
             or f.get("backtrack_restores", 0) >= BACKTRACK_RESTORES_THRESHOLD
         ),
+        "params": ["door_cooldown", "stuck_threshold", "waypoint_skip_distance", "bt_restore_threshold"],
+    },
+    {
+        # stuck_count only counts wedge *episodes* (STUCK logs at streaks 2/5/10/20),
+        # so one fatal wedge stays under navigation-thrash. Streak length catches it.
+        "name": "terminal-wedge",
+        "fires": lambda f: f.get("max_stuck_streak", 0) >= TERMINAL_WEDGE_STREAK,
         "params": ["door_cooldown", "stuck_threshold", "waypoint_skip_distance", "bt_restore_threshold"],
     },
     {

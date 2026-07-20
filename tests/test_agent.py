@@ -3195,6 +3195,14 @@ class TestComputeFitness:
         result = ag.compute_fitness()
         assert result["turns"] == 0
         assert result["stuck_count"] == 0
+        assert result["max_stuck_streak"] == 0
+
+    def test_max_stuck_streak_reports_high_water_mark(self, tmp_path):
+        """A terminal wedge must be visible in fitness even though STUCK events cap at 4."""
+        ag = _make_agent(tmp_path)
+        ag.max_stuck_streak = 575
+        ag.memory.read_overworld_state = MagicMock(return_value=OverworldState())
+        assert ag.compute_fitness()["max_stuck_streak"] == 575
 
 
 # ===================================================================
