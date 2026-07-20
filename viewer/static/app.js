@@ -95,6 +95,7 @@ async function routeInitial() {
 async function selectRun(id, label) {
   runId = id;
   closeLive();
+  resetHealUI();
   maybePushBeatRoute(label);
   const detail = await (await fetch(`${API}/api/runs/${id}`)).json();
   frames = detail.frames;
@@ -252,8 +253,51 @@ function setSpeed(ms) {
   if (timer) play();  // restart the loop at the new speed
 }
 
+// HEAL button: run healer.py check on this run's own fitness; poll for the verdict.
+// Races take minutes of real emulation, so the server heals in the background.
+let healPoll = null;
+function resetHealUI() {
+  if (healPoll) clearTimeout(healPoll);
+  healPoll = null;
+  const btn = document.getElementById("heal-btn");
+  btn.disabled = false;
+  btn.textContent = "HEAL";
+  delete btn.dataset.force;
+  document.getElementById("heal-readout").textContent = "";
+}
+function renderHeal(job) {
+  const btn = document.getElementById("heal-btn");
+  const readout = document.getElementById("heal-readout");
+  if (job.state === "running") {
+    btn.disabled = true;
+    readout.textContent = "healing — racing variants…";
+    healPoll = setTimeout(pollHeal, 2000);
+    return;
+  }
+  btn.disabled = false;
+  readout.textContent = job.verdict || "";
+  // Match the healer's skip phrasing exactly — a bare /cooldown/ also hits
+  // param names like door_cooldown inside accepted-race verdicts.
+  if (job.state === "done" && /cooldown active/i.test(job.verdict || "")) {
+    btn.textContent = "FORCE HEAL";  // cooldown blocked the race; re-press overrides it
+    btn.dataset.force = "1";
+  } else {
+    btn.textContent = "HEAL";
+    delete btn.dataset.force;
+  }
+}
+async function pollHeal() {
+  renderHeal(await (await fetch(`${API}/api/runs/${runId}/heal`)).json());
+}
+async function startHeal() {
+  const force = document.getElementById("heal-btn").dataset.force === "1";
+  const r = await fetch(`${API}/api/runs/${runId}/heal${force ? "?force=true" : ""}`, { method: "POST" });
+  renderHeal(await r.json());
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("scrub").addEventListener("input", e => { stop(); showFrame(+e.target.value); });
+  document.getElementById("heal-btn").addEventListener("click", startHeal);
   // Live playback controls: [ slower, ] faster, space = play/pause.
   document.addEventListener("keydown", e => {
     if (e.key === "[") setSpeed(frameDelay + 150);
