@@ -964,6 +964,52 @@ class PokemonAgent:
         # failed moves and steering around known grass via the encounter cost. ``cross_step`` then
         # sweeps the top boundary for the real exit column into Pewter.
         if state.map_id == 51:
+            # Sign curiosity: the sign table (wNumSigns) is as readable as the collision
+            # grid, so when the agent walks beside a sign it hasn't read, it turns to face
+            # it and reads it on the next turn — one guaranteed discovery event per sign,
+            # then the planner resumes. Read each sign once; no detours are taken.
+            # Sign text clears the wd730 flags as soon as the short line prints, so the
+            # text_box_active-gated capture above never sees it — capture directly on the
+            # turn after our own A press, then dismiss.
+            if getattr(self, "_sign_read_pending", None) == "capture":
+                self._sign_read_pending = None
+                self.controller.wait(45)  # let the progressive text finish printing
+                text = self.memory.read_dialogue()
+                if text:
+                    self.log(f'DISCOVERY | map={state.map_id} pos=({state.x},{state.y}) text="{text}"')
+                    self.collector.discovery(self.turn_count, state.map_id, state.x, state.y, text, kind="sign")
+                return "a"
+            if getattr(self, "_sign_read_pending", None) == "press":
+                self._sign_read_pending = "capture"
+                return "a"
+            if not hasattr(self, "_signs_read"):
+                self._signs_read = set()
+            for sx, sy in self.memory.read_signs():
+                if (state.map_id, sx, sy) in self._signs_read:
+                    continue
+                dx, dy = sx - state.x, sy - state.y
+                if abs(dx) + abs(dy) == 1:
+                    self._signs_read.add((state.map_id, sx, sy))
+                    self._sign_read_pending = "press"
+                    return {(1, 0): "right", (-1, 0): "left", (0, 1): "down", (0, -1): "up"}[(dx, dy)]
+
+            # Hard-wedge interaction: at each milestone (streak 20, then every 25 stuck
+            # turns) turn to the next direction in a cycle and press A on the following
+            # turn — a face-then-read pair. Unlike the removed press-A-on-every-block hack
+            # below, this cannot corrupt wall learning: the two-consecutive-failed-steps
+            # rule converges by streak 2, long before this fires. A sign or NPC may sit to
+            # any side of the wedge; the attempt counter survives streak resets (a turn
+            # that happens to step simply un-wedges us), so all four sides get read within
+            # four milestones. The text box that opens is captured as a discovery event:
+            # the wedge itself narrates the world.
+            if getattr(self, "_wedge_read_pending", False):
+                self._wedge_read_pending = False
+                return "a"
+            if self.stuck_turns >= 20 and self.stuck_turns % 25 == 20:
+                n = getattr(self, "_wedge_attempts", 0)
+                self._wedge_attempts = n + 1
+                self._wedge_read_pending = True
+                return ["up", "right", "down", "left"][n % 4]
             # Drive the maze with the persistent WorldMap planner. Walls — and bug-catcher NPCs,
             # whose tiles collision reports impassable — are learned by run_overworld's normal
             # two-consecutive-failed-steps rule and routed around: we don't need to battle a catcher

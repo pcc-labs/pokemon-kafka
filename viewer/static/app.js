@@ -5,11 +5,12 @@ let isolated = null; // null = show every kind; otherwise show only this one
 function kindForEvent(et) {
   if (et === "milestone" || et === "map_change") return "milestone";
   if (
-    et === "battle" || et === "overworld" || et === "stuck" ||
+    et === "battle" || et === "overworld" ||
     et === "battle_end" || et === "battle_outcome" || et === "move_result"
   ) return "telemetry";
   if (et === "discovery") return "observation";
   if (et === "decision") return "decision";
+  if (et === "stuck") return "anomaly";  // wedged off-plan — mirror feed.py
   return null;
 }
 
@@ -112,6 +113,15 @@ async function selectRun(id, label) {
       const msg = JSON.parse(e.data);
       if (msg.type === "done") {
         closeLive();
+      } else if (msg.type === "anomaly") {
+        // Same text shape as the server-side REST merge (feed.py build_feed).
+        feed.push({
+          kind: "anomaly",
+          turn: msg.turn || 0,
+          ts: "",
+          text: `${msg.alert_type || "ANOMALY"}: ${msg.detail || ""}`,
+        });
+        renderFeed();
       } else if (msg.type === "event") {
         if (msg.event_type === "agent_state") {
           states.push({ turn: msg.turn, ts: msg.occurred_at || "", data: msg.data || {} });

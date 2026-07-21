@@ -76,6 +76,7 @@ class GameProfile:
 
     # Flags / scripts
     addr_wd730: int  # wStatusFlags5: text/menu/simulated-joypad bits
+    addr_num_signs: int  # wNumSigns: current map's sign count; (y,x) coord pairs follow at +1
     addr_wd74b: int  # wEventFlags+4: bit 5 = got Pokedex
     addr_lab_script: int  # wPalletTownCurScript — logged during the Oak's-lab intro phases
     addr_diag_script: int  # wRoute15CurScript — legacy diagnostic read, preserved verbatim
@@ -130,6 +131,7 @@ RED_BLUE = GameProfile(
     addr_money_2=0xD348,
     addr_money_3=0xD349,
     addr_wd730=0xD730,
+    addr_num_signs=0xD4B0,
     addr_wd74b=0xD74B,
     addr_lab_script=0xD5F1,
     addr_diag_script=0xD625,

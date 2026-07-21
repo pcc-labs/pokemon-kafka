@@ -1,4 +1,9 @@
-"""Merge game events, observations, and anomalies into one tagged feed."""
+"""Merge game events and anomalies into one tagged feed.
+
+Observations are in-game only: `discovery` events (signs, dialogue the agent
+read). Session/dev memory like observations.md is deliberately NOT merged — the
+Pokédex narrates what happened in the game, in human-readable terms.
+"""
 
 from __future__ import annotations
 
@@ -7,9 +12,12 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 _MILESTONE_TYPES = {"milestone", "map_change"}
-_TELEMETRY_TYPES = {"battle", "overworld", "stuck", "battle_end", "battle_outcome", "move_result"}
+_TELEMETRY_TYPES = {"battle", "overworld", "battle_end", "battle_outcome", "move_result"}
 _OBSERVATION_TYPES = {"discovery"}
 _DECISION_TYPES = {"decision"}
+# A stuck event means the agent wedged somewhere its route didn't predict — the
+# in-run anomaly signal (Flink alerts cover the aggregated/windowed kind).
+_ANOMALY_TYPES = {"stuck"}
 
 
 @dataclass
@@ -55,7 +63,7 @@ def _event_text(event: dict) -> str:
     return et or "event"
 
 
-def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
+def build_feed(events, anomalies=None) -> list[FeedEntry]:
     entries: list[FeedEntry] = []
     for ev in events:
         et = ev.get("event_type")
@@ -67,6 +75,8 @@ def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
             kind = "observation"
         elif et in _DECISION_TYPES:
             kind = "decision"
+        elif et in _ANOMALY_TYPES:
+            kind = "anomaly"
         else:
             continue
         entries.append(
@@ -78,8 +88,6 @@ def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
                 data=ev.get("data", {}),
             )
         )
-    for obs in observations or []:
-        entries.append(FeedEntry(ts="", turn=0, kind="observation", text=obs, data={}))
     for an in anomalies or []:
         entries.append(
             FeedEntry(
@@ -91,19 +99,6 @@ def build_feed(events, observations=None, anomalies=None) -> list[FeedEntry]:
             )
         )
     return sorted(entries, key=lambda e: e.turn)
-
-
-def load_observations(path: Path) -> list[str]:
-    path = Path(path)
-    if not path.exists():
-        return []
-    out = []
-    for line in path.read_text().splitlines():
-        s = line.strip()
-        if not s or s.startswith("#"):
-            continue
-        out.append(s)
-    return out
 
 
 def load_anomalies(path: Path) -> list[dict]:

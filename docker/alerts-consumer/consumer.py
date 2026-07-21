@@ -43,6 +43,17 @@ def alert_observation(data: dict) -> dict:
     }
 
 
+def append_alert_line(memory_dir: str, data: dict) -> None:
+    """Append the raw alert to <memory_dir>/alerts.jsonl for the viewer.
+
+    The viewer merges this file into run feeds (REST) and live-streams appended
+    lines to open Pokédex sessions, tagging them as anomaly entries.
+    """
+    path = os.path.join(memory_dir, "alerts.jsonl")
+    with open(path, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(data) + "\n")
+
+
 def main():
     print(f"[alerts] Connecting to {BOOTSTRAP}, topic={TOPIC}", flush=True)
 
@@ -77,6 +88,12 @@ def main():
             try:
                 data = json.loads(msg.value().decode("utf-8"))
                 print(format_alert(data), flush=True)
+
+                if MEMORY_DIR:
+                    try:
+                        append_alert_line(MEMORY_DIR, data)
+                    except Exception as exc:
+                        print(f"[alerts] alerts.jsonl write failed: {exc}", flush=True)
 
                 if append_observations:
                     try:

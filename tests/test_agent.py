@@ -1357,6 +1357,56 @@ class TestChooseOverworldAction:
         # Lab exit navigation: at x=5 (center), should go down or A
         assert result in ("down", "a")
 
+    def test_forest_adjacent_sign_face_read_capture(self, tmp_path):
+        """Walking beside a sign in the forest, the agent turns to face it, presses A, then
+        captures the sign text as a discovery on the following turn — sign boxes clear the
+        wd730 text flags as soon as the short text prints, so the text_box_active-gated
+        capture in the generic path never sees them. Each sign is read once; the planner
+        then resumes."""
+        ag = _make_agent(tmp_path)
+        ag._pilot_to = MagicMock(return_value="up")
+        ag.memory.read_dialogue = MagicMock(return_value="TRAINER TIPS")
+        mem = ag.pyboy.memory
+        mem[0xD4B0] = 1
+        mem[0xD4B1], mem[0xD4B2] = 45, 18  # wSignCoords stores (y, x): sign at (18,45)
+        state = OverworldState(map_id=51, x=17, y=45)
+        assert ag.choose_overworld_action(state) == "right"  # face the sign
+        assert ag.choose_overworld_action(state) == "a"  # open its text box
+        assert ag.choose_overworld_action(state) == "a"  # capture + dismiss
+        discoveries = [e for e in ag.collector.events if e["event_type"] == "discovery"]
+        assert len(discoveries) == 1
+        assert discoveries[0]["data"]["text"] == "TRAINER TIPS"
+        assert ag.choose_overworld_action(state) == "up"  # read once; planner resumes
+
+    def test_forest_hard_wedge_face_then_read(self, tmp_path):
+        """At each hard-wedge milestone (streak 20, 45, ...) the agent turns to the next
+        direction in a cycle, then presses A on the following turn — a face-then-read pair.
+        The attempt counter persists across streak resets, so within four milestones every
+        side of the wedge gets a read attempt: an adjacent sign or NPC fires a discovery
+        wherever it sits."""
+        ag = _make_agent(tmp_path)
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=6, y=2)
+        for expected_turn in ["up", "right", "down", "left", "up"]:
+            ag.stuck_turns = 20
+            assert ag.choose_overworld_action(state) == expected_turn
+            # Next turn (regardless of streak): the paired read press.
+            ag.stuck_turns = 21
+            assert ag.choose_overworld_action(state) == "a"
+        # Off-milestone with no pending read: the planner keeps driving.
+        ag.stuck_turns = 22
+        assert ag.choose_overworld_action(state) == "up"
+
+    def test_forest_normal_stuck_does_not_interact(self, tmp_path):
+        """Below the hard-wedge threshold the planner keeps driving — no stray A presses
+        (they would corrupt the two-failed-steps wall learning)."""
+        ag = _make_agent(tmp_path)
+        ag._pilot_to = MagicMock(return_value="up")
+        state = OverworldState(map_id=51, x=6, y=2)
+        for streak in (0, 2, 19, 21):
+            ag.stuck_turns = streak
+            assert ag.choose_overworld_action(state) == "up"
+
     def test_navigator_returns_none_falls_back_to_a(self, tmp_path):
         ag = _make_agent(tmp_path)
         ag.navigator.next_direction = MagicMock(return_value=None)

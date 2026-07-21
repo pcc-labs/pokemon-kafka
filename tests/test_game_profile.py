@@ -69,6 +69,8 @@ def test_red_blue_matches_legacy_constants():
     assert RED_BLUE.addr_pp_1 == 0xD02C  # NOTE: one below wBattleMonPP (d02d); preserved verbatim
     assert RED_BLUE.addr_text_progress == 0xC4F2
     assert RED_BLUE.addr_warp_flag == 0xD736
+    assert RED_BLUE.addr_num_signs == 0xD4B0  # wNumSigns; coord pairs follow at +1
+    assert YELLOW.addr_num_signs == 0xD4AF  # WRAM shift applies
     assert RED_BLUE.routes_file == "routes.json"
     assert RED_BLUE.lab_ball_x == 6  # Charmander ball column
 

@@ -745,3 +745,23 @@ class TestReadDialogue:
 
         reader = MemoryReader(_BoomPyBoy())
         assert reader.read_dialogue() == ""
+
+
+class TestReadSigns:
+    """read_signs surfaces the current map's sign table (wNumSigns / wSignCoords)."""
+
+    def test_reads_sign_coords(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[0xD4B0] = 2
+        # Pairs are stored (y, x)
+        fake_memory[0xD4B1], fake_memory[0xD4B2] = 45, 18
+        fake_memory[0xD4B3], fake_memory[0xD4B4] = 1, 2
+        assert reader.read_signs() == [(18, 45), (2, 1)]
+
+    def test_no_signs(self, mock_pyboy):
+        assert MemoryReader(mock_pyboy).read_signs() == []
+
+    def test_caps_at_sixteen(self, mock_pyboy, fake_memory):
+        reader = MemoryReader(mock_pyboy)
+        fake_memory[0xD4B0] = 200  # garbage count must not scan past the table
+        assert len(reader.read_signs()) == 16

@@ -212,6 +212,21 @@ class MemoryReader:
         self.ADDR_WD730 = p.addr_wd730
         self.ADDR_WD74B = p.addr_wd74b
         self.ADDR_PLAYER_FACING = p.addr_player_facing
+        self.ADDR_NUM_SIGNS = p.addr_num_signs
+
+    def read_signs(self) -> list[tuple[int, int]]:
+        """Current map's sign positions as (x, y) tiles.
+
+        The game loads wNumSigns and up to 16 (y, x) coordinate pairs for each map;
+        reading them lets the agent notice a sign it is standing beside.
+        """
+        count = min(self._read(self.ADDR_NUM_SIGNS), 16)
+        signs = []
+        for i in range(count):
+            y = self._read(self.ADDR_NUM_SIGNS + 1 + i * 2)
+            x = self._read(self.ADDR_NUM_SIGNS + 2 + i * 2)
+            signs.append((x, y))
+        return signs
 
     def _read(self, addr: int) -> int:
         """Read a single byte from memory."""
