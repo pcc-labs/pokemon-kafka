@@ -2,24 +2,46 @@
 
 from __future__ import annotations
 
+import asyncio
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
-from viewer.feed import build_feed, load_anomalies, load_observations
+from viewer.alerts_tail import tail_alerts
+from viewer.feed import build_feed, load_anomalies
 from viewer.heal import HealJobs
 from viewer.store import RunStore
 
 _STATIC = Path(__file__).parent / "static"
 
 
-def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None, heal_jobs=None) -> FastAPI:
+def create_app(
+    runs_dir,
+    *,
+    alerts_path=None,
+    hub=None,
+    heal_jobs=None,
+    alerts_poll_interval: float = 1.0,
+) -> FastAPI:
     runs_dir = Path(runs_dir)
     store = RunStore(runs_dir)
     heal = heal_jobs if heal_jobs is not None else HealJobs(runs_dir)
-    app = FastAPI(title="Pokédex Viewer")
+
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        # Live anomaly bridge: alerts appended while runs stream reach subscribers
+        # through the hub; without it they'd only show on the next full page load.
+        task = None
+        if hub is not None and alerts_path is not None:
+            task = asyncio.create_task(tail_alerts(Path(alerts_path), hub, poll_interval=alerts_poll_interval))
+        yield
+        if task is not None:
+            task.cancel()
+
+    app = FastAPI(title="Pokédex Viewer", lifespan=lifespan)
 
     @app.get("/api/runs")
     def list_runs():
@@ -37,9 +59,8 @@ def create_app(runs_dir, *, observations_path=None, alerts_path=None, hub=None, 
     def run_feed(run_id: str):
         if not (runs_dir / run_id).is_dir():
             raise HTTPException(status_code=404, detail="run not found")
-        observations = load_observations(observations_path) if observations_path else []
         anomalies = load_anomalies(alerts_path) if alerts_path else []
-        feed = build_feed(store.load_events(run_id), observations, anomalies)
+        feed = build_feed(store.load_events(run_id), anomalies)
         return {"feed": [e.to_dict() for e in feed]}
 
     @app.get("/api/runs/{run_id}/agent_state")

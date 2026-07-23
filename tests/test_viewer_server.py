@@ -200,6 +200,33 @@ def test_ws_produce_disconnect_no_hub(tmp_path: Path):
     # No assertion needed beyond no exception being raised
 
 
+def test_ws_live_streams_appended_alerts_as_anomalies(tmp_path: Path):
+    """Alerts appended to alerts.jsonl while a live subscriber is connected are
+    pushed over the live websocket as anomaly messages."""
+    import time
+
+    make_fixture_run(tmp_path, "r")
+    alerts = tmp_path / "alerts.jsonl"
+    app = create_app(tmp_path, alerts_path=alerts, hub=LiveHub(), alerts_poll_interval=0.02)
+    with TestClient(app) as client:  # context manager → startup event runs the tail task
+        with client.websocket_connect("/ws/live/r") as sub:
+            time.sleep(0.1)  # let the tail record its starting offset
+            with alerts.open("a") as fh:
+                fh.write(json.dumps({"alert_type": "STUCK_LOOP", "detail": "map=51", "turn": 42}) + "\n")
+            msg = sub.receive_json()
+    assert msg["type"] == "anomaly"
+    assert msg["alert_type"] == "STUCK_LOOP"
+    assert msg["turn"] == 42
+
+
+def test_no_tail_task_without_hub(tmp_path: Path):
+    """With hub=None the app must start cleanly even when alerts_path is set."""
+    make_fixture_run(tmp_path, "r")
+    app = create_app(tmp_path, alerts_path=tmp_path / "alerts.jsonl", hub=None)
+    with TestClient(app) as client:
+        assert client.get("/api/runs").status_code == 200
+
+
 def test_agent_state_endpoint_and_404(tmp_path: Path):
     run = tmp_path / "r1"
     run.mkdir()

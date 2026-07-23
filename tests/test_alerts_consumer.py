@@ -105,3 +105,19 @@ class TestMemoryIntegration:
     def test_no_memory_dir_configured(self):
         consumer = _import_consumer(None)
         assert not consumer.MEMORY_DIR
+
+
+class TestAppendAlertLine:
+    def test_appends_raw_alert_json(self, tmp_path):
+        """Alerts land in alerts.jsonl so the viewer can merge and live-stream them."""
+        import json
+
+        consumer = _import_consumer(str(tmp_path))
+        data = {"alert_type": "STUCK_LOOP", "detail": "map=51", "event_count": 3}
+        consumer.append_alert_line(str(tmp_path), data)
+        consumer.append_alert_line(str(tmp_path), {"alert_type": "NO_PROGRESS"})
+
+        lines = (tmp_path / "alerts.jsonl").read_text().splitlines()
+        assert len(lines) == 2
+        assert json.loads(lines[0]) == data
+        assert json.loads(lines[1])["alert_type"] == "NO_PROGRESS"

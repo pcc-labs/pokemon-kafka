@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from viewer.feed import _event_text, build_feed, load_anomalies, load_observations
+from viewer.feed import _event_text, build_feed, load_anomalies
 
 
 def test_build_feed_tags_kinds_and_orders():
@@ -17,25 +17,17 @@ def test_build_feed_tags_kinds_and_orders():
     assert "starter" in feed[0].text
 
 
-def test_build_feed_includes_observations_and_anomalies():
+def test_build_feed_includes_anomalies():
     feed = build_feed(
         [],
-        observations=["The agent oscillated at a door for 200 turns."],
         anomalies=[{"alert_type": "GAME_STUCK_LOOP", "detail": "map=0 streak=8", "turn": 40}],
     )
-    kinds = {e.kind for e in feed}
-    assert kinds == {"observation", "anomaly"}
+    assert [e.kind for e in feed] == ["anomaly"]
+    assert feed[0].text == "GAME_STUCK_LOOP: map=0 streak=8"
 
 
 def test_loaders_missing_files_return_empty(tmp_path: Path):
-    assert load_observations(tmp_path / "none.md") == []
     assert load_anomalies(tmp_path / "none.jsonl") == []
-
-
-def test_load_observations_strips_headings(tmp_path: Path):
-    p = tmp_path / "observations.md"
-    p.write_text("# Heading\n\n- did a thing\nplain line\n")
-    assert load_observations(p) == ["- did a thing", "plain line"]
 
 
 def test_feed_entry_to_dict():
@@ -57,7 +49,8 @@ def test_build_feed_all_event_types():
     assert "Map 1 → 2" in feed[0].text
     assert feed[1].kind == "telemetry"
     assert "3 (10,20) walk" in feed[1].text
-    assert feed[2].kind == "telemetry"
+    # A stuck event is the agent wedged off-plan — the in-run anomaly signal.
+    assert feed[2].kind == "anomaly"
     assert "Stuck ×5" in feed[2].text
 
 

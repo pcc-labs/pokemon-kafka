@@ -22,3 +22,8 @@ class LiveHub:
     async def publish(self, run_id: str, message: dict) -> None:
         for q in list(self._subs.get(run_id, [])):
             await q.put(message)
+
+    async def broadcast(self, message: dict) -> None:
+        """Publish to every subscriber of every run (alerts aren't tied to one run)."""
+        for run_id in list(self._subs):
+            await self.publish(run_id, message)
