@@ -47,6 +47,21 @@ def _default_battle(io) -> None:
     raise QuartermasterError("road: a battle started and no battle handler was injected")
 
 
+BOULDER_PIC = 63  # the picture of every sprite on the boulder maps (108, 155, 159-162, 192, 194, 198), extracted
+
+
+def live_sprites(io, bounds: tuple[int, int] | None = None) -> dict[int, tuple[int, int]]:
+    """``{slot: (x, y)}`` for every live sprite, slot 1..15 -- slot ``i`` draws the cartridge's
+    sprite ``i - 1`` for the map, which is how a boulder keeps its identity after it moves."""
+    out = {}
+    for i in range(1, 16):
+        if io.read(SPRITE_STATE_BASE + i * 0x10):
+            xy = (io.read(SPRITE_DATA_BASE + i * 0x10 + 5) - 4, io.read(SPRITE_DATA_BASE + i * 0x10 + 4) - 4)
+            if bounds is None or (0 <= xy[0] < bounds[0] and 0 <= xy[1] < bounds[1]):
+                out[i] = xy
+    return out
+
+
 def live_bodies(io, bounds: tuple[int, int] | None = None) -> set[tuple[int, int]]:
     """Positions of every live sprite - a beaten trainer still stands, and paths route around.
 
@@ -93,12 +108,19 @@ def reachable(truth, pairs, map_id: int, start, blocked=()) -> set[tuple[int, in
     def tile(tx, ty):
         return int(tiles[ty][2 * tx : 2 * tx + 2], 16)
 
+    # A door is a warp tile the collision grid calls solid (the Elite Four rooms' (4,0)/(5,0),
+    # measured): it is reachable from the cell beside it, and leads off the map, so it is a
+    # terminal cell here -- seen, never expanded from.
+    warps = {(wp[0], wp[1]) for wp in m.get("warps", [])}
     seen = {tuple(start)}
     queue = deque([tuple(start)])
     while queue:
         x, y = queue.popleft()
         for nx, ny in ((x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)):
             if not (0 <= nx < w and 0 <= ny < h) or (nx, ny) in seen or (nx, ny) in blocked:
+                continue
+            if (nx, ny) in warps and m["grid"][ny][nx] != "1" and m["grid"][y][x] == "1":
+                seen.add((nx, ny))
                 continue
             if m["grid"][ny][nx] != "1" or not rt.passable(m, pairs, x, y, nx, ny):
                 continue
@@ -433,7 +455,9 @@ def blocking_body(truth, pairs, map_id: int, start, targets, bodies):
 def edge_cells(truth: dict, cur: int, nxt: int) -> tuple[set[tuple[int, int]], str]:
     """The open cells on ``cur``'s edge facing ``nxt``, and the outward direction."""
     m = truth["maps"][str(cur)]
-    side = next(k for k, v in m.get("connections", {}).items() if v == nxt)
+    side = next((k for k, v in m.get("connections", {}).items() if v == nxt), None)
+    if side is None:  # not a neighbour by connection: no edge, no direction (measured: 17->10 on a reroute)
+        return set(), ""
     if side in ("north", "south"):
         row = 0 if side == "north" else m["height"] - 1
         return {(x, row) for x in range(m["width"]) if m["grid"][row][x] == "1"}, _OUTWARD[side]
@@ -695,6 +719,8 @@ def shore_stand(truth, pairs, cur: int, nxt: int, start, bodies=()) -> tuple[tup
     if not m.get("tiles"):
         return None
     _cells, d = edge_cells(truth, cur, nxt)
+    if not d:
+        return None
     w, h = m["width"], m["height"]
 
     def far_edge(c):
@@ -808,6 +834,220 @@ def _water_cross(io, truth, cur: int, nxt: int, d: str, battle) -> bool | str | 
     return None
 
 
+_FACES = {(0, 1): "down", (0, -1): "up", (1, 0): "right", (-1, 0): "left"}
+
+
+def _key_between(a, b) -> str:
+    dx, dy = b[0] - a[0], b[1] - a[1]
+    if dx:
+        return "right" if dx > 0 else "left"
+    return "down" if dy > 0 else "up"
+
+
+def _shore_regions(truth, pairs, map_id: int, start, targets, bodies):
+    """(here, there): the land region ``start`` is in, and the land that reaches ``targets``."""
+    m = truth["maps"][str(map_id)]
+    w, h = m["width"], m["height"]
+    here = reachable(truth, pairs, map_id, tuple(start), bodies)
+    there: set = set()
+    for t in targets:
+        there.add(t)
+        there |= reachable(truth, pairs, map_id, t, bodies)
+        for dx, dy in _FACES:
+            n = (t[0] + dx, t[1] + dy)
+            if 0 <= n[0] < w and 0 <= n[1] < h and m["grid"][n[1]][n[0]] == "1" and n not in bodies:
+                there |= reachable(truth, pairs, map_id, n, bodies)
+    return here, there - here
+
+
+def _water_exits(m, prev: dict, there: set, bodies: set):
+    """``(path over water, landing)`` pairs from a water BFS ``prev`` onto the land in ``there``."""
+    out = []
+    for cell in prev:
+        for ex, ey in _FACES:
+            land = (cell[0] + ex, cell[1] + ey)
+            if land not in there or land in bodies or m["grid"][land[1]][land[0]] != "1":
+                continue
+            path = [cell]
+            while prev[path[-1]] is not None:
+                path.append(prev[path[-1]])
+            path.reverse()
+            out.append((path, land))
+    return out
+
+
+def water_route(truth, pairs, map_id: int, start, targets, bodies=()):
+    """A SURF route INSIDE one map: ``(stand, face_in, water_path, landing, face_out)`` from the
+    land region ``start`` is in, across a water component, onto the land region that reaches
+    ``targets`` -- or None when a walk already reaches them, or no water joins the two.
+
+    Measured on Route 23 (2026-09-05): the hop 34->108 is a warp on the far side of a channel;
+    the planner saw land only, reported no-path, and the whole League leg died on the shore.
+    ``surf_cross`` crosses a map EDGE; this crosses to a cell. Water is solid in the extracted
+    grid (367 cells on map 34, none walkable), so land regions never bleed into it.
+    """
+    m = truth["maps"].get(str(map_id))
+    if not m or not m.get("tiles"):
+        return None
+    w, h = m["width"], m["height"]
+    bodies = set(bodies)
+    targets = set(targets)
+    here, there = _shore_regions(truth, pairs, map_id, start, targets, bodies)
+    if here & targets:
+        return None
+    best = None
+    for ax, ay in here:
+        for (dx, dy), face_in in _FACES.items():
+            wx, wy = ax + dx, ay + dy
+            if not (0 <= wx < w and 0 <= wy < h) or (wx, wy) in bodies or not _water_model(m, wx, wy):
+                continue
+            prev = _water_reach(m, wx, wy, bodies)
+            for path, land in _water_exits(m, prev, there, bodies):
+                cost = len(path) + abs(ax - start[0]) + abs(ay - start[1])
+                if best is None or cost < best[0]:
+                    face_out = _key_between(path[-1], land)
+                    best = (cost, ((ax, ay), face_in, path, land, face_out))
+    return best[1] if best else None
+
+
+def _press_toward(io, cur: int, cell, step, battle) -> tuple:
+    """Press once toward ``step`` (re-pressing after a wild, or when a lingering box ate it);
+    returns the position read afterwards."""
+    key = _key_between(cell, step)
+    pos = read_pos(io)
+    for _ in range(4):
+        io.press(key, hold=15, release=15)
+        io.wait(25)
+        if io.read(ADDR_IN_BATTLE) and battle:
+            battle(io)
+            continue
+        pos = read_pos(io)
+        if pos[0] != cur or tuple(pos[1:3]) == tuple(step):
+            break
+    return pos
+
+
+def surf_route(
+    io,
+    truth,
+    pairs,
+    cur: int,
+    targets,
+    *,
+    arm_surf=None,
+    mount=None,
+    battle=_default_battle,
+    bodies=(),
+    settle=None,
+    replans: int = 24,
+    log=None,
+    dismiss=None,
+):
+    """Ride ``water_route`` for real: walk to the stand, face the water, arm SURF, then route
+    over the water to a landing on the far region, re-planning around every cell the game
+    refuses (the model calls it water; a rock sits there -- measured on map 34). True on the
+    landing; "no-route" when no water joins the regions; "surfmoved-failed" when the water is
+    exhausted; "detoured" when a step flipped the map.
+
+    ``dismiss()`` advances a box a step ran into: measured on Route 23 (2026-09-05) at (8,96),
+    a badge guard in the channel says "You can pass here only if you have the MARSHBADGE" and
+    every press is eaten until the page is turned; with the badge held he steps aside. A refusal
+    is only a refusal once the page is gone.
+    ``mount(face)`` gets the surfer onto the water facing ``face`` and answers by position (the
+    rig's ``surf_onto``); without it, ``arm_surf`` is called after a turn toward the water and
+    ``settle`` closes what arming leaves on screen: measured on Route 23 (2026-09-05, screenshot
+    surf_refused.png), the party menu stays up with "AAAA got on GYARADOS" typing out, and every
+    direction press until it closes goes nowhere. The io alone cannot see a box; the rig can.
+    """
+    m = truth["maps"].get(str(cur)) or {}
+    if not m.get("tiles"):
+        # Without a tile model the water model proposes EVERY cell as water (its contract for
+        # the edge crossing's live corrections); here that read a gym floor as open sea and
+        # stalled the engage loop "afloat" (measured on maps 45, 171, 236). No model, no route.
+        return "no-route"
+    bodies = set(bodies)
+    targets = set(targets)
+    say = log or (lambda *_: None)
+    here_cell = tuple(read_pos(io)[1:3])
+    afloat = _water_model(m, *here_cell)  # already surfing (a previous route ended mid-water)
+    if afloat:
+        stand, face_in = here_cell, None
+        _here, there = _shore_regions(truth, pairs, cur, here_cell, targets, bodies)
+        if not there:
+            return "no-route"
+        say(f"    afloat at {here_cell}; routing to the far bank")
+    else:
+        plan = water_route(truth, pairs, cur, here_cell, targets, bodies)
+        if plan is None:
+            return "no-route"
+        stand, face_in, _path, _landing, _face_out = plan
+        say(f"    surf plan: stand {stand} face {face_in}, {len(_path)} water cells, land {_landing}")
+        r = walk(io, truth, pairs, cur, {stand}, battle=battle)
+        if r is not True:
+            return r
+    if afloat:
+        pass
+    elif mount is not None:
+        if not mount(face_in):
+            return "surfmoved-failed"
+    else:
+        io.press(face_in, hold=8, release=8)  # a walker's step into water is refused: it turns
+        io.wait(30)
+        if arm_surf is None or not arm_surf():
+            return "surfmoved-failed"
+        for _ in range(3):
+            io.press("a")
+            io.wait(40)
+        if settle is not None:
+            settle()  # the party menu and "AAAA got on GYARADOS!" (measured, Route 23) close here
+        for _ in range(3):
+            io.press("b")
+            io.wait(20)
+    if not afloat:
+        _here, there = _shore_regions(truth, pairs, cur, stand, targets, bodies)
+    blocked = set(bodies)
+    for _ in range(replans):
+        pos = read_pos(io)
+        if pos[0] != cur:
+            return "detoured"
+        cell = tuple(pos[1:3])
+        if cell in there:
+            return True
+        if face_in is not None and not _water_model(m, *cell) and cell == tuple(stand):
+            # still ashore: the confirmation did not carry us on; one step into the water
+            pos = _press_toward(
+                io, cur, cell, (cell[0] + _FACES_DELTA[face_in][0], cell[1] + _FACES_DELTA[face_in][1]), battle
+            )
+            if tuple(pos[1:3]) == cell:
+                return "surfmoved-failed"
+            continue
+        prev = _water_reach(m, cell[0], cell[1], blocked)
+        exits = _water_exits(m, prev, there, blocked)  # a landing the game refused is out too
+        if not exits:
+            say(f"    no water exit from {cell} with {len(blocked - bodies)} refused cell(s)")
+            return "surfmoved-failed"
+        path, land = min(exits, key=lambda e: len(e[0]))
+        say(f"    water leg from {cell}: {len(path)} cells to land at {land}")
+        for step in path[1:] + [land]:
+            pos = _press_toward(io, cur, cell, step, battle)
+            if pos[0] == cur and tuple(pos[1:3]) != step and dismiss is not None:
+                dismiss()  # a guard's page, a "got on" line: turn it, then ask the step again
+                pos = _press_toward(io, cur, cell, step, battle)
+            if pos[0] != cur:
+                return "detoured"
+            if tuple(pos[1:3]) != step:
+                # refused: a rock where the model said water, or "There's no place to get off!"
+                # (measured at (7,88) on map 34) at a landing -- replan without that cell
+                say(f"    refused {cell} -> {step}; replanning")
+                blocked.add(step)
+                break
+            cell = step
+    return "surfmoved-failed"
+
+
+_FACES_DELTA = {v: k for k, v in _FACES.items()}
+
+
 # Measured twice, on two different counters: a Pokemon Center nurse at (3,1) is talked to from
 # (3,3) facing up, and the BIKE SHOP clerk at (6,2) from (4,2) facing right. The body sits two
 # tiles away along one axis with the counter tile between, so NO cell is adjacent to it and a
@@ -849,6 +1089,8 @@ def surf_cross(io, truth, pairs, cur: int, nxt: int, *, arm_surf, battle=_defaul
     when the shore has refused every row (the ladder then bans and reroutes, so a bad line
     costs one hop rather than hanging)."""
     _, d = edge_cells(truth, cur, nxt)
+    if not d:
+        return "no-route"
     left = SURF_MAX_STEPS
     armed = False
     stand = shore_stand(truth, pairs, cur, nxt, read_pos(io)[1:])

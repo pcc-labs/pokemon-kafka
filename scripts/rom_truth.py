@@ -1029,6 +1029,9 @@ def path_on_map(
         return None
     tiles = m.get("tiles")
     ledges = loaded_ledges(truth) if m.get("tileset") == 0 and tiles else set()
+    # A door is a warp tile the grid calls solid (the Elite Four rooms' (4,0)/(5,0), measured):
+    # as the TARGET it is enterable from a walkable neighbour, the way the engine enters it.
+    door_targets = {(wp[0], wp[1]) for wp in m.get("warps", [])} & targets
 
     def _tile(tx: int, ty: int) -> int:
         return int(tiles[ty][2 * tx : 2 * tx + 2], 16)
@@ -1054,7 +1057,8 @@ def path_on_map(
                 if step in prev or step in blocked:
                     continue
                 if step not in hops and not passable(m, pairs, x, y, *step):
-                    continue
+                    if not (step in door_targets and m["grid"][y][x] == "1"):
+                        continue
                 prev[step] = (x, y)
                 if step in targets:
                     path = [step]

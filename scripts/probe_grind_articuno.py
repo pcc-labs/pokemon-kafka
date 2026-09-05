@@ -3,6 +3,7 @@ wilds L28-42, rate 10) between two cells, let the agent fight every wild, heal a
 the lead is low, bank every few fights, stop at the target level or the fight budget. Levels come from the party
 read; nothing is recalled."""
 
+import os
 import subprocess
 import sys
 import time
@@ -18,7 +19,9 @@ BUDGET_S = int(sys.argv[3]) if len(sys.argv) > 3 else 5 * 3600
 SPECIES = sys.argv[4] if len(sys.argv) > 4 else "Articuno"
 LANE = [(5, 25), (2, 12)]  # mansion 1F: from the entrance hall up the west corridor and back
 print(subprocess.run(["date"], capture_output=True, text=True).stdout.strip(), flush=True)
-rig = Rig(STATE, settle_on_boot=True)
+# LIVE_LABEL attaches the recorder: every fight then lands as battle / move_result / battle_outcome
+# rows in runs/<run_id>/events.jsonl, which the SFT converter reads. Without it the rows are lost.
+rig = Rig(STATE, settle_on_boot=True, live_label=os.environ.get("LIVE_LABEL"))
 t0 = time.time()
 
 
@@ -162,3 +165,5 @@ while time.time() - t0 < BUDGET_S:
 print("end", rig.pos(), [(n, lv, h) for n, lv, h in rig.party()], flush=True)
 rig.bank(f"grind_{SPECIES.lower()}")
 print(subprocess.run(["date"], capture_output=True, text=True).stdout.strip(), flush=True)
+rig.finish(fights=fights)
+print("done", rig.run_id, rig.pos(), rig.party(), flush=True)

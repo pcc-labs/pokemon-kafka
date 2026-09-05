@@ -381,6 +381,17 @@ def test_engage_that_changes_nothing_is_reported_as_such():
     assert result["outcome"] == "engaged-no-badge" and not result["ok"]
 
 
+def test_engage_never_talks_to_an_item_ball():
+    """Balls are in the live sprite table too; they are sweep_items' job. Talking to one read the
+    START menu the bag step had left on the window layer (measured on maps 194, 219, 234)."""
+    truth = _truth()
+    truth["maps"]["2"]["sprites"] = [{"kind": "item", "x": 2, "y": 2, "pic": 61, "item": 10}]
+    rig = FakeRig(start=(2, 3, 3), badges=0b11111, bodies={(4, 3), (2, 2)}, truth=truth)
+    LegRunner(rig, goal=2, engage=True, consult=_consult("GIVE_UP"), log=lambda *_: None).run()
+    talked = {c[1] for c in rig.calls if c[0] == "talk"}
+    assert talked and (2, 2) not in talked
+
+
 def _truth_with_a_nurse():
     """The fake world plus a Center nurse ON MAP 2, because `engage_bodies` meets the bodies the
     *cartridge* lists, not the live sprite table — and in the real game the nurse is one of them.
@@ -1162,6 +1173,18 @@ def test_hop_blocker_is_none_for_a_pair_with_no_connection():
     rig = FakeRig()
     assert supervisor.hop_blocker(rig, {"via": "edge", "to": 404}) is None
     assert supervisor.hop_blocker(rig, None) is None
+
+
+def test_a_map_missing_from_the_truth_is_not_a_crash():
+    """The connection table can lack a side (edge_cells answers empty); the truth can also lack the
+    map the rig reads (a garbage map byte mid-warp). Every reader of the edge handles the second."""
+    rig = FakeRig(start=(404, 1, 1))
+    assert supervisor.hop_blocker(rig, {"via": "edge", "to": 2}) is None
+    runner = LegRunner(rig, goal=2, engage=False, consult=_consult("GIVE_UP"), log=lambda *_: None)
+    assert runner.read_refusal({"via": "edge", "to": 2}) == ""
+    runner._act("USE_GATE_WARP", {"via": "edge", "to": 2})  # targets fall back to the map's warps
+    facts = supervisor.describe(rig, 2, {"via": "edge", "to": 2}, "no-path")
+    assert "no side for this pair" in facts
 
 
 def test_describe_survives_a_hop_whose_pair_has_no_side():
@@ -2342,3 +2365,371 @@ def test_a_full_bag_is_freed_before_a_body_is_talked_to(tmp_path):
     runner = LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
     runner._go_and_talk((1, 1))
     assert calls == ["make_room"]
+
+
+def _shaft_truth():
+    """A 3-wide shaft on map 1: the boulder at (1,1) plugs the only way down to the warp at (0,4)."""
+    truth = _truth()
+    truth["maps"]["1"] = {
+        "width": 3,
+        "height": 5,
+        "tileset": 17,
+        "grid": ["111", "010", "111", "010", "111"],
+        "connections": {},
+        "warps": [[0, 2, 2, 0]],
+        "sprites": [{"kind": "npc", "x": 1, "y": 1, "pic": 63}],
+        "tiles": ["030303"] * 5,
+    }
+    return truth
+
+
+class BoulderRig(FakeRig):
+    def __init__(self, knows_strength=True, **kw):
+        kw.setdefault("truth", _shaft_truth())
+        kw.setdefault("start", (1, 0, 0))
+        kw.setdefault("bodies", {(1, 1)})
+        super().__init__(**kw)
+        self.knows_strength = knows_strength
+        self.boulder = (1, 1)
+
+    def knows_move(self, name, species=None):
+        return 0 if (name == "STRENGTH" and self.knows_strength) else None
+
+    def bodies(self):
+        return {self.boulder}
+
+    def boulders(self):
+        return {self.boulder}
+
+    def approach(self, cells):
+        self.calls.append(("approach", sorted(cells)))
+        cells = {c for c in cells if c[1] <= self.boulder[1]}  # nothing below the boulder is reachable
+        if not cells:
+            return False
+        self._pos = (1, *sorted(cells)[0])
+        return True
+
+    def walk(self, mp, targets, **kw):
+        # the default walk teleports anywhere; nothing below the boulder is walkable here
+        self.calls.append(("walk", sorted(targets)))
+        cells = {c for c in targets if c[1] <= self.boulder[1]}
+        if not cells:
+            return "no-path"
+        self._pos = (mp, *sorted(cells)[0])
+        return True
+
+    def push_boulder(self, stand, face):
+        self.calls.append(("push", tuple(stand), face))
+        if face != "down":
+            return False
+        self.boulder = (self.boulder[0], self.boulder[1] + 1)
+        return True
+
+    def warp(self, mp, x, y, **kw):
+        self.calls.append(("warp", (x, y)))
+        if self.boulder[1] < 3:
+            return "no-path"
+        self._pos = (2, 1, 1)
+        return True
+
+
+def test_a_boulder_sealing_a_hop_is_pushed_down_the_line(tmp_path):
+    rig = BoulderRig()
+    runner = LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    result = runner.run()
+    assert result["ok"], result["reason"]
+    assert [c for c in rig.calls if c[0] == "push"] == [("push", (1, 0), "down"), ("push", (1, 1), "down")]
+    assert sum(1 for e in rig.events if e["event"] == "supervisor.boulder_pushed") == 2
+
+
+def test_no_push_without_strength_and_a_refused_push_is_reported(tmp_path):
+    rig = BoulderRig(knows_strength=False)
+    LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path).run()
+    assert not any(c[0] == "push" for c in rig.calls)
+    stuck = BoulderRig()
+    stuck.push_boulder = lambda stand, face: stuck.calls.append(("push", tuple(stand), face)) or False
+    runner = LegRunner(stuck, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    runner.run()
+    assert any("did not move" in n for n in runner.notes)
+    assert any(e["event"] == "supervisor.push_refused" for e in stuck.events)
+
+
+class ChannelRig(FakeRig):
+    """Route 23 in miniature: the warp to map 2 sits across a channel on map 1."""
+
+    def __init__(self, knows_surf=True, result=True, **kw):
+        truth = _truth()
+        truth["maps"]["1"] = {
+            "width": 5,
+            "height": 3,
+            "tileset": 0,
+            "grid": ["10011", "10011", "10011"],
+            "connections": {},
+            "warps": [[4, 1, 2, 0]],
+            "sprites": [],
+            "tiles": ["031414" + "0303"] * 3,
+        }
+        kw.setdefault("truth", truth)
+        kw.setdefault("start", (1, 0, 1))
+        super().__init__(**kw)
+        self.knows_surf = knows_surf
+        self.result = result
+        self.across = False
+
+    def knows_move(self, name, species=None):
+        return 0 if (name == "SURF" and self.knows_surf) else None
+
+    def walk(self, mp, targets, **kw):
+        # the default walk teleports anywhere, water included; here the channel is real
+        self.calls.append(("walk", sorted(targets)))
+        cells = {c for c in targets if c[0] == 0 or self.across}
+        if not cells:
+            return "no-path"
+        self._pos = (mp, *sorted(cells)[0])
+        return True
+
+    def approach(self, cells):
+        self.calls.append(("approach", sorted(cells)))
+        cells = {c for c in cells if c[0] == 0 or self.across}
+        if not cells:
+            return False
+        self._pos = (1, *sorted(cells)[0])
+        return True
+
+    def surf_to(self, targets):
+        self.calls.append(("surf_to", sorted(targets)))
+        if self.result is True:
+            self.across = True
+            self._pos = (1, 3, 1)
+        return self.result
+
+    def warp(self, mp, x, y, **kw):
+        self.calls.append(("warp", (x, y)))
+        if not self.across:
+            return "no-path"
+        self._pos = (2, 1, 1)
+        return True
+
+
+def test_water_between_the_regions_is_surfed_before_any_consult(tmp_path):
+    rig = ChannelRig()
+    runner = LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    result = runner.run()
+    assert result["ok"], result["reason"]
+    assert ("surf_to", [(4, 1)]) in rig.calls
+    assert any(e["event"] == "supervisor.surfed" for e in rig.events)
+
+
+def test_no_surf_without_the_move_and_a_refused_surf_is_reported(tmp_path):
+    rig = ChannelRig(knows_surf=False)
+    LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path).run()
+    assert not any(c[0] == "surf_to" for c in rig.calls)
+    refused = ChannelRig(result="surfmoved-failed")
+    runner = LegRunner(refused, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    runner.run()
+    assert any("SURF route" in n for n in runner.notes)
+    assert any(e["event"] == "supervisor.surf_refused" for e in refused.events)
+    quiet = ChannelRig(result="no-route")
+    LegRunner(quiet, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path).run()
+    assert not any(e["event"] == "supervisor.surf_refused" for e in quiet.events)
+
+
+def test_engage_surfs_to_a_body_no_walk_reaches():
+    rig = ChannelRig(start=(1, 0, 1), bodies={(4, 0)})
+    original = rig.approach
+
+    def approach(cells):
+        rig.calls.append(("approach", sorted(cells)))
+        if not rig.across:
+            return False
+        return original(cells)
+
+    rig.approach = approach
+    LegRunner(rig, goal=1, engage=True, consult=_consult("GIVE_UP"), log=lambda *_: None).run()
+    assert any(c[0] == "surf_to" for c in rig.calls)
+    assert any(c[0] == "talk" for c in rig.calls)
+    assert any(e["event"] == "supervisor.surfed" and e.get("toward") == [4, 0] for e in rig.events)
+    refused = ChannelRig(start=(1, 0, 1), bodies={(4, 0)}, result="surfmoved-failed")
+    refused.approach = lambda cells: refused.calls.append(("approach", sorted(cells))) or False
+    LegRunner(refused, goal=1, engage=True, consult=_consult("GIVE_UP"), log=lambda *_: None).run()
+    assert any(e["event"] == "supervisor.surf_refused" and e.get("toward") == [4, 0] for e in refused.events)
+    landed_short = ChannelRig(start=(1, 0, 1), bodies={(4, 0)})  # surfed over, but the last cell is walled
+    landed_short.approach = lambda cells: landed_short.calls.append(("approach", sorted(cells))) or False
+    LegRunner(landed_short, goal=1, engage=True, consult=_consult("GIVE_UP"), log=lambda *_: None).run()
+    assert any(e["event"] == "supervisor.surfed" for e in landed_short.events)
+    assert not any(c[0] == "talk" for c in landed_short.calls)
+
+
+def test_push_and_surf_hooks_decline_cleanly_when_they_do_not_apply(tmp_path):
+    hop = {"via": "warp", "to": 2, "x": 0, "y": 2}
+    plain = FakeRig()  # no knows_move at all
+    runner = LegRunner(plain, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._push_through(hop) is False and runner._surf_through(hop) is False
+    lost = BoulderRig(start=(404, 0, 0))  # a map the truth does not model
+    runner = LegRunner(lost, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._push_through(hop) is False
+    lost_channel = ChannelRig(start=(404, 0, 0))
+    runner = LegRunner(lost_channel, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._surf_through(hop) is False
+    empty = BoulderRig()
+    empty.boulders = lambda: set()  # STRENGTH known, nothing to push
+    runner = LegRunner(empty, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._push_through(hop) is False
+    walled = BoulderRig()
+    walled.truth["maps"]["1"]["grid"] = ["111", "010", "000", "010", "111"]  # nothing opens below
+    runner = LegRunner(walled, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._push_through(hop) is False
+    across = ChannelRig(start=(1, 3, 1))  # already on the far bank: a walk reaches the warp, no surf
+    runner = LegRunner(across, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner._surf_through({"via": "warp", "to": 2, "x": 4, "y": 1}) is False
+    assert not any(c[0] == "surf_to" for c in across.calls)
+    # the edge form of a hop's targets is the open edge
+    edge_rig = FakeRig()
+    runner = LegRunner(edge_rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    cells = runner._hop_targets({"via": "edge", "to": 2}, 1)
+    assert cells and all(isinstance(c, tuple) for c in cells)
+
+
+def test_a_surf_that_fails_in_the_hop_attempt_is_tried_again_from_the_ladder(tmp_path):
+    """The hop attempt tries the field move first; the ladder tries it once more before a consult."""
+    rig = ChannelRig()
+    answers = iter(["surfmoved-failed", True])
+    original = rig.surf_to
+
+    def flaky(targets):
+        result = next(answers)
+        if result is True:
+            return original(targets)
+        rig.calls.append(("surf_to", sorted(targets)))
+        return result
+
+    rig.surf_to = flaky
+    runner = LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    result = runner.run()
+    assert result["ok"], result["reason"]
+    assert sum(1 for c in rig.calls if c[0] == "surf_to") == 2
+
+
+def test_a_push_that_fails_in_the_hop_attempt_is_tried_again_from_the_ladder(tmp_path):
+    rig = BoulderRig()
+    original = rig.push_boulder
+    state = {"first": True}
+
+    def flaky(stand, face):
+        if state["first"]:
+            state["first"] = False
+            rig.calls.append(("push", tuple(stand), face))
+            return False  # a wild on the way to the stand (measured on Victory Road 1F)
+        return original(stand, face)
+
+    rig.push_boulder = flaky
+    runner = LegRunner(rig, goal=2, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    runner._clear_blocker = lambda hop: False  # the boulder is not a body to argue with
+    result = runner.run()
+    assert result["ok"], result["reason"]
+    assert sum(1 for c in rig.calls if c[0] == "push") == 3  # one refused, then the two that opened the shaft
+
+
+class BoulderedBodyRig(BoulderRig):
+    """The shaft again, with the map's one body and one item ball on the far side of the boulder
+    (map 155's shape: the boulder at (8,4) with a RARE CANDY behind it, measured 2026-09-05)."""
+
+    def __init__(self, **kw):
+        truth = _shaft_truth()
+        truth["maps"]["1"]["sprites"] += [
+            {"kind": "npc", "x": 0, "y": 2, "pic": 1},
+            {"kind": "item", "x": 2, "y": 2, "pic": 61, "item": 10},
+        ]
+        truth["maps"]["1"]["warps"] = []
+        kw.setdefault("truth", truth)
+        kw.setdefault("bodies", {(1, 1), (0, 2), (2, 2)})
+        super().__init__(**kw)
+        self.opened: list = []
+
+    def bodies(self):
+        return {self.boulder, (0, 2), (2, 2)}
+
+    def collect_item(self, bx, by):
+        self.calls.append(("collect", (bx, by)))
+        if self.boulder[1] < 3:
+            return False  # the boulder still plugs the shaft
+        self.opened.append((bx, by))
+        self._bag.append((10, 1))
+        return True
+
+    def item_balls(self, map_id):
+        return [(2, 2)]
+
+    def ball_contents(self, map_id):
+        return {(2, 2): "MOON STONE"}
+
+
+def test_a_body_behind_a_boulder_is_reached_by_pushing_it(tmp_path):
+    rig = BoulderedBodyRig()
+    runner = LegRunner(
+        rig, goal=1, engage=True, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path
+    )
+    runner.run()
+    assert [c for c in rig.calls if c[0] == "push"] == [("push", (1, 0), "down"), ("push", (1, 1), "down")]
+    assert any(c[0] == "talk" for c in rig.calls)
+    assert any(e["event"] == "supervisor.boulder_pushed" for e in rig.events)
+
+
+def test_a_ball_behind_a_boulder_is_opened_after_a_push(tmp_path):
+    rig = BoulderedBodyRig()
+    runner = LegRunner(rig, goal=1, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    gained = runner.sweep_items()
+    assert rig.opened == [(2, 2)] and gained == [(10, 1)]
+    assert sum(1 for c in rig.calls if c[0] == "push") == 2
+    quiet = BoulderedBodyRig(knows_strength=False)
+    runner = LegRunner(quiet, goal=1, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner.sweep_items() == [] and not any(c[0] == "push" for c in quiet.calls)
+
+
+class HmRig(BoulderedBodyRig):
+    """HM04 in the bag; Gyarados knows STRENGTH but is fainted; Charizard stands and can learn it."""
+
+    def __init__(self, hm=True, able=("CHARIZARD",), **kw):
+        kw.setdefault("party", (("GYARADOS", 20, 0), ("CHARIZARD", 99, 337)))
+        super().__init__(knows_strength=False, **kw)
+        self.hm = hm
+        self.able = set(able)
+        self.learned = {"GYARADOS"}
+        self.taught: list = []
+
+    def bag_named(self, full=False):
+        return [("NUGGET", 1)] + ([("HM04 STRENGTH", 1)] if self.hm else [])
+
+    def knows_move(self, name, species=None):
+        if name != "STRENGTH":
+            return None
+        if species is not None:
+            return 0 if species in self.learned else None
+        standing = [n for n, _l, hp in self._party if hp > 0 and n in self.learned]
+        return self._party.index(next((p for p in self._party if p[0] == standing[0]), None)) if standing else None
+
+    def teach(self, machine, species=None):
+        self.taught.append((machine, species))
+        if species not in self.able:
+            return None
+        self.learned.add(species)
+        return [p[0] for p in self._party].index(species)
+
+
+def test_strength_is_taught_to_a_standing_member_before_the_first_push(tmp_path):
+    """Map 155: HM04 in the bag, the only holder fainted, a boulder beside the WARDEN's RARE CANDY."""
+    rig = HmRig()
+    runner = LegRunner(rig, goal=1, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner.sweep_items() == [(10, 1)]
+    assert rig.taught == [("HM04", "CHARIZARD")]  # never the fainted holder
+    assert any(e["event"] == "supervisor.move_taught" and e["species"] == "CHARIZARD" for e in rig.events)
+    # no HM in the bag: nothing to teach; nobody ABLE: the note says so
+    bare = HmRig(hm=False)
+    assert (
+        LegRunner(bare, goal=1, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path).sweep_items()
+        == []
+    )
+    assert bare.taught == []
+    unable = HmRig(able=())
+    runner = LegRunner(unable, goal=1, consult=_consult("GIVE_UP"), log=lambda *_: None, learnings_dir=tmp_path)
+    assert runner.sweep_items() == [] and any("no standing member could learn it" in n for n in runner.notes)

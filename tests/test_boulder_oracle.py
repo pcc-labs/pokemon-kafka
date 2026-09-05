@@ -95,3 +95,69 @@ def test_a_boulder_on_a_hole_tile_has_fallen_and_is_never_pushed():
     cands = bo.candidate_pushes(t, set(), 7, (0, 0), {(1, 1), (3, 1)})
     assert all(b == (3, 1) for _s, _d, b in cands) and cands
     assert bo.fallen({"maps": {"7": {"tiles": None}}}, 7, {(1, 1)}) == set()
+
+
+def _t_shape():
+    # A 3-wide shaft: the boulder at (1,1) plugs the only way down; two pushes down clear (1,1)
+    # and (1,2), and the boulder rests at (1,3) where the shaft narrows again.
+    rows = ["111", "010", "111", "010", "111"]
+    return {"maps": {"7": {"width": 3, "height": 5, "tileset": 17, "grid": rows, "warps": [], "sprites": []}}}
+
+
+def test_push_plan_pushes_one_boulder_down_the_line_until_the_target_connects():
+    plan = bo.push_plan(_t_shape(), set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)})
+    assert plan == [((1, 0), "down", (1, 1)), ((1, 1), "down", (1, 2))]
+
+
+def test_push_plan_is_empty_when_already_connected_and_none_when_no_line_opens():
+    assert bo.push_plan(_t_shape(), set(), 7, (0, 0), {(2, 0)}, {(1, 1)}, {(1, 1)}) == []
+    walled = _t_shape()
+    walled["maps"]["7"]["grid"] = ["111", "010", "000"]
+    walled["maps"]["7"]["height"] = 3
+    assert bo.push_plan(walled, set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)}) is None
+    # a body that is not a boulder is never pushed; a boulder that is not live is not a wall
+    assert bo.push_plan(_t_shape(), set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, set()) is None
+    assert bo.push_plan(_t_shape(), set(), 7, (0, 0), {(0, 2)}, set(), {(1, 1)}) == []
+
+
+def test_push_plan_fills_a_gap_tile_and_the_boulder_becomes_floor():
+    """Victory Road 1F's rule: the boulder pushed onto the 0x24 tile stays and carries the player."""
+    grid = ["11111", "11111", "11111", "00000", "11111"]  # row 3 is a chasm; (2,3) is the gap tile
+    tiles = ["0303030303", "0303030303", "0303030303", "0303240303", "0303030303"]
+    truth = {
+        "maps": {
+            "7": {"width": 5, "height": 5, "tileset": 17, "grid": grid, "warps": [], "sprites": [], "tiles": tiles}
+        }
+    }
+    plan = bo.push_plan(truth, set(), 7, (0, 0), {(2, 4)}, {(2, 1)}, {(2, 1)})
+    assert plan is not None
+    stand, direction, last = plan[-1]
+    dx, dy = bo.DIRS[direction]
+    assert (last[0] + dx, last[1] + dy) == (2, 3)  # the last push drops it into the gap
+    assert [b for _s, _d, b in plan] == [(2, 1), (2, 2)]
+    plain = {"maps": {"7": {**truth["maps"]["7"], "tiles": ["0303030303"] * 5}}}
+    assert bo.push_plan(plain, set(), 7, (0, 0), {(2, 4)}, {(2, 1)}, {(2, 1)}) is None
+
+
+def test_filled_is_a_no_op_on_floor_and_the_push_cap_holds():
+    plain = _t_shape()
+    assert bo._filled(plain, 7, (0, 0)) is plain  # already floor
+    assert bo._is_gap(plain["maps"]["7"], (0, 0)) is False  # no tile model
+    # the shaft needs two pushes; capped at one, there is no plan
+    assert bo.push_plan(_t_shape(), set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)}, max_pushes=1) is None
+
+
+def test_push_plan_never_stands_on_or_pushes_onto_a_warp():
+    """Victory Road 1F, measured: the sixth push was planned from the exit warp and the player left the map."""
+    t = _t_shape()
+    t["maps"]["7"]["warps"] = [[1, 0, 9, 0]]  # the only stand for the first push is the exit
+    assert bo.push_plan(t, set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)}) is None
+    t2 = _t_shape()
+    t2["maps"]["7"]["warps"] = [[1, 3, 9, 0]]  # the boulder would have to rest on a warp
+    assert bo.push_plan(t2, set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)}) is None
+    t3 = _t_shape()
+    t3["maps"]["7"]["warps"] = [[2, 4, 9, 0]]  # a warp off the line changes nothing
+    assert bo.push_plan(t3, set(), 7, (0, 0), {(0, 2)}, {(1, 1)}, {(1, 1)}) == [
+        ((1, 0), "down", (1, 1)),
+        ((1, 1), "down", (1, 2)),
+    ]

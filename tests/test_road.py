@@ -1372,3 +1372,300 @@ def test_the_water_model_calls_anything_off_the_map_land():
     assert road._water_model(m, 0, 2) is False
     assert road._water_model(m, 0, -1) is False
     assert road._water_model(m, 0, 0) is True
+
+
+def test_edge_cells_without_a_connection_is_empty_not_an_error():
+    truth = {"maps": {"1": _map(["111", "111"], connections={"north": 2}), "2": _map(["111"])}}
+    assert road.edge_cells(truth, 1, 2) == ({(0, 0), (1, 0), (2, 0)}, "up")
+    assert road.edge_cells(truth, 1, 9) == (set(), "")  # 17->10 on a reroute raised StopIteration here
+
+
+def test_a_door_is_reachable_and_a_steppable_target_but_never_a_corridor():
+    """The Elite Four rooms' door tiles (4,0)/(5,0) are warps the collision grid calls solid."""
+    import rom_truth as rt
+
+    m = _map(["000", "111", "111"], warps=[[1, 0, 9, 0]])
+    truth = {"maps": {"1": m}}
+    region = road.reachable(truth, set(), 1, (1, 2))
+    assert (1, 0) in region and (0, 0) not in region and (2, 0) not in region
+    assert rt.path_on_map(truth, set(), 1, (1, 2), {(1, 0)}) == [(1, 2), (1, 1), (1, 0)]
+    assert rt.path_on_map(truth, set(), 1, (1, 2), {(0, 0)}) is None  # not a warp: still solid
+    # the door is a terminal cell: nothing routes *through* it to the far side
+    m2 = _map(["101", "000", "111"], warps=[[1, 1, 9, 0]])
+    assert rt.path_on_map({"maps": {"1": m2}}, set(), 1, (1, 2), {(1, 0)}) is None
+
+
+def test_shore_stand_and_surf_cross_bail_when_the_pair_has_no_side():
+    assert road.shore_stand(_strip_truth(), PAIRS, 1, 404, (3, 0)) is None  # a tiled map, no side to 404
+    io = SurfIO(1, (2, 0, 0))
+    assert road.surf_cross(io, _surf_truth(1), set(), 1, 404, arm_surf=io.arm) == "no-route"
+    assert io.mem[qm.ADDR_MAP] == 1
+
+
+class ChannelIO:
+    """One map with water in it: presses move over land; a press onto water is refused until SURF
+    is armed and then moves; ``solid`` cells refuse even surfing (the model was wrong there)."""
+
+    def __init__(self, truth, start, solid=(), battle_on=None):
+        self.truth = truth
+        self.mem = {qm.ADDR_MAP: start[0], qm.ADDR_X: start[1], qm.ADDR_Y: start[2]}
+        self.solid = set(solid)
+        self.battle_on = set(battle_on or ())  # cells whose first entry opens a wild fight
+        self.arms = 0
+        self.fought = 0
+        self._battle = False
+
+    def read(self, addr):
+        if addr == qm.ADDR_IN_BATTLE:
+            return 1 if self._battle else 0
+        return self.mem.get(addr, 0)
+
+    def wait(self, frames=30):
+        pass
+
+    def arm(self):
+        self.arms += 1
+        return True
+
+    def fight(self, io=None):
+        self.fought += 1
+        self._battle = False
+
+    def press(self, btn, hold=8, release=8):
+        d = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}.get(btn)
+        if d is None:
+            return
+        m = self.truth["maps"][str(self.mem[qm.ADDR_MAP])]
+        x, y = self.mem[qm.ADDR_X] + d[0], self.mem[qm.ADDR_Y] + d[1]
+        if not (0 <= x < m["width"] and 0 <= y < m["height"]) or (x, y) in self.solid:
+            return
+        if road._water_model(m, x, y) and self.arms == 0:
+            return  # water refuses a walker
+        if not road._water_model(m, x, y) and m["grid"][y][x] != "1":
+            return
+        if (x, y) in self.battle_on:
+            self.battle_on.discard((x, y))
+            self._battle = True  # the step is cancelled by the encounter
+            return
+        self.mem[qm.ADDR_X], self.mem[qm.ADDR_Y] = x, y
+
+
+def _channel_truth():
+    # Route 23 in miniature: land on the left, a two-wide channel, land on the right where the
+    # warp (4,1) sits. Water is solid in the extracted grid, exactly as on map 34.
+    grid = ["10011", "10011", "10011"]
+    tiles = [".ww..", ".ww..", ".ww.."]
+    return {"maps": {"34": _tiled(grid, tiles, warps=[[4, 1, 108, 0]])}}
+
+
+def test_water_route_crosses_the_channel_to_the_land_that_reaches_the_target():
+    truth = _channel_truth()
+    plan = road.water_route(truth, set(), 34, (0, 2), {(4, 1)})
+    assert plan is not None
+    stand, face_in, path, landing, face_out = plan
+    assert stand[0] == 0 and face_in == "right"
+    assert path[0] == (1, stand[1]) and all(road._water_model(truth["maps"]["34"], *c) for c in path)
+    assert landing[0] == 3 and face_out == "right"
+    assert road.water_route(truth, set(), 34, (3, 0), {(4, 1)}) is None  # a walk already reaches it
+    assert road.water_route({"maps": {"34": _map(["111"])}}, set(), 34, (0, 0), {(2, 0)}) is None  # no tile model
+
+
+def test_surf_route_walks_faces_arms_and_lands():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1), battle_on={(2, 1)})
+    r = road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm, battle=io.fight)
+    assert r is True
+    assert io.arms == 1 and io.fought == 1  # the wild on (2,1) was fought and the step re-pressed
+    assert (io.mem[qm.ADDR_X], io.mem[qm.ADDR_Y]) == (3, 1)
+
+
+def test_surf_route_reports_what_stopped_it():
+    truth = _channel_truth()
+    far = ChannelIO(truth, (34, 3, 0))
+    assert road.surf_route(far, truth, set(), 34, {(4, 1)}, arm_surf=lambda: True) == "no-route"
+    io = ChannelIO(truth, (34, 0, 2))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=lambda: False) == "surfmoved-failed"
+    io = ChannelIO(truth, (34, 0, 2), solid={(2, 2), (2, 1), (2, 0)})  # the far column refuses surfing
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) == "surfmoved-failed"
+
+
+def test_live_sprites_keeps_slots_and_clips_to_the_map():
+    class IO:
+        def read(self, addr):
+            slot = (
+                (addr - road.SPRITE_STATE_BASE) // 0x10
+                if addr < road.SPRITE_DATA_BASE
+                else (addr - road.SPRITE_DATA_BASE) // 0x10
+            )
+            if addr < road.SPRITE_DATA_BASE:
+                return 1 if slot in (1, 2) else 0
+            off = addr & 0xF
+            return {1: {4: 5 + 4, 5: 3 + 4}, 2: {4: 40 + 4, 5: 1 + 4}}[slot][off]
+
+    assert road.live_sprites(IO()) == {1: (3, 5), 2: (1, 40)}
+    assert road.live_sprites(IO(), (10, 10)) == {1: (3, 5)}
+
+
+def test_surf_route_edge_cases_walk_failure_vertical_keys_and_a_detour(monkeypatch):
+    assert road._key_between((0, 0), (0, 1)) == "down" and road._key_between((0, 1), (0, 0)) == "up"
+    truth = _channel_truth()
+    monkeypatch.setattr(road, "walk", lambda *a, **kw: "no-path")
+    io = ChannelIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) == "no-path"
+    monkeypatch.undo()
+
+    class FlipIO(ChannelIO):
+        def press(self, btn, hold=8, release=8):
+            super().press(btn, hold, release)
+            if (self.mem[qm.ADDR_X], self.mem[qm.ADDR_Y]) == (2, 1):
+                self.mem[qm.ADDR_MAP] = 99  # a current carried us onto another map mid-water
+
+    io = FlipIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) == "detoured"
+
+
+def test_surf_route_skips_the_cell_the_surf_confirmation_already_carried_us_onto():
+    truth = _channel_truth()
+
+    class AutoStepIO(ChannelIO):
+        def arm(self):
+            self.arms += 1
+            self.mem[qm.ADDR_X] += 1  # "use SURF?" -> yes -> the player is already on the water
+            return True
+
+    io = AutoStepIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) is True
+    assert (io.mem[qm.ADDR_X], io.mem[qm.ADDR_Y]) == (3, 1)
+
+
+def test_surf_route_re_presses_a_step_a_lingering_box_swallowed():
+    truth = _channel_truth()
+
+    class BoxIO(ChannelIO):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.eaten = 0
+
+        def press(self, btn, hold=8, release=8):
+            if btn in ("up", "down", "left", "right") and self.arms and self.eaten < 2:
+                self.eaten += 1  # the "got on" box is still up: the press advances text, not the player
+                return
+            super().press(btn, hold, release)
+
+    io = BoxIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) is True
+    assert io.eaten == 2 and (io.mem[qm.ADDR_X], io.mem[qm.ADDR_Y]) == (3, 1)
+
+
+def test_surf_route_settles_what_arming_left_on_screen():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1))
+    closed = []
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm, settle=lambda: closed.append(1)) is True
+    assert closed == [1]
+
+
+def test_surf_route_replans_around_a_cell_the_game_refuses():
+    """The model calls it water; a rock sits there (measured on map 34). One refusal, one replan."""
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1), solid={(2, 1)})  # the straight line across is blocked mid-channel
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) is True
+    assert io.mem[qm.ADDR_X] == 3  # landed on the far bank by another row
+    all_solid = ChannelIO(truth, (34, 0, 1), solid={(2, 0), (2, 1), (2, 2)})
+    assert road.surf_route(all_solid, truth, set(), 34, {(4, 1)}, arm_surf=all_solid.arm) == "surfmoved-failed"
+
+
+def test_surf_route_steps_in_itself_when_the_confirmation_did_not():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1))  # arm() here never moves the player: the route must step in
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) is True
+    stuck = ChannelIO(truth, (34, 0, 1), solid={(1, 1)})  # the very first water cell refuses
+    assert road.surf_route(stuck, truth, set(), 34, {(4, 1)}, arm_surf=stuck.arm) == "surfmoved-failed"
+
+
+def test_surf_route_mounts_through_the_rig_when_given_a_mount():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1))
+    mounted = []
+
+    def mount(face):
+        mounted.append(face)
+        io.arms += 1
+        io.mem[qm.ADDR_X] += 1  # surf_onto answers by position: we are on the water now
+        return True
+
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, mount=mount) is True
+    assert mounted == ["right"]
+    assert (
+        road.surf_route(ChannelIO(truth, (34, 0, 1)), truth, set(), 34, {(4, 1)}, mount=lambda f: False)
+        == "surfmoved-failed"
+    )
+    assert (
+        road.surf_route(ChannelIO(truth, (34, 0, 1)), truth, set(), 34, {(4, 1)}) == "surfmoved-failed"
+    )  # nothing to arm with
+
+
+def test_surf_route_replans_past_a_landing_the_game_refuses_and_gives_up_when_the_water_runs_out():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 0, 1), solid={(3, 1)})  # "There's no place to get off!" on the straight landing
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) is True
+    assert io.mem[qm.ADDR_X] == 3 and io.mem[qm.ADDR_Y] != 1
+    io = ChannelIO(truth, (34, 0, 1), solid={(3, 0), (3, 1), (3, 2)})
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm, replans=2) == "surfmoved-failed"
+
+    class DriftIO(ChannelIO):
+        def press(self, btn, hold=8, release=8):
+            super().press(btn, hold, release)
+            if self.arms and self.mem[qm.ADDR_X] == 1:
+                self.mem[qm.ADDR_MAP] = 99  # a current took us off the map the moment we were afloat
+
+    io = DriftIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm) == "detoured"
+
+
+def test_surf_route_continues_when_already_afloat_and_says_what_it_does():
+    truth = _channel_truth()
+    io = ChannelIO(truth, (34, 1, 1))  # a previous route left us on the water
+    io.arms = 1
+    said = []
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=lambda: False, log=said.append) is True
+    assert io.mem[qm.ADDR_X] == 3 and any("afloat" in s for s in said)
+    io = ChannelIO(truth, (34, 1, 1))
+    io.arms = 1
+    no_bank = road.surf_route(io, truth, set(), 34, {(0, 9)}, arm_surf=lambda: False)
+    assert no_bank == "surfmoved-failed"  # no bank reaches that cell
+    assert road.surf_route(io, truth, set(), 34, set(), arm_surf=lambda: False) == "no-route"  # nowhere to go
+
+
+def test_surf_route_turns_a_guards_page_before_calling_a_step_refused():
+    truth = _channel_truth()
+
+    class GuardIO(ChannelIO):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.page_up = False
+            self.pages = 0
+
+        def press(self, btn, hold=8, release=8):
+            if self.page_up:
+                return  # every press is eaten while the guard talks
+            if btn == "right" and self.arms and not self.pages and (self.mem[qm.ADDR_X], self.mem[qm.ADDR_Y]) == (1, 1):
+                self.page_up = True  # stepping toward (2,1) trips the badge check, once
+                return
+            super().press(btn, hold, release)
+
+        def dismiss(self):
+            self.pages += 1
+            self.page_up = False
+
+    io = GuardIO(truth, (34, 0, 1))
+    assert road.surf_route(io, truth, set(), 34, {(4, 1)}, arm_surf=io.arm, dismiss=io.dismiss) is True
+    assert io.pages == 1 and io.mem[qm.ADDR_X] == 3
+
+
+def test_surf_route_needs_a_tile_model_before_it_believes_it_is_afloat():
+    """Indoors (maps 45, 171, 236, measured): no tiles, so the water model says everything is water."""
+    truth = {"maps": {"45": _map(["111", "111"])}}
+    io = ChannelIO(truth, (45, 0, 0))
+    assert road.surf_route(io, truth, set(), 45, {(2, 1)}, arm_surf=io.arm) == "no-route"
+    assert io.arms == 0

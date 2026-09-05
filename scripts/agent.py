@@ -2671,6 +2671,98 @@ class PokemonAgent:
         img.save(path)
         self.log(f"SCREENSHOT | {path}")
 
+    def snapshot_battle_start(self, battle) -> None:
+        """Capture the fight's start-of-battle features (the battle RAM is cleared when it ends).
+
+        Called once per fight, by the agent's own loop and by the expedition rig's ``battle()``:
+        whoever drives the emulator, the ``battle_outcome`` row needs the same snapshot.
+        """
+        self._pre_battle_species = self.memory.read_party_species()
+        # The battler, from the battle struct: party slot 1 can be fainted (measured on the
+        # route23_kit / victory_road_1f_kit batons, Hypno at 0 HP logged as the fighter).
+        self._battle_my_species = battle.player_species
+        self._pre_battle_level = battle.player_level
+        self._battle_start_turn = self.turn_count
+        self._battle_type = battle.battle_type
+        # A fresh battle is a fresh enemy: the 3-throw catch cap tracks its enemy by
+        # SPECIES, so without this reset one failed catch silences every later
+        # encounter of that species (measured in Diglett's Cave: 120 roam legs of
+        # Digletts, zero balls thrown after the first three).
+        self._catch_enemy = None
+        self._catch_throws = 0
+        self._battle_map_id = self.memory._read(self.memory.ADDR_MAP_ID)
+        prev_ow = self.last_overworld_state
+        self._battle_pos = (prev_ow.x, prev_ow.y) if prev_ow is not None else (-1, -1)
+        self._battle_opponent_species = battle.enemy_species_name
+        self._battle_opponent_level = battle.enemy_level
+        # Whether the Boulder Badge was already in hand when this fight started. Brock
+        # is the fight that *earns* it, so holding it first is proof this is not Brock.
+        self._battle_pre_badges = self.memory._read(self.memory.ADDR_BADGES)
+        # Win-probability features observed at battle start: HP buffer, my move types,
+        # and whether a heal item is on hand.
+        self._battle_my_hp_start = battle.player_hp
+        self._battle_my_max_hp = battle.player_max_hp
+        t1, t2 = battle.enemy_type_name, TYPE_ID_MAP.get(battle.enemy_type2, "")
+        self._battle_enemy_type = t1 if not t2 or t2 == t1 else f"{t1}/{t2}"
+        self._battle_my_move_types = [MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m]
+        self.log(
+            f"BATTLE START | type={self._battle_type} map={self._battle_map_id} "
+            f"opp={self._battle_opponent_species} L{self._battle_opponent_level}"
+        )
+        self._battle_had_healing = self.memory.find_healing_item() is not None
+
+    def emit_battle_summary(self, won: bool, battle_turns: int) -> str:
+        """After a fight: the ``battle_end`` / ``encounter`` / ``battle_outcome`` rows from the
+        snapshot, then the snapshot is reset. Returns the disposition (won / caught / lost)."""
+        party_after = self.memory.read_party()
+        if len(party_after) > len(self._pre_battle_species):
+            disposition = "caught"
+        elif won:
+            disposition = "won"
+        else:
+            disposition = "escaped_or_lost"
+        self.collector.battle_end(
+            self.turn_count,
+            won,
+            battle_turns,
+            self._battle_map_id,
+            *getattr(self, "_battle_pos", (-1, -1)),
+            disposition,
+            len(party_after),
+        )
+        self.collector.encounter(
+            self.turn_count,
+            self._battle_opponent_species,
+            self._battle_opponent_level,
+            getattr(self, "_battle_enemy_type", ""),
+            self._battle_type,
+            self._battle_map_id,
+            *getattr(self, "_battle_pos", (-1, -1)),
+            disposition,
+            len(party_after),
+        )
+        lead = self._pre_battle_species[0] if self._pre_battle_species else 0
+        mine = getattr(self, "_battle_my_species", 0) or lead
+        self.collector.battle_outcome(
+            self.turn_count,
+            SPECIES_ID_MAP.get(mine, SPECIES_ID_MAP.get(lead, "")),
+            self._pre_battle_level,
+            getattr(self, "_battle_my_hp_start", 0),
+            getattr(self, "_battle_my_max_hp", 0),
+            (self.memory._read_party_hp(1) or [0])[0],
+            getattr(self, "_battle_my_move_types", []),
+            getattr(self, "_battle_had_healing", False),
+            self._battle_opponent_species,
+            self._battle_opponent_level,
+            getattr(self, "_battle_enemy_type", ""),
+            self._battle_type,
+            battle_turns,
+            won,
+        )
+        self._pre_battle_species = []
+        self._pre_battle_level = 0
+        return disposition
+
     def run_battle_turn(self):
         """Execute one battle turn."""
         # Capture the battle screen now, while it is guaranteed up — before menu
@@ -3627,36 +3719,7 @@ class PokemonAgent:
                 # Snapshot pre-battle state on first battle turn (battle RAM is cleared
                 # once the fight ends, so opponent identity must be captured here).
                 if not self._pre_battle_species:
-                    self._pre_battle_species = self.memory.read_party_species()
-                    self._pre_battle_level = battle.player_level
-                    self._battle_start_turn = self.turn_count
-                    self._battle_type = battle.battle_type
-                    # A fresh battle is a fresh enemy: the 3-throw catch cap tracks its enemy by
-                    # SPECIES, so without this reset one failed catch silences every later
-                    # encounter of that species (measured in Diglett's Cave: 120 roam legs of
-                    # Digletts, zero balls thrown after the first three).
-                    self._catch_enemy = None
-                    self._catch_throws = 0
-                    self._battle_map_id = self.memory._read(self.memory.ADDR_MAP_ID)
-                    prev_ow = self.last_overworld_state
-                    self._battle_pos = (prev_ow.x, prev_ow.y) if prev_ow is not None else (-1, -1)
-                    self._battle_opponent_species = battle.enemy_species_name
-                    self._battle_opponent_level = battle.enemy_level
-                    # Whether the Boulder Badge was already in hand when this fight started. Brock
-                    # is the fight that *earns* it, so holding it first is proof this is not Brock.
-                    self._battle_pre_badges = self.memory._read(self.memory.ADDR_BADGES)
-                    # Win-probability features observed at battle start: HP buffer, my move types,
-                    # and whether a heal item is on hand.
-                    self._battle_my_hp_start = battle.player_hp
-                    self._battle_my_max_hp = battle.player_max_hp
-                    t1, t2 = battle.enemy_type_name, TYPE_ID_MAP.get(battle.enemy_type2, "")
-                    self._battle_enemy_type = t1 if not t2 or t2 == t1 else f"{t1}/{t2}"
-                    self._battle_my_move_types = [MOVE_DATA.get(m, ("", "none", 0, 0))[1] for m in battle.moves if m]
-                    self.log(
-                        f"BATTLE START | type={self._battle_type} map={self._battle_map_id} "
-                        f"opp={self._battle_opponent_species} L{self._battle_opponent_level}"
-                    )
-                    self._battle_had_healing = self.memory.find_healing_item() is not None
+                    self.snapshot_battle_start(battle)
 
                     # Learn the grass: a wild battle (type 1) fires on the tile the agent just
                     # stepped onto, so mark its last overworld position as an encounter tile. The
@@ -3775,62 +3838,7 @@ class PokemonAgent:
                         self.brock_lead_species = SPECIES_ID_MAP.get(lead, f"#{lead:02X}")
                         self.brock_lead_level = self._pre_battle_level
 
-                    # Emit a battle-end summary (turns, outcome, post-battle party).
-                    self.collector.battle_end(
-                        self.turn_count,
-                        won,
-                        battle_turns,
-                        self._battle_type,
-                        self._battle_map_id,
-                        self._battle_opponent_species,
-                        self._battle_opponent_level,
-                        self.memory.read_party(),
-                    )
-
-                    # The labeled ENCOUNTER row — the roster catalog's unit: who, where (map AND
-                    # tile), and how it ended. "caught" is party growth across the battle, the
-                    # only disposition the win flag can't express.
-                    party_after = self.memory.read_party()
-                    if len(party_after) > len(self._pre_battle_species):
-                        disposition = "caught"
-                    elif won:
-                        disposition = "won"
-                    else:
-                        disposition = "escaped_or_lost"
-                    self.collector.encounter(
-                        self.turn_count,
-                        self._battle_opponent_species,
-                        self._battle_opponent_level,
-                        getattr(self, "_battle_enemy_type", ""),
-                        self._battle_type,
-                        self._battle_map_id,
-                        *getattr(self, "_battle_pos", (-1, -1)),
-                        disposition,
-                        len(party_after),
-                    )
-
-                    # Emit the labeled WIN-PROBABILITY row: start-of-battle features + result.
-                    self.collector.battle_outcome(
-                        self.turn_count,
-                        SPECIES_ID_MAP.get(self._pre_battle_species[0] if self._pre_battle_species else 0, ""),
-                        self._pre_battle_level,
-                        getattr(self, "_battle_my_hp_start", 0),
-                        getattr(self, "_battle_my_max_hp", 0),
-                        # Post-battle lead HP from the PARTY struct (the battle struct is cleared).
-                        (self.memory._read_party_hp(1) or [0])[0],
-                        getattr(self, "_battle_my_move_types", []),
-                        getattr(self, "_battle_had_healing", False),
-                        self._battle_opponent_species,
-                        self._battle_opponent_level,
-                        getattr(self, "_battle_enemy_type", ""),
-                        self._battle_type,
-                        battle_turns,
-                        won,
-                    )
-
-                    # Reset pre-battle snapshots
-                    self._pre_battle_species = []
-                    self._pre_battle_level = 0
+                    self.emit_battle_summary(won, battle_turns)
                     self._reset_battle_wedge_watchdog()
 
                     if battle_limit > 0 and self.battles_won >= battle_limit:

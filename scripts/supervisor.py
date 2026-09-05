@@ -220,6 +220,8 @@ BODY_WAIT_FRAMES = 240  # wanderers clear; a trainer in a corridor never will (P
 # The two growth classes the field-Cut flow has been measured to open (road.py): 0x3D bushes
 # (the Vermilion yard, Celadon's hedges, Route 16's (34,9)) and 0x50 trees (Erika's garden).
 CUT_TILES = {0x3D, 0x50}
+# The refusals a field move (STRENGTH on a boulder, SURF over water) can answer before a consult.
+FIELD_MOVE_FAILURES = ("no-path", "body-blocked", "stuck-on-edge", "interior-interior-stuck")
 DEFAULT_MAX_HOPS = 80
 DEFAULT_ENGAGE_ROUNDS = 14
 
@@ -285,7 +287,7 @@ def hop_blocker(rig, hop: dict | None) -> tuple[int, int] | None:
             if doors:
                 targets = doors  # the terrain is severed: the gate door is the real objective
         return road.blocking_body(rig.truth, rig.pairs, mp, (x, y), targets, rig.bodies())
-    except (StopIteration, KeyError):
+    except KeyError:  # the map itself is missing from the truth; a missing side is not an error
         return None
 
 
@@ -341,13 +343,16 @@ def describe(
         if hop["via"] == "edge":
             try:
                 cells, direction = road.edge_cells(rig.truth, mp, hop["to"])
+            except KeyError:
+                cells, direction = set(), ""
+            if not direction:
+                lines.append(f"OPEN EDGE CELLS toward {hop['to']}: the connection table has no side for this pair.")
+            else:
                 shown = sorted(cells)[:14]
                 lines.append(
                     f"OPEN EDGE CELLS toward {hop['to']} (step {direction}): {shown}"
                     + (" ..." if len(cells) > 14 else "")
                 )
-            except (StopIteration, KeyError):
-                lines.append(f"OPEN EDGE CELLS toward {hop['to']}: the connection table has no side for this pair.")
         else:
             lines.append(f"WARP TILE: ({hop.get('x')}, {hop.get('y')}) on this map.")
     else:
@@ -492,6 +497,14 @@ class LegRunner:
 
         cur = self.rig.pos()[0]
         result = self.rig.cross(cur, hop["to"]) if hop["via"] == "edge" else self.rig.warp(cur, hop["x"], hop["y"])
+        if result in FIELD_MOVE_FAILURES and self.rig.pos()[0] == cur:
+            # A field move the party holds may reconnect the target from right here. Tried
+            # BEFORE the gate-building detour: on Route 23 (measured 2026-09-05) that detour
+            # left the map, and the surf could only ever be planned from the shore it left.
+            if self._push_through(hop) or self._surf_through(hop):
+                result = (
+                    self.rig.cross(cur, hop["to"]) if hop["via"] == "edge" else self.rig.warp(cur, hop["x"], hop["y"])
+                )
         if result == "no-path" and (cur, hop["to"]) not in self.gated:
             # A severed route is usually its own gate building (Route 11's Diglett house taught
             # that the nearest door is not the gate). Determinism gets this before the crew does.
@@ -651,6 +664,127 @@ class LegRunner:
         self.rig.emit("supervisor.sleeper_woken", body=list(culprit), item=flute)
         return True
 
+    def _hop_targets(self, hop: dict, mp: int) -> set[tuple[int, int]]:
+        """The cells this hop needs to stand on: the open edge, or the warp tile."""
+        import road
+
+        if hop["via"] == "edge":
+            cells, _direction = road.edge_cells(self.rig.truth, mp, hop["to"])
+            return set(cells)
+        return {(hop["x"], hop["y"])}
+
+    def _push_through(self, hop: dict) -> bool:
+        """Push the one boulder whose line reconnects this hop, when the party has STRENGTH.
+
+        Victory Road 1F, measured 2026-09-05: the boulder at (2,10) was engaged as a body seven
+        times ("This requires STRENGTH to move!") and the leg burned its budget without a push.
+        A boulder is found like a growth is: on the sprite table, with the plan simulated on it
+        (``boulder_oracle.push_plan``), and every push is proved by the table changing.
+        """
+        mp = self.rig.pos()[0]
+        if not self._push_to(self._hop_targets(hop, mp), what="this hop"):
+            return False
+        self.notes[-1] += "; the hop's region changed"
+        self.gated.discard((mp, hop["to"]))
+        self.banned.discard((mp, hop["to"]))
+        return True
+
+    def _teach_from_bag(self, machine: str, move: str) -> bool:
+        """Teach ``machine`` from the bag when nobody knows ``move`` yet. Map 155, measured
+        2026-09-05: the WARDEN had handed over HM04 STRENGTH, the bag held it, nobody had learned
+        it, and the boulder beside his RARE CANDY was talked to seven times. The move id landing
+        in RAM is the proof (``Rig.teach``)."""
+        bag = getattr(self.rig, "bag_named", None)
+        teach = getattr(self.rig, "teach", None)
+        if bag is None or teach is None:
+            return False
+        if not any(name.upper().startswith(machine) for name, _q in bag(full=True)):
+            return False
+        # A fainted member who knows the move is no use (map 155: Gyarados at 0 HP held STRENGTH
+        # and "already knows" ended the teach). Teach a STANDING member who does not; the
+        # game's ABLE captions decide who can, so a refusal moves to the next.
+        for name, _lvl, hp in self.rig.party():
+            if hp <= 0 or self.rig.knows_move(move, name) is not None:
+                continue
+            self.log(f"  nobody standing knows {move}; teaching {machine} to {name}")
+            who = teach(machine, species=name)
+            if who is not None and self.rig.knows_move(move) is not None:
+                self.rig.emit("supervisor.move_taught", machine=machine, move=move, member=who, species=name)
+                return True
+        self.notes.append(f"{machine} is in the bag but no standing member could learn it")
+        return False
+
+    def _push_to(self, targets, what: str = "the target", exclude=()) -> bool:
+        """Push ONE boulder so a walk reaches one of ``targets``; every push is proved by the
+        sprite table. Serves a hop's cells, a body's neighbours and a ball's neighbours alike:
+        map 155, measured 2026-09-05, had the boulder at (8,4) talked to seven times with a RARE
+        CANDY ball behind it, because pushes served hops only. ``exclude`` are sprites that are
+        the goal, not a wall (the body or ball itself)."""
+        import boulder_oracle
+
+        knows = getattr(self.rig, "knows_move", None)
+        if knows is None or not hasattr(self.rig, "boulders"):
+            return False
+        if knows("STRENGTH") is None and not self._teach_from_bag("HM04", "STRENGTH"):
+            return False
+        mp, x, y = self.rig.pos()
+        if str(mp) not in self.rig.truth.get("maps", {}):
+            return False
+        # The sprite table names most boulders by picture (63); the cartridge lists Victory Road
+        # 1F's plateau boulder (7,5) as a trainer, and what it said when engaged is the proof.
+        heard = {cell for cell, said in self.heard.items() if "requires STRENGTH" in (said or "")}
+        boulders = (set(self.rig.boulders()) | heard) - set(exclude)
+        if not boulders:
+            return False
+        bodies = set(self.rig.bodies())  # the goal sprite stays a wall: a boulder cannot land on a ball
+        plan = boulder_oracle.push_plan(self.rig.truth, self.rig.pairs, mp, (x, y), set(targets), bodies, boulders)
+        if not plan:
+            return False
+        for stand, face, boulder in plan:
+            self.log(f"  a boulder at {boulder} seals {what} -- pushing it {face} from {stand}")
+            if not self.rig.push_boulder(stand, face):
+                self.notes.append(f"the boulder at {boulder} did not move when pushed {face} from {stand}")
+                self.rig.emit("supervisor.push_refused", map=mp, boulder=list(boulder), stand=list(stand), face=face)
+                return False
+            self.rig.emit("supervisor.boulder_pushed", map=mp, boulder=list(boulder), stand=list(stand), face=face)
+        self.tried.append(f"pushed the boulder at {plan[0][2]} {plan[0][1]} x{len(plan)}")
+        self.notes.append(f"pushed the boulder at {plan[0][2]} {plan[0][1]} x{len(plan)} toward {what}")
+        return True
+
+    def _surf_through(self, hop: dict) -> bool:
+        """SURF across this map's water to the land the hop needs, when the party has SURF.
+
+        Route 23, measured 2026-09-05: the 34->108 warp sits across a channel; the planner sees
+        land only and the League leg died on the shore with "no-path". The route is planned on
+        the tile model (``road.water_route``) and proved by the landing position.
+        """
+        import road
+
+        knows = getattr(self.rig, "knows_move", None)
+        if knows is None or knows("SURF") is None or not hasattr(self.rig, "surf_to"):
+            return False
+        mp, x, y = self.rig.pos()
+        if str(mp) not in self.rig.truth.get("maps", {}):
+            return False
+        targets = self._hop_targets(hop, mp)
+        if road.reachable(self.rig.truth, self.rig.pairs, mp, (x, y), self.rig.bodies()) & targets:
+            return False
+        self.log(f"  water between here and {sorted(targets)[:3]} -- surfing across map {mp}")
+        result = self.rig.surf_to(targets)
+        self.log(f"  surf -> {result} at {self.rig.pos()}")
+        if result is not True:
+            if result != "no-route":
+                self.notes.append(f"the SURF route toward {sorted(targets)[:4]} ended {result}")
+                self.rig.emit("supervisor.surf_refused", map=mp, result=str(result))
+            return False
+        landed = self.rig.pos()
+        self.tried.append(f"surfed to {landed[1:]} on map {mp}")
+        self.notes.append(f"surfed across map {mp}'s water to {landed[1:]}; the hop's region changed")
+        self.rig.emit("supervisor.surfed", map=mp, to=list(landed[1:]))
+        self.gated.discard((mp, hop["to"]))
+        self.banned.discard((mp, hop["to"]))
+        return True
+
     def _cut_through(self, hop: dict) -> bool:
         """Cut the one growth that seals this hop, when the party can and the tile model shows it.
 
@@ -742,7 +876,7 @@ class LegRunner:
                     direction = "right" if dx > 0 else "left" if dx < 0 else "down"
                 else:
                     direction = "down" if dy > 0 else "up"
-        except (StopIteration, KeyError):
+        except KeyError:  # the map itself is missing from the truth; a missing side is not an error
             return ""
         before = self.rig.pos()
 
@@ -810,10 +944,11 @@ class LegRunner:
             if hop and hop["via"] == "edge":
                 try:
                     targets, _d = road.edge_cells(self.rig.truth, cur, hop["to"])
-                except (StopIteration, KeyError):
+                except KeyError:  # the map itself is missing from the truth; a missing side is not an error
                     targets = set()
             if not targets:
-                targets = {(w[0], w[1]) for w in self.rig.truth["maps"][str(cur)]["warps"]}
+                warps = self.rig.truth["maps"].get(str(cur), {}).get("warps", [])
+                targets = {(w[0], w[1]) for w in warps}
             self.rig.gate(cur, targets)
             return
         if action == "BACK_OUT_AND_REENTER":
@@ -884,6 +1019,8 @@ class LegRunner:
         the wanted ball is opened first, before a full bag or a lost trainer fight can cost it.
         Bag growth is the only proof a pickup happened.
         """
+        import road
+
         mp = self.rig.pos()[0]
         gained: list[tuple[int, int]] = []
         contents = self.rig.ball_contents(mp)
@@ -896,6 +1033,11 @@ class LegRunner:
             self.looted.add((mp, ball))
             before = self.rig.bag()
             holds = contents.get(ball, "?")
+            bx, by = ball
+            beside = {(bx + 1, by), (bx - 1, by), (bx, by + 1), (bx, by - 1)}
+            px, py = self.rig.pos()[1:]
+            if not (road.walkable(self.rig.truth, self.rig.pairs, mp, (px, py), self.rig.bodies() - {ball}) & beside):
+                self._push_to(beside, what=f"the ball at {ball}", exclude={ball})  # the pickup is the verdict
             if not self.rig.collect_item(*ball):
                 self.log(f"  could not open the ball at {ball} on map {mp} (cartridge says {holds})")
                 self.name_the_ride(ball)
@@ -1135,6 +1277,10 @@ class LegRunner:
             # the gym cleared.
             reach = road.walkable(self.rig.truth, self.rig.pairs, mp, (x, y), self.rig.bodies() - {spot})
             near = reach & adjacent
+            if not near and self._push_to(adjacent, what=f"the body at {spot}", exclude={spot}):
+                mp, x, y = self.rig.pos()
+                reach = road.walkable(self.rig.truth, self.rig.pairs, mp, (x, y), self.rig.bodies() - {spot})
+                near = reach & adjacent
             if not near:
                 # No neighbouring tile: this body may be behind a COUNTER, which is a shape the
                 # engine only knew about for Pokemon Center nurses. Measured on the BIKE SHOP
@@ -1146,7 +1292,19 @@ class LegRunner:
                         self.rig.talk(face)
                         return True
             if not self.rig.approach(near or adjacent):
-                return False
+                # No walk and no ride: the body may stand across water (Route 19's swimmers,
+                # Seafoam's shore). SURF over, then approach again.
+                surf = getattr(self.rig, "surf_to", None)
+                if surf is None:
+                    return False
+                result = surf(adjacent)
+                if result is not True:
+                    if result != "no-route":
+                        self.rig.emit("supervisor.surf_refused", map=mp, result=str(result), toward=list(spot))
+                    return False
+                self.rig.emit("supervisor.surfed", map=mp, to=list(self.rig.pos()[1:]), toward=list(spot))
+                if not self.rig.approach(adjacent):
+                    return False
             mp, x, y = self.rig.pos()
             if (x, y) not in adjacent:
                 return False
@@ -1218,7 +1376,11 @@ class LegRunner:
             if done():
                 return True
             mp, _x, _y = self.rig.pos()
-            all_bodies = list(self.rig.bodies())
+            # Item balls are in the live sprite table too; they are sweep_items' job, and "talking"
+            # to one reads whatever the bag step left on the window layer ("OPTION EXIT", measured
+            # on maps 194, 219, 234) -- never the body's words.
+            balls = set(self.rig.item_balls(mp)) if hasattr(self.rig, "item_balls") else set()
+            all_bodies = [b for b in self.rig.bodies() if b not in balls]
             if not all_bodies:
                 return done()
             # Keep a stable order for the retry phase: which bodies reappear is decided by the
@@ -1361,6 +1523,12 @@ class LegRunner:
             #    A growth the party can cut is the same shape as a body: one cell, and lifting it
             #    reconnects the target. It is measured off the tile model and proved by the step.
             if hop is not None and failure == "no-path" and self._cut_through(hop):
+                continue
+            #    A boulder in the line, or water between the regions, are the same shape again:
+            #    a field move the party holds reconnects the target, and the map proves it.
+            if hop is not None and failure in FIELD_MOVE_FAILURES and self._push_through(hop):
+                continue
+            if hop is not None and failure in FIELD_MOVE_FAILURES and self._surf_through(hop):
                 continue
             # 3. A door that will not open is as structural as a severed grid. Silph 1F's
             #    (16,10) pad is dead, and the floor has two other ways up — (26,0) and (20,0).

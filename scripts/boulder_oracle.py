@@ -74,6 +74,99 @@ def candidate_pushes(truth, pairs, map_id: int, player, boulders) -> list[tuple[
     return out
 
 
+GAP_TILE = 0x24  # measured on Victory Road 1F (probe_vr_1f_plate, 2026-09-04): the boulder pushed onto (9,12)
+# stays there and the tile carries the player -- the grid calls it solid, the boulder makes it floor.
+
+
+def _filled(truth, map_id: int, cell) -> dict:
+    """The truth with ``cell`` walkable: a boulder resting on a gap tile is floor from then on."""
+    m = truth["maps"][str(map_id)]
+    if m["grid"][cell[1]][cell[0]] == "1":
+        return truth
+    rows = [list(r) for r in m["grid"]]
+    rows[cell[1]][cell[0]] = "1"
+    filled = dict(m)
+    filled["grid"] = ["".join(r) for r in rows]
+    return {**truth, "maps": {**truth["maps"], str(map_id): filled}}
+
+
+def _is_gap(m, cell) -> bool:
+    tiles = m.get("tiles")
+    return bool(tiles) and int(tiles[cell[1]][2 * cell[0] : 2 * cell[0] + 2], 16) == GAP_TILE
+
+
+def push_plan(
+    truth, pairs, map_id: int, start, targets, bodies, boulders, max_pushes: int = 40
+) -> list[tuple[tuple[int, int], str, tuple[int, int]]] | None:
+    """The pushes ``(stand, direction, boulder)`` of ONE boulder that reconnect ``start``'s region
+    to ``targets``: ``[]`` when already connected, ``None`` when no boulder can (a two-boulder
+    puzzle is the oracle's job, not this).
+
+    Measured on Victory Road 1F (2026-09-05): the crew engaged the boulder at (2,10) as a body
+    seven times ("This requires STRENGTH to move!") and never pushed. A push is simulated on the
+    sprite set -- the boulder lands one cell on, the player stands where it was, the player's
+    region is recomputed -- as a breadth-first search over the boulder's positions, so it may
+    turn corners. A boulder pushed onto a gap tile (0x24) fills it and becomes floor (Victory
+    Road 1F's rule, measured 2026-09-04), which is the whole point of most pushes there.
+    """
+    from collections import deque
+
+    m = truth["maps"][str(map_id)]
+    w, h = m["width"], m["height"]
+    bodies = set(bodies)
+    targets = set(targets)
+    start = tuple(start)
+    boulders = (set(boulders) & bodies) - fallen(truth, map_id, boulders)
+    # A warp tile is not a place to stand or to park a boulder: measured on Victory Road 1F
+    # (2026-09-05), the sixth push was planned from the exit at (8,17) and the player left the map.
+    warps = {(wp[0], wp[1]) for wp in m.get("warps", [])}
+
+    def connected(world, player, blocked):
+        return bool(road.reachable(world, pairs, map_id, player, blocked=blocked) & targets)
+
+    if connected(truth, start, bodies):
+        return []
+    best = None
+    for b0 in sorted(boulders):
+        others = bodies - {b0}
+        # state: (boulder cell, player cell); the player is wherever the last push left them
+        seen = {(b0, start)}
+        queue = deque([((b0, start), [])])
+        while queue:
+            (b, player), moves = queue.popleft()
+            if len(moves) >= max_pushes:
+                continue
+            region = road.reachable(truth, pairs, map_id, player, blocked=others | {b})
+            for name, (dx, dy) in DIRS.items():
+                stand = (b[0] - dx, b[1] - dy)
+                land = (b[0] + dx, b[1] + dy)
+                if stand not in region or stand in warps:
+                    continue
+                if not (0 <= land[0] < w and 0 <= land[1] < h) or land in others or land in warps:
+                    continue
+                gap = _is_gap(m, land)
+                if m["grid"][land[1]][land[0]] != "1" and not gap:
+                    continue
+                nxt = (land, b)  # the boulder moved on; the player now stands where it was
+                if nxt in seen:
+                    continue
+                seen.add(nxt)
+                path = moves + [(stand, name, b)]
+                if gap:  # it fills the gap: floor now, and no longer a body
+                    if connected(_filled(truth, map_id, land), b, others):
+                        rank = (len(path), abs(stand[0] - start[0]) + abs(stand[1] - start[1]))
+                        if best is None or rank < best[0]:
+                            best = (rank, path)
+                    continue  # a boulder in a gap does not move again
+                if connected(truth, b, others | {land}):
+                    rank = (len(path), abs(stand[0] - start[0]) + abs(stand[1] - start[1]))
+                    if best is None or rank < best[0]:
+                        best = (rank, path)
+                    break
+                queue.append((nxt, path))
+    return best[1] if best else None
+
+
 def parse_surf_test(spec: str | None) -> tuple[tuple[int, int], str] | None:
     """``"15,7,down"`` -> ((15, 7), "down"): the shore cell to stand on and the way to face.
 

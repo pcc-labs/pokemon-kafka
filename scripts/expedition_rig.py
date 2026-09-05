@@ -304,7 +304,18 @@ class Rig:
             frame_interval=frame_interval,
             live=producer.send,
         )
-        self.ag.collector = GameEventCollector(recorder=self.recorder, game=self.ag.profile.name, run_id=run_id)
+        # The same date-partitioned sink the expedition events use (data/telemetry/game/<date>.jsonl):
+        # the game-event-bridge container tails it into Kafka, and Flink reads that topic. Without a
+        # publisher the fight rows stopped at runs/<run_id>/events.jsonl and never reached the stream.
+        from publisher import make_publisher
+
+        sink = (self.telemetry_root or TELEMETRY_DIR).parent / "game"
+        self.ag.collector = GameEventCollector(
+            publisher=make_publisher(telemetry_dir=str(sink)),
+            recorder=self.recorder,
+            game=self.ag.profile.name,
+            run_id=run_id,
+        )
         self.recorder.start({"label": label, "rom": str(ROM_DEFAULT)})
 
         def wrap(press_fn):
@@ -460,13 +471,17 @@ class Rig:
             self.ctl.wait(30)
         return len(self.bag()) < before
 
-    def make_room(self) -> bool:
-        """Free one bag slot along ``room_plan``: use what only helps, toss what only sells.
+    def make_room(self, allow_toss: bool = False) -> bool:
+        """Free one bag slot along ``room_plan``: use what only helps; toss only when told to.
 
         The caller decides when (``bag_full``); this frees exactly one slot. The verdict is the
         stack count dropping -- never the menu having been navigated. A use the game refuses
         ("It won't have any effect") leaves the count alone and the plan moves on; so does a toss
         the game refuses (a key item), which is the backstop against lore about what is safe.
+
+        Tossing is off by default: the 2026-09-05 replays threw away NUGGETs and TMs on bag-full
+        talks. The game's own answer to a full bag is the Center PC (``store_at_pc``); a leg that
+        cannot reach one says so (``bag.full``) rather than selling the bag one item at a time.
         """
         before = len(self.bag())
         # room_plan sees the FULL names ("TM28 DIG"); the id lookup must use the same names, or every
@@ -476,6 +491,8 @@ class Rig:
         can_use = hasattr(self, "use_item") and hasattr(self, "ctl")
         for action, name in room_plan(named):
             if name not in by_name or (action == "use" and not can_use):
+                continue
+            if action == "toss" and not allow_toss:
                 continue
             print(f"  bag full: {action} {name} to free a slot", flush=True)
             if action == "use":
@@ -501,6 +518,9 @@ class Rig:
                 if hasattr(self, "emit"):
                     self.emit("bag.freed", action=action, item=name, slots=len(self.bag()))
                 return True
+        print("  bag full: nothing to use; store at a Center PC (store_at_pc) rather than toss", flush=True)
+        if hasattr(self, "emit"):
+            self.emit("bag.full", slots=len(self.bag()), hint="store_at_pc")
         print("  bag is full and nothing in it is expendable", flush=True)
         return False
 
@@ -717,9 +737,20 @@ class Rig:
         """The agent's full battle turn until the fight ends; a stuck fight is a wedge."""
         self.ag._catch_enemy = None
         self.ag._catch_throws = 0
+        # The same start-of-battle snapshot the standalone agent takes, so the fight ends with a
+        # battle_outcome row (species, levels, HP, move types, result) in runs/<run_id>/events.jsonl.
+        # Without it every supervisor-driven fight since 2026-08-27 left only per-turn rows.
+        # Measured: the flag flips before the battle struct is loaded, so a snapshot taken at
+        # once carries the previous battler (a L20 Gyarados logged as L100 with Charizard's HP).
+        # The struct is complete once FIGHT is drawn, which is what _await_battle_menu syncs on.
+        # And on a fight a trainer starts on approach (Lance, measured), the in-battle flag is up
+        # before the battle-type byte, so the first sync fails; the attempt repeats each turn until
+        # the struct is there, rather than dropping the whole fight's row.
         turns = 0
         no_fight = 0  # consecutive turns on a menu the routine cannot drive
         while self.mem[qm.ADDR_IN_BATTLE] and turns < BATTLE_TURN_CAP:
+            if not self.ag._pre_battle_species and self.ag._await_battle_menu():
+                self.ag.snapshot_battle_start(self.mr.read_battle_state())
             self.ag.run_battle_turn()
             turns += 1
             # The fight routine leaves a special (no-FIGHT) menu exactly where it found it: after a
@@ -732,6 +763,7 @@ class Rig:
                 no_fight = 0
             if no_fight >= SPECIAL_MENU_GRACE and self._flee_special_menu():
                 self.emit("battle.fled", pos=list(self.pos()), turns=turns)
+                self._battle_summary(won=False, turns=turns)
                 return
             if turns in (60, 110, 160):
                 self.ag._recover_battle_wedge()
@@ -739,6 +771,14 @@ class Rig:
             self.bank("wedge")
             self.emit("battle.wedge", pos=list(self.pos()), turns=turns)
             raise BattleWedge(f"battle did not end in {turns} turns; banked wedge.state")
+        self._battle_summary(won=not self.mr.player_whited_out(), turns=turns)
+
+    def _battle_summary(self, won: bool, turns: int) -> None:  # pragma: no cover - drives the emulator
+        """Close the fight on the collector; a fight that was never snapshotted has no row."""
+        if not self.ag._pre_battle_species:
+            return
+        disposition = self.ag.emit_battle_summary(won, turns)
+        self.emit("battle.outcome", won=won, turns=turns, disposition=disposition)
 
     def _fightable(self, probes: int = 8) -> bool:  # pragma: no cover - drives the emulator
         """B through intro/dialog (B is a no-op on a menu, A on the evolution screen); report
@@ -976,6 +1016,15 @@ class Rig:
                 if self.use_field_move("SURF", species=name):
                     break
         said = self.textbox()
+        # Measured on Route 23 (2026-09-05): "AAAA got on GYARADOS!" types out over the party menu
+        # and the position updates only when that page closes -- read at once, a mount that worked
+        # looked refused (four legs, one screenshot each, the player already on the water in all).
+        # So the verdict waits for the page: A advances it; the position is the proof either way.
+        for _ in range(8):
+            if self.pos() != before:
+                break
+            self.ctl.press("a")
+            self.ctl.wait(45)
         refused = self.pos() == before  # settled before the clear loop; pressing B never moves us
         if refused:
             self.screenshot("surf_refused")  # the picture, not just the sentence -- see screenshot()
@@ -1042,6 +1091,63 @@ class Rig:
         and an off-map "blocker" is one a leg will walk across the floor to argue with."""
         m = self.truth["maps"].get(str(self.pos()[0]))
         return road.live_bodies(self.io, (m["width"], m["height"]) if m else None)
+
+    def boulders(self) -> set[tuple[int, int]]:
+        """Live cells of the sprites the cartridge draws as boulders (pic 63): a pushed boulder
+        keeps its slot, so slot ``i`` is matched to the map's sprite ``i - 1``."""
+        m = self.truth["maps"].get(str(self.pos()[0]))
+        if not m:
+            return set()
+        sprites = m.get("sprites") or []
+        live = road.live_sprites(self.io, (m["width"], m["height"]))
+        return {
+            xy
+            for slot, xy in live.items()
+            if slot - 1 < len(sprites) and sprites[slot - 1].get("pic") == road.BOULDER_PIC
+        }
+
+    def push_boulder(self, stand, face: str) -> bool:  # pragma: no cover - drives the emulator
+        """Stand beside a boulder and shove it with STRENGTH; the sprite table is the verdict.
+
+        Measured on Victory Road 1F (2026-09-05): a wild Onix opened on the walk to the stand and
+        the push that followed was refused twice -- the win box was still up. So the walk is
+        settled, the stand re-checked, and the shove tried twice.
+        """
+        stand = tuple(stand)
+        for _ in range(2):
+            if self.pos()[1:] != stand and not self.approach({stand}):
+                return False
+            self.settle()
+            if self.pos()[1:] != stand:
+                continue
+            if self.strength_push(face):
+                return True
+            self.settle()
+        return False
+
+    def surf_to(self, targets) -> bool | str:  # pragma: no cover - drives the emulator
+        """SURF across this map's water to the land that reaches ``targets`` (``road.surf_route``)."""
+        return road.surf_route(
+            self.io,
+            self.truth,
+            self.pairs,
+            self.pos()[0],
+            set(targets),
+            mount=self.surf_onto,  # measured to answer by position, which the menu read cannot
+            battle=self.battle,
+            bodies=self.bodies(),
+            log=lambda msg: print(msg, flush=True),
+            dismiss=self._turn_pages,
+        )
+
+    def _turn_pages(self, rounds: int = 12) -> None:  # pragma: no cover - drives the emulator
+        """A while the game is saying something: a guard's badge check, a "got on" line. Stops
+        the moment the window is clear; the stale-window case just costs a few harmless A's."""
+        for _ in range(rounds):
+            if not self.textbox():
+                return
+            self.ctl.press("a")
+            self.ctl.wait(40)
 
     def screenshot_path(self, tag: str) -> Path:
         """Where a tagged screen grab for this run lives. Pure — no PyBoy, so it is testable."""
@@ -1552,7 +1658,8 @@ class Rig:
         if anchor is None or item_row is None:
             print("  the START menu did not open", flush=True)
             return False
-        if not self.menu_cursor_to((item_row - anchor) // 2):
+        if not self.start_menu_cursor_to((item_row - anchor) // 2):
+            print("  could not put the START menu's cursor on ITEM", flush=True)
             return False
         self.ctl.press("a")
         self.ctl.wait(60)
@@ -1767,8 +1874,25 @@ class Rig:
     def strength_push(
         self, face: str
     ) -> bool:  # pragma: no cover - drives the emulator; verified live, not in unit tests
-        """Enable Strength, then shove the boulder. Proved by the boulder's tile opening up."""
-        if not self.use_field_move("STRENGTH", face=face):
+        """Enable Strength, then shove the boulder. Proved by the boulder's tile opening up.
+
+        The move is used by whoever knows it, named by species: measured on Victory Road 1F
+        (2026-09-05), party member 0 was a fainted Hypno and "no field move called 'STRENGTH' on
+        party member 0" refused every push while Gyarados held it in slot 3.
+        """
+        idx = self.knows_move("STRENGTH")
+        if idx is None:
+            return False
+        # By menu index, not by name: the POKeMON menu prints NICKNAMES (this party's Charizard is
+        # "AAAAAAA", measured on strength_ready) and omits fainted members, so the menu index is
+        # the party index less the fainted members drawn above it.
+        # Measured both ways: the Route 23 party menu drew "HYPNO 100 FNT" in slot 0 (screenshot
+        # 20260905-193131-1de1/surf_refused.png), while an older leg saw fainted members omitted.
+        # So the party index is tried first, the index less the fainted members above second.
+        party = self.party()
+        fainted_above = sum(1 for _n, _l, hp in party[:idx] if hp <= 0)
+        candidates = [idx] if not fainted_above else [idx, idx - fainted_above]
+        if not any(self.use_field_move("STRENGTH", face=face, member=m) for m in candidates):
             return False
         for _ in range(4):
             self.ctl.press("a")
@@ -2100,6 +2224,19 @@ class Rig:
         party roster, its STATS/SWITCH/CANCEL submenu and the TM roster all "failed to reach" an
         entry that was three presses away.
         """
+        for _ in range(presses):
+            at = self.mem[qm.ADDR_MENU_CUR]
+            if at == index:
+                return True
+            self.ctl.press("down" if at < index else "up")
+            self.ctl.wait(20)
+        return self.mem[qm.ADDR_MENU_CUR] == index
+
+    def start_menu_cursor_to(self, index: int, presses: int = 16) -> bool:  # pragma: no cover - drives the emulator
+        """The START menu does not scroll: its highlight is the cursor register alone. Judged with
+        ``list_index`` (cursor + scroll), a scroll value left behind by an earlier list made ITEM
+        unreachable -- measured on strength_ready (2026-09-05): every press cycled the cursor and
+        the teach reported HM04 "not in the bag" with the HM in it."""
         for _ in range(presses):
             at = self.mem[qm.ADDR_MENU_CUR]
             if at == index:
